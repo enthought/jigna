@@ -1,0 +1,1 @@
+Jigna is a TraitsUI like frontend for Traits, but unlike TraitsUI which is based on Qt/Wx, it is based on HTML/CSS/JS. This gives the flexibility of HTML/CSS for the view and the ease of Python and Traits for the model.
