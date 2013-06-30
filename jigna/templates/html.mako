@@ -1,5 +1,5 @@
 <%!
-    from traits.api import Int, Str, Bool, Enum
+    from traits.api import Int, Str, Bool, Enum, Float
 %>
 
 <%def name="html_for_trait(obj, tname)">
@@ -7,6 +7,12 @@
         trait_type = obj.trait(tname).trait_type
     %>
     % if isinstance(trait_type, Int):
+        <label for="${tname}"> ${tname} </label>
+        <input type='number' ng-model='${tname}' name='${tname}'
+               value='${getattr(obj, tname)}'>
+    % endif
+    
+    % if isinstance(trait_type, Float):
         <label for="${tname}"> ${tname} </label>
         <input type='number' ng-model='${tname}' name='${tname}'
                value='${getattr(obj, tname)}'>
@@ -27,7 +33,7 @@
     % if isinstance(trait_type, Enum):
         <label for="${tname}"> ${tname} </label>
         <div>
-            % for value in obj.trait(tname).handle.values:
+            % for value in obj.trait(tname).handler.values:
                 <input id="${tname}_${value}" type='radio' ng-model='${tname}' 
                        value='${value}'>
                 <label for="${tname}_${value}"> ${value}</label>

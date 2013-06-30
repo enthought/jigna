@@ -3,7 +3,7 @@ from mako.template import Template
 from os.path import join, dirname
 
 # Enthought library imports
-from traits.api import Str, Bool, HasTraits
+from traits.api import Str, Bool, HasTraits, Enum
 
 def to_html(obj, js="", css="", resource_url=""):
     """ Returns a default html template of the trait named tname defined in 
@@ -21,6 +21,7 @@ if __name__=="__main__":
         first_name = Str
         last_name = Str
         is_manager = Bool(True)
+        department = Enum('Engineering', 'Management')
     
     e = Employee(first_name="Foo", last_name="Bar", is_manager=True)
     print to_html(e)
