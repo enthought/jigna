@@ -7,7 +7,7 @@ from pyface.qt import QtGui
 # Local imports
 from jigna.core.html_widget import HTMLWidget
 from jigna.templates import html, js
-from jigna.util import serialize
+from jigna.util.misc import serialize
 from jigna.util.wsgi import JinjaRenderer
 
 class HTMLView(object):

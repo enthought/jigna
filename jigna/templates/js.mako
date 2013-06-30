@@ -1,5 +1,5 @@
 <%!
-    from jigna.util import serialize
+    from jigna.util.misc import serialize
 %>
 
 <%def name="js_for_trait(obj, tname)">
