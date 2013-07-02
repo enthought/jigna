@@ -43,5 +43,4 @@ class Item(object):
         self.name = name
 
     def render(self, model):
-        from IPython.core.debugger import Tracer; Tracer()()
         return get_editor(model, self.name).html()
