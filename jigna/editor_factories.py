@@ -16,4 +16,4 @@ def get_editor(obj, tname):
     if editor:
         return editor.get('simple')(obj=obj, tname=tname)
     else:
-        raise ValueError('Unsupported trait type - no editor found!')
+        raise ValueError('Unsupported trait type "%s"- no editor found!' % trait.trait_type.__class__)
