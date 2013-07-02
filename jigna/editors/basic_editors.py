@@ -73,7 +73,6 @@ class StringEditor(BasicEditor):
                         """)
         return Template(template_str).render(obj=self.obj, tname=self.tname)
 
-
 class BoolEditor(BasicEditor):
 
     def html(self):
@@ -88,17 +87,14 @@ class BoolEditor(BasicEditor):
                         """)
         return Template(template_str).render(obj=self.obj, tname=self.tname)
 
-
 class EnumEditor(BasicEditor):
 
     def html(self):
-        template_str = dedent("""
-                        <div class="editor enum-editor">
-                            <label for="${tname}"> ${tname} </label>
-                            <div class="enum-elements">
-                                % for value in obj.trait(tname).handler.values:
-                                <label for="${tname}_${value}">
-                                    <input id="${tname}_${value}" type='radio' ng-model='${tname}'
+        template_str =  dedent("""
+                        <label for="${tname}"> ${tname} </label>
+                        <div>
+                            % for value in obj.trait(tname).handler.values:
+                                <input id="${tname}_${value}" type='radio' ng-model='${tname}'
                                     value='${value}'>
                                     ${value}
                                 </label>
@@ -107,9 +103,44 @@ class EnumEditor(BasicEditor):
                         </div>
                         """)
         return Template(template_str).render(obj=self.obj, tname=self.tname)
-        
+
 class ListEditor(BasicEditor):
-    
+
     def html(self):
-        pass
-            
+        raise NotImplementedError
+
+
+class InstanceEditor(BasicEditor):
+
+    def html(self):
+        instance = getattr(self.obj, self.tname)
+        template_str = dedent("""
+                        <div>
+                            <%!
+                                from jigna.editor_factories import get_editor
+                            %>
+                            % for instance_tname in instance.editable_traits():
+                                ${get_editor(instance, instance_tname).html()}
+                            % endfor
+                        </div>
+                        """)
+        return Template(template_str).render(instance=instance)
+
+    def js(self):
+        instance = getattr(self.obj, self.tname)
+        js = super(InstanceEditor, self).js()
+        template_str = dedent("""
+                        <%!
+                            from jigna.session import PYNAME as pyobj
+                        %>
+                        % for inner_tname in instance.editable_traits():
+                            $scope.$watch('${tname}.${inner_tname}', function(newValue, oldValue){
+                                ${pyobj}.trait_set($scope.obj_id,
+                                                  '${tname}.${inner_tname}',
+                                                   $scope.${tname})
+                            })
+                        % endfor
+                        """)
+        js += Template(template_str).render(instance=instance,
+                                            tname=self.tname)
+        return js

@@ -1,0 +1,25 @@
+from traits.api import HasTraits, Str, Bool, Instance
+from jigna.html_view import HTMLView
+from jigna.session import show_simple_view
+
+class SimpleEmployee(HasTraits):
+    first_name = Str
+    last_name = Str
+
+    is_manager = Bool(False)
+
+class Manager(SimpleEmployee):
+    subordinate = Instance(SimpleEmployee)
+
+rachel = SimpleEmployee(first_name="Cat",
+                     last_name="Woman",
+                     is_manager=False)
+rachel.edit_traits()
+
+bruce = Manager(first_name="Dark",
+                last_name="Knight",
+                is_manager=True,
+                subordinate=rachel)
+
+view = HTMLView(model=bruce)
+show_simple_view(view)

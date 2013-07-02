@@ -54,7 +54,11 @@ class Session(HasTraits):
     def trait_set(self, model_id, tname, value):
         for view in self.views:
             if view.model_id == model_id:
-                setattr(view.model, tname, value)
+                extended_name = tname.split('.')
+                obj = view.model
+                for attr in extended_name[:-1]:
+                    obj = getattr(obj, attr)
+                setattr(obj, extended_name[-1], value)
 
     def trait_get(self, model_id, tname):
         for view in self.views:
@@ -129,8 +133,8 @@ class Session(HasTraits):
             """)
         template = Template(template_str)
         self.html = template.render(views=self.views,
-                                    jquery=self.resource_url + 'jquery.min.js',
-                                    angular=self.resource_url + 'angular.min.js',
+                                    jquery=self.resource_url+'jquery.min.js',
+                                    angular=self.resource_url+'angular.min.js',
                                     jignajs=self.js, jignacss=self.css)
 
     def create_py_html_bridge(self):
