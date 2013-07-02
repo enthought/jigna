@@ -1,13 +1,14 @@
-from traits.api import Int, Str, Bool, Float, Enum
+from traits.api import Int, Str, Bool, Float, Enum, List
 
 from jigna.editors.api import IntEditor, FloatEditor, BoolEditor, \
-    StringEditor, EnumEditor
+    StringEditor, EnumEditor, ListEditor
     
 factory_mapping = {Int: {'simple': IntEditor},
                    Str: {'simple': StringEditor},
                    Float: {'simple': FloatEditor},
                    Bool: {'simple': BoolEditor},
-                   Enum: {'simple': EnumEditor}}
+                   Enum: {'simple': EnumEditor},
+                   List: {'simple': ListEditor}}
     
 def get_editor(obj, tname):
     trait = obj.trait(tname)

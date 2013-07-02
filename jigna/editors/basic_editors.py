@@ -88,3 +88,9 @@ class EnumEditor(BasicEditor):
                         </div>
                         """)
         return Template(template_str).render(obj=self.obj, tname=self.tname)
+        
+class ListEditor(BasicEditor):
+    
+    def html(self):
+        pass
+            

@@ -15,5 +15,14 @@ sam = SimpleEmployee(first_name="Dark",
                      department="Engineering", 
                      salary=50000)
 sam.edit_traits()
-view = HTMLView(model=sam)
+
+html_template = """
+    <div>
+        <h3>Employee's name is <input ng-model="first_name"> {{last_name}}</h3>
+        He works in the <span style="color: #0645AD">{{department}}</span> 
+        department, and obtains a salary of 
+        Rs. <input ng-model="salary" type="number"> per month.
+    </div>
+    """
+view = HTMLView(model=sam, template=html_template)
 show_simple_view(view)

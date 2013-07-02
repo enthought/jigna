@@ -4,6 +4,10 @@ from textwrap import dedent
 
 # Enthought library imports
 from traits.api import HasTraits, Instance, Str, Property, Int
+from traitsui.api import View, Group, Item
+
+# Local imports
+from jigna.layout import render_layout
 
 class HTMLView(HasTraits):
     
@@ -19,8 +23,12 @@ class HTMLView(HasTraits):
     
     model_id = Property(Int, depends_on='model')
     
-    # Path of the object html template file.
-    obj_html_template = Str
+    # TraitsUI View object to dictate layout
+    layout = Instance(View)
+    
+    # HTML template.
+    template = Property(Str, depends_on='layout')
+    _template = Str
     
     # Location relative to which the resource urls (css/js/images) are given in 
     # the html_template
@@ -28,6 +36,21 @@ class HTMLView(HasTraits):
     
     def _get_model_id(self):
         return id(self.model)
+        
+    def _layout_default(self):
+        items = []
+        for tname in self.model.editable_traits():
+            items.append(Item(name=tname))
+        return View(Group(items))
+        
+    def _get_template(self):
+        if not len(self._template):
+            return render_layout(self.layout)
+        else:
+            return self._template
+    
+    def _set_template(self, template):
+        self._template = template
         
     ## HTML/JS generation ####################################################
         
@@ -49,7 +72,7 @@ class HTMLView(HasTraits):
                 }
                 
                 % for tname in obj.editable_traits():
-                    ${get_editor(obj, tname).js()}    
+                        ${get_editor(obj, tname).js()}
                 % endfor
                 
                 // utility functions
@@ -84,18 +107,12 @@ class HTMLView(HasTraits):
                 id="id_${obj_id}" 
                 class="class_${obj_class}"
                 ng-init="init(${obj_id})">
-                    % if obj_html_template:
-                        ${open(obj_html_template, 'r').read()}
-                    % else:
-                        % for tname in obj.editable_traits():
-                            ${get_editor(obj, tname).html()}
-                        % endfor          
-                    % endif
+                    ${template}
             </div>
             """)
         template = Template(template_str)
         self.html = template.render(obj=self.model,
-                                    obj_html_template=self.obj_html_template)
+                                    template=self.template)
     
     def generate_js_html(self):
         self.generate_js()

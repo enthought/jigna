@@ -1,4 +1,3 @@
-# configure_traits.py -- Sample code to demonstrate
 from traits.api import HasTraits, Str, Bool, Float, Enum
 from jigna.html_view import HTMLView
 from jigna.session import Session
