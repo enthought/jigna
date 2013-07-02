@@ -36,4 +36,4 @@ view_rachel = HTMLView(model=rachel)
 
 session = Session(views=[view_sam, view_rachel])
 print render(session)
-session.start()
+
