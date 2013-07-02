@@ -1,51 +1,47 @@
 from jigna.editor_factories import get_editor
-from traitsui.api import View, Group, Item
 
 
-def _get_trait_view(model):
-    view = model.trait_view()
-    return view
+class View(object):
+    def __init__(self, group, **kwargs):
+        self.content = group
+
+    def render(self, model):
+        child = self.content
+        return '<div class="container">' + child.render(model) + '</div>'
 
 
-def _render(obj, model):
-    if isinstance(obj, View):
-        return _render_view(obj, model)
-    elif isinstance(obj, Group):
-        return _render_group(obj, model)
-    elif isinstance(obj, Item):
-        return _render_item(obj, model)
-    else:
-        raise Exception('Object %s of unknown type %s found' %
-            (obj, obj.__class__))
+class Group(object):
+    def __init__(self, *items, **kwargs):
+        self.content = items
+        self.orientation = kwargs.pop('orientation', 'vertical')
+
+    def render(self, model):
+        ret_val = '<div class="row">'
+        TOTAL_COLUMNS = 12
+
+        if self.orientation == 'horizontal':
+            n_columns = TOTAL_COLUMNS // len(self.content)
+            item_class = "span%s" % n_columns
+            for content in self.content:
+                ## XXX: ideally this should be added to the editor
+                ret_val += '<div class="%s">' % item_class
+                ret_val += content.render(model)
+                ret_val += '</div>'
+        else:
+            # default orientation is vertical
+            for content in self.content:
+                ## XXX: ideally this should be added to the editor
+                ret_val += '<div>'
+                ret_val += content.render(model)
+                ret_val += '</div>'
+        ret_val += '</div>'
+        return ret_val
 
 
-def _render_view(view, model):
-    child = view.content
-    ## Is a View's child always a Group ?
-    return '<div class="container">' + _render(child, model) + '</div>'
+class Item(object):
+    def __init__(self, name):
+        self.name = name
 
-
-def _render_group(group, model):
-    ret_val = '<div class="row">'
-    for content in group.content:
-        ret_val += _render(content, model)
-    ret_val += '</div>'
-    return ret_val
-
-
-def _render_item(item, model):
-    # from IPython.core.debugger import Tracer; Tracer()()
-    ret_val = get_editor(model, item.name).html()
-    return ret_val
-
-
-def render(session):
-    '''
-    :param obj: is a `jigna.session.Session` object
-    '''
-    html_views = session.views
-    html = ''
-    for view in html_views:
-        trait_view = view.model.trait_view()
-        html += _render(trait_view, view.model)
-    return html
+    def render(self, model):
+        from IPython.core.debugger import Tracer; Tracer()()
+        return get_editor(model, self.name).html()

@@ -6,7 +6,7 @@ from textwrap import dedent
 from traits.api import HasTraits, Instance, Str
 
 # Local imports
-from jigna.session import PYNAME
+from jigna.api import PYNAME
 
 
 class BasicEditor(HasTraits):

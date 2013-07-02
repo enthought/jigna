@@ -4,23 +4,21 @@ from textwrap import dedent
 
 # Enthought library imports
 from traits.api import HasTraits, Instance, Str, Property, Int
-from traitsui.api import View, Group, Item
+from jigna.layout import View
 
-# Local imports
-from jigna.layout import render_layout
 
 class HTMLView(HasTraits):
-    
+
     ## Traits declaration ####################################################
-    
+
     model = Instance(HasTraits)
-    
+
     html = Str
-    
+
     js = Str
-    
+
     css = Str
-    
+
     model_id = Property(Int, depends_on='model')
     
     # TraitsUI View object to dictate layout
@@ -33,32 +31,18 @@ class HTMLView(HasTraits):
     # Location relative to which the resource urls (css/js/images) are given in 
     # the html_template
     base_url = Str
-    
+    view = View
+
     def _get_model_id(self):
         return id(self.model)
-        
-    def _layout_default(self):
-        items = []
-        for tname in self.model.editable_traits():
-            items.append(Item(name=tname))
-        return View(Group(items))
-        
-    def _get_template(self):
-        if not len(self._template):
-            return render_layout(self.layout)
-        else:
-            return self._template
-    
-    def _set_template(self, template):
-        self._template = template
-        
+
     ## HTML/JS generation ####################################################
-        
+
     def generate_js(self):
         template_str = dedent("""
             <%!
                 from jigna.editor_factories import get_editor
-                from jigna.session import PYNAME as pyobj
+                from jigna.api import PYNAME as pyobj
             %>
             <%
                 obj_class = obj.__class__.__name__
@@ -70,11 +54,11 @@ class HTMLView(HasTraits):
                         $scope.${tname} = ${pyobj}.trait_get($scope.obj_id, '${tname}');
                     % endfor
                 }
-                
+
                 % for tname in obj.editable_traits():
                         ${get_editor(obj, tname).js()}
                 % endfor
-                
+
                 // utility functions
                 $scope.scoped = function() {
                     var func, largs;
@@ -92,7 +76,7 @@ class HTMLView(HasTraits):
             """)
         template = Template(template_str)
         self.js = template.render(obj=self.model)
-                               
+
     def generate_html(self):
         template_str = dedent("""
             <%!
