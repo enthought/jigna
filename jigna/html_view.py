@@ -111,7 +111,7 @@ class HTMLView(HasTraits):
         template = Template(template_str)
         self.html = template.render(obj=self.model,
                                     template=self.template)
-
+    
     def generate_js_html(self):
         self.generate_js()
         self.generate_html()
