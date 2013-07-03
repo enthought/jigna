@@ -29,12 +29,6 @@ sam = SimpleEmployee(first_name="Dark",
 ui = sam.edit_traits()
 view_sam = HTMLView(model=sam, layout=view1)
 
-rachel = SimpleEmployee(first_name="Cat",
-                        last_name="Woman",
-                        department="Management",
-                        salary=100000)
-# rachel.edit_traits()
-view_rachel = HTMLView(model=rachel, layout=view1)
 
-session = Session(views=[view_sam, view_rachel])
+session = Session(views=[view_sam])
 session.start()

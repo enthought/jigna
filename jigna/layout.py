@@ -1,6 +1,3 @@
-from jigna.editor_factories import get_editor
-
-
 class View(object):
     def __init__(self, group, **kwargs):
         self.content = group
@@ -43,4 +40,6 @@ class Item(object):
         self.name = name
 
     def render(self, model):
-        return get_editor(model, self.name).html()
+        from jigna.editor_factories import get_editor
+        editor = get_editor(model, self.name)
+        return editor.html()

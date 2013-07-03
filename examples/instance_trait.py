@@ -14,12 +14,12 @@ class Manager(SimpleEmployee):
 rachel = SimpleEmployee(first_name="Cat",
                      last_name="Woman",
                      is_manager=False)
-rachel.edit_traits()
 
 bruce = Manager(first_name="Dark",
                 last_name="Knight",
                 is_manager=True,
                 subordinate=rachel)
+bruce.edit_traits()
 
 view = HTMLView(model=bruce)
 show_simple_view(view)

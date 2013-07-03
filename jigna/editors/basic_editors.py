@@ -7,13 +7,15 @@ from traits.api import HasTraits, Instance, Str
 
 # Local imports
 from jigna.api import PYNAME
-
+from jigna.html_view import HTMLView
 
 class BasicEditor(HasTraits):
 
     obj = Instance(HasTraits)
 
     tname = Str
+
+    obj_view = Instance(HTMLView)
 
     def html(self):
         raise NotImplementedError
@@ -26,7 +28,7 @@ class BasicEditor(HasTraits):
                        %>
                        $scope.${tname} = JSON.parse('${value}');
                        $scope.$watch('${tname}', function(newValue, oldValue) {
-                           ${pyobj}.trait_set($scope.obj_id, '${tname}', newValue);
+                           ${pyobj}.set_trait($scope.obj_id, '${tname}', newValue);
                        });
                        """)
         return Template(template_str).render(obj=self.obj, tname=self.tname,
@@ -112,35 +114,22 @@ class ListEditor(BasicEditor):
 
 class InstanceEditor(BasicEditor):
 
+    obj_view = Instance(HTMLView)
+
     def html(self):
         instance = getattr(self.obj, self.tname)
-        template_str = dedent("""
-                        <div>
-                            <%!
-                                from jigna.editor_factories import get_editor
-                            %>
-                            % for instance_tname in instance.editable_traits():
-                                ${get_editor(instance, instance_tname).html()}
-                            % endfor
+        view = HTMLView(model=instance)
+        view.generate_html()
+        return Template("""
+                        <label for="${tname}">${tname}</label>
+                        <div style="border:solid 1px #ccc; padding: 5px"
+                             class="editor bool-editor">
+                            ${instance_html}
                         </div>
-                        """)
-        return Template(template_str).render(instance=instance)
+                        """).render(instance_html=view.html, tname=self.tname)
 
     def js(self):
         instance = getattr(self.obj, self.tname)
-        js = super(InstanceEditor, self).js()
-        template_str = dedent("""
-                        <%!
-                            from jigna.session import PYNAME as pyobj
-                        %>
-                        % for inner_tname in instance.editable_traits():
-                            $scope.$watch('${tname}.${inner_tname}', function(newValue, oldValue){
-                                ${pyobj}.trait_set($scope.obj_id,
-                                                  '${tname}.${inner_tname}',
-                                                   $scope.${tname})
-                            })
-                        % endfor
-                        """)
-        js += Template(template_str).render(instance=instance,
-                                            tname=self.tname)
-        return js
+        view = HTMLView(model=instance, session=self.obj_view.session)
+        view.setup_session()
+        return view.js
