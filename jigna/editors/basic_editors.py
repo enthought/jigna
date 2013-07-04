@@ -7,15 +7,12 @@ from traits.api import HasTraits, Instance, Str
 
 # Local imports
 from jigna.api import PYNAME
-from jigna.html_view import HTMLView
 
 class BasicEditor(HasTraits):
 
     obj = Instance(HasTraits)
 
     tname = Str
-
-    obj_view = Instance(HTMLView)
 
     def html(self):
         raise NotImplementedError
@@ -33,6 +30,11 @@ class BasicEditor(HasTraits):
                        """)
         return Template(template_str).render(obj=self.obj, tname=self.tname,
                                              pyobj=PYNAME)
+
+    def setup_session(self, session=None):
+        """ Any setup steps that need to be performed before the session starts
+        """
+        pass
 
 
 class IntEditor(BasicEditor):
@@ -114,22 +116,21 @@ class ListEditor(BasicEditor):
 
 class InstanceEditor(BasicEditor):
 
-    obj_view = Instance(HTMLView)
+    def __init__(self, **traits):
+        super(InstanceEditor, self).__init__(**traits)
+        self.instance = getattr(self.obj, self.tname)
+        from jigna.html_view import HTMLView
+        self.instance_view = HTMLView(model=self.instance)
 
     def html(self):
-        instance = getattr(self.obj, self.tname)
-        view = HTMLView(model=instance)
-        view.generate_html()
         return Template("""
                         <label for="${tname}">${tname}</label>
                         <div style="border:solid 1px #ccc; padding: 5px"
                              class="editor bool-editor">
                             ${instance_html}
                         </div>
-                        """).render(instance_html=view.html, tname=self.tname)
+                        """).render(instance_html=self.instance_view.html,
+                                    tname=self.tname)
 
     def js(self):
-        instance = getattr(self.obj, self.tname)
-        view = HTMLView(model=instance, session=self.obj_view.session)
-        view.setup_session()
-        return view.js
+        return self.instance_view.js

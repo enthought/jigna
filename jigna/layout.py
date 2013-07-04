@@ -36,10 +36,14 @@ class Group(object):
 
 
 class Item(object):
-    def __init__(self, name):
+    def __init__(self, name, **options):
         self.name = name
+        self.options = options
 
-    def render(self, model):
-        from jigna.editor_factories import get_editor
-        editor = get_editor(model, self.name)
-        return editor.html()
+    def render(self, model, **kwargs):
+        editor = self.options.get('editor')
+        if not editor:
+            from jigna.editor_factories import get_editor
+            ttype = model.trait(getattr(model, self.name)).trait_type
+            editor = get_editor(ttype, **self.options)
+        return editor(obj=model, tname=self.name, **self.options).html()

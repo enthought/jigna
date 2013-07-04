@@ -22,14 +22,14 @@ sam = SimpleEmployee(first_name="Dark",
                      last_name="Knight",
                      department="Engineering",
                      salary=50000)
-sam.edit_traits()
+ui = sam.edit_traits()
 view_sam = HTMLView(model=sam)
 
 rachel = SimpleEmployee(first_name="Cat",
                         last_name="Woman",
                         department="Management",
                         salary=100000)
-rachel.edit_traits()
+ui2 = rachel.edit_traits()
 view_rachel = HTMLView(model=rachel)
 
 session = Session(views=[view_sam, view_rachel])

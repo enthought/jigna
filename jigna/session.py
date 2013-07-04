@@ -1,6 +1,7 @@
 # Standard library imports
 from mako.template import Template
 from textwrap import dedent
+import os
 
 # Enthought library imports
 from pyface.qt import QtGui
@@ -10,6 +11,7 @@ from traits.api import HasTraits, List, Instance, Str, Property, Any
 from jigna.core.html_widget import HTMLWidget
 from jigna.util.wsgi import JinjaRenderer
 from jigna.api import PYNAME
+from jigna.util.misc import serialize
 import jigna.registry as registry
 
 
@@ -27,22 +29,32 @@ class Session(HasTraits):
 
     resource_url = Property(Str, depends_on='resource_host')
 
-    html = Str
+    html = Property(Str, depends_on='views')
 
-    js = Str
+    js = Property(Str, depends_on='views')
 
     css = Str
 
+    # Location relative to which the resource urls (css/js/images) are given in
+    # the html_template
+    base_url = Str
+
     def _get_resource_url(self):
         return 'http://{0}/'.format(self.resource_host)
+
+    def _base_url_default(self):
+        return os.getcwd()
 
     ## Private interface ####################################################
 
     def _create_widget(self):
         hosts = {self.resource_host: JinjaRenderer(
-                            package='jigna',
-                            template_root='resources'
-                )}
+                        package='jigna',
+                        template_root='resources'
+                    ),
+                 'file.jigna': JinjaRenderer(
+                        template_root=self.base_url
+                    )}
         self.widget = HTMLWidget(callbacks=[('set_trait', self.set_trait),
                                             ('get_trait', self.get_trait)],
                                  python_namespace=PYNAME,
@@ -53,20 +65,40 @@ class Session(HasTraits):
         self.widget.create()
 
     def _create_py_html_bridge(self):
-        for view in self.views:
-            view.setup_session(self)
-        self.generate_js_html()
         self.widget.load_html(self.html)
+        d = registry.registry['models']
+        for model_id, model in d.iteritems():
+            self._bind_trait_change_events(model)
+            view = registry.registry['views'][model_id]
+            for tname in model.editable_traits():
+                editor = view.editors[tname](obj=model, tname=tname)
+                editor.setup_session(session=self)
+
+    def _bind_trait_change_events(self, model):
+        def handler(model, tname, oldValue, newValue):
+            template = Template("""
+                                $('[data-id=${obj_id}]').each(function(index) {
+                                    scope = $(this).scope();
+                                    scope.scoped(function() {
+                                        scope.${tname} = JSON.parse('${value}');
+                                    })
+                                })
+                                """)
+            traitchange_js = template.render(obj_id=id(model), tname=tname,
+                                             value=serialize(newValue))
+            self.widget.execute_js(traitchange_js)
+
+        model.on_trait_change(handler)
 
     ## Callbacks exposed to the QWebView ####################################
 
     def set_trait(self, model_id, tname, value):
-        model = registry.registry['objects'].get(model_id)
+        model = registry.registry['models'].get(model_id)
         if model:
             setattr(model, tname, value)
 
     def get_trait(self, model_id, tname):
-        model = registry.registry['objects'].get(model_id)
+        model = registry.registry['models'].get(model_id)
         if model:
             return getattr(model, tname)
 
@@ -76,6 +108,7 @@ class Session(HasTraits):
         app = QtGui.QApplication.instance() or QtGui.QApplication([])
         self.create()
         app.exec_()
+        registry.clean()
 
     def create(self):
         self._create_widget()
@@ -99,7 +132,7 @@ class Session(HasTraits):
             self.widget.execute_js(set_html_cmd)
             self.widget.execute_js(view.js)
 
-    def generate_html(self):
+    def _get_html(self):
         template_str = dedent("""
             <html ng-app>
                 <head>
@@ -108,6 +141,8 @@ class Session(HasTraits):
                     <script type="text/javascript">
                         ${jignajs}
                     </script>
+
+                    <script type="text/javascript" href="http://file.jigna/test.js"></script>
 
                     <style>
                         ${jignacss}
@@ -121,16 +156,13 @@ class Session(HasTraits):
             </html>
             """)
         template = Template(template_str)
-        self.html = template.render(views=self.views,
-                                    jquery=self.resource_url+'js/jquery.min.js',
-                                    angular=self.resource_url+'js/angular.min.js',
-                                    jignajs=self.js, jignacss=self.css)
+        return template.render(views=self.views,
+                               jquery=self.resource_url+'js/jquery.min.js',
+                               angular=self.resource_url+'js/angular.min.js',
+                               jignajs=self.js, jignacss=self.css)
 
-    def generate_js(self):
-        self.js = ""
+    def _get_js(self):
+        js = ""
         for view in self.views:
-            self.js += view.js + "\n"
-
-    def generate_js_html(self):
-        self.generate_js()
-        self.generate_html()
+            js += view.js + "\n"
+        return js

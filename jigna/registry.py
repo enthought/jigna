@@ -1,22 +1,30 @@
-registry = {'objects': {}, 'classes': []}
+registry = {'models': {}, 'model_classes': [], 'views': {}}
 
-def add_object(obj):
+def add_model(model):
     global registry
-    registry['objects'][id(obj)] = obj
+    registry['models'][id(model)] = model
 
-def remove_object(obj):
+def remove_model(model):
     global registry
-    registry['objects'].pop(id(obj))
+    registry['models'].pop(id(model))
 
-def add_class(cls):
+def add_view(model, view):
     global registry
-    if not cls in registry['classes']:
-        registry['classes'].append(cls)
+    registry['views'][id(model)] = view
 
-def remove_class(cls):
+def remove_view(model, view):
     global registry
-    registry['classes'].remove(cls)
+    registry['views'].pop(id(model))
+
+def add_model_class(cls):
+    global registry
+    if not cls in registry['model_classes']:
+        registry['model_classes'].append(cls)
+
+def remove_model_class(cls):
+    global registry
+    registry['model_classes'].remove(cls)
 
 def clean():
     global registry
-    registry = {'objects': {}, 'classes':[]}
+    registry = {'models': {}, 'model_classes':[], 'views': {}}
