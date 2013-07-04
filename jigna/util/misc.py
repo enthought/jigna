@@ -8,26 +8,14 @@ from pyface.action.api import Action, Separator, Group
 from pyface.qt import QtGui
 
 def serialize(obj):
-    """ Convert a python object to JS by serialization/deserialization. If one 
-    of the traits could not be converted, it's possibly a HasTraits object, 
+    """ Convert a python object to JS by serialization/deserialization. If one
+    of the traits could not be converted, it's possibly a HasTraits object,
     in which case, it is serialized by repeating the process for that trait.
     """
     try:
         serialized = json.dumps(obj)
     except TypeError:
-        if (isinstance(obj, list) or isinstance(obj, tuple) or \
-            isinstance(obj, set)):
-            serialized = ''
-            for item in obj:
-                serialized += serialize(item)
-        elif isinstance(obj, dict):
-            serialized = ''
-            for key in obj.keys():
-                serialized += serialize(obj[key])
-        elif isinstance(obj, HasTraits):
-            serialized = ''
-            for tname in obj.editable_traits():
-                serialized = serialize({tname:getattr(obj, tname)})
+        serialized = json.dumps(None)
     return serialized
 
 ###############################################################################

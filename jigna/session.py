@@ -2,6 +2,7 @@
 from mako.template import Template
 from textwrap import dedent
 import os
+import json
 
 # Enthought library imports
 from pyface.qt import QtGui
@@ -29,9 +30,9 @@ class Session(HasTraits):
 
     resource_url = Property(Str, depends_on='resource_host')
 
-    html = Property(Str, depends_on='views')
+    html = Str
 
-    js = Property(Str, depends_on='views')
+    js = Str
 
     css = Str
 
@@ -65,6 +66,9 @@ class Session(HasTraits):
         self.widget.create()
 
     def _create_py_html_bridge(self):
+        # NOTE: Loading the widget html before binding trait change events is
+        # necessary since we need atleast one access to view.html and view.js
+        # to register them
         self.widget.load_html(self.html)
         d = registry.registry['models']
         for model_id, model in d.iteritems():
@@ -95,6 +99,8 @@ class Session(HasTraits):
     def set_trait(self, model_id, tname, value):
         model = registry.registry['models'].get(model_id)
         if model:
+            oldval = getattr(model, tname)
+            value = type(oldval)(value)
             setattr(model, tname, value)
 
     def get_trait(self, model_id, tname):
@@ -132,7 +138,7 @@ class Session(HasTraits):
             self.widget.execute_js(set_html_cmd)
             self.widget.execute_js(view.js)
 
-    def _get_html(self):
+    def _html_default(self):
         template_str = dedent("""
             <html ng-app>
                 <head>
@@ -161,7 +167,7 @@ class Session(HasTraits):
                                angular=self.resource_url+'js/angular.min.js',
                                jignajs=self.js, jignacss=self.css)
 
-    def _get_js(self):
+    def _js_default(self):
         js = ""
         for view in self.views:
             js += view.js + "\n"

@@ -3,7 +3,7 @@ from mako.template import Template
 from textwrap import dedent
 
 # Enthought library imports
-from traits.api import HasTraits, Instance, Str
+from traits.api import HasTraits, Instance, Str, Float
 
 # Local imports
 from jigna.api import PYNAME
@@ -107,6 +107,25 @@ class EnumEditor(BasicEditor):
                         </div>
                         """)
         return Template(template_str).render(obj=self.obj, tname=self.tname)
+
+class RangeEditor(BasicEditor):
+
+    min = Float(0.0)
+
+    max = Float(100.0)
+
+    def html(self):
+        template_str = dedent("""
+                        <div class="editor float-editor">
+                            <label for="${tname}"> ${tname}
+                                <input type='range' ng-model='${tname}' name='${tname}'
+                                value=${getattr(obj, tname)} min="${min}"
+                                max="${max}">
+                            </label>
+                        </div>
+                        """)
+        return Template(template_str).render(obj=self.obj, tname=self.tname,
+                                             min=self.min, max=self.max)
 
 class ListEditor(BasicEditor):
 

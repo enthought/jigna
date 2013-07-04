@@ -45,12 +45,6 @@ class HTMLView(HasTraits):
 
     _registered = Bool(False)
 
-    def _register(self):
-        registry.add_model(self.model)
-        registry.add_model_class(self.model.__class__)
-        registry.add_view(self.model, self)
-        self._registered = True
-
     ## Trait property getters/setters and default methods ###################
 
     def _get_model_id(self):

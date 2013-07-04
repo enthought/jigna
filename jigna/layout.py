@@ -44,6 +44,6 @@ class Item(object):
         editor = self.options.get('editor')
         if not editor:
             from jigna.editor_factories import get_editor
-            ttype = model.trait(getattr(model, self.name)).trait_type
+            ttype = model.trait(self.name).trait_type
             editor = get_editor(ttype, **self.options)
         return editor(obj=model, tname=self.name, **self.options).html()
