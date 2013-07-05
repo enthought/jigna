@@ -4,11 +4,12 @@ from textwrap import dedent
 
 # Enthought library imports
 from traits.api import HasTraits, Instance, Str, Float
+from traitsui.api import EditorFactory
 
 # Local imports
 from jigna.api import PYNAME
 
-class BasicEditor(HasTraits):
+class BasicEditor(EditorFactory):
 
     obj = Instance(HasTraits)
 
@@ -18,18 +19,7 @@ class BasicEditor(HasTraits):
         raise NotImplementedError
 
     def js(self):
-        template_str = dedent("""
-                       <%
-                           from jigna.util.misc import serialize
-                           value = serialize(getattr(obj, tname))
-                       %>
-                       $scope.${tname} = JSON.parse('${value}');
-                       $scope.$watch('${tname}', function(newValue, oldValue) {
-                           ${pyobj}.set_trait($scope.obj_id, '${tname}', newValue);
-                       });
-                       """)
-        return Template(template_str).render(obj=self.obj, tname=self.tname,
-                                             pyobj=PYNAME)
+        return ""
 
     def setup_session(self, session=None):
         """ Any setup steps that need to be performed before the session starts
@@ -119,7 +109,7 @@ class RangeEditor(BasicEditor):
                         <div class="editor float-editor">
                             <label for="${tname}"> ${tname}
                                 <input type='range' ng-model='${tname}' name='${tname}'
-                                value=${getattr(obj, tname)} min="${min}"
+                                value="${getattr(obj, tname)}" min="${min}"
                                 max="${max}">
                             </label>
                         </div>

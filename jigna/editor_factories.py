@@ -1,7 +1,8 @@
 from traits.api import Int, Str, Bool, Float, Enum, Range, List, Instance
 
 from jigna.editors.api import IntEditor, FloatEditor, BoolEditor, \
-    StringEditor, EnumEditor, RangeEditor, ListEditor, InstanceEditor
+    StringEditor, EnumEditor, RangeEditor, ListEditor, InstanceEditor, \
+    ChacoPlotEditor
 
 def get_editor(ttype, **kwargs):
     factory_mapping = {Int: {'simple': IntEditor},
@@ -19,3 +20,16 @@ def get_editor(ttype, **kwargs):
     else:
         raise ValueError('Unsupported trait type "%s"- no editor found!' %
                         ttype.__class__)
+
+from traitsui.api import EditorFactory
+
+class _TU_ChacoPlotEditor(EditorFactory):
+    pass
+
+class _TU_RangeEditor(EditorFactory):
+    pass
+
+
+tu_to_jigna_mapping = {_TU_ChacoPlotEditor: ChacoPlotEditor, 
+                       _TU_RangeEditor: RangeEditor}
+    
