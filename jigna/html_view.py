@@ -53,7 +53,7 @@ class HTMLView(HasTraits):
     def _layout_default(self):
         items = []
         for tname in self.model.editable_traits():
-            items.append(Item(name=tname, editor=self.editors.get(tname)))
+            items.append(Item(name=tname))
         return View(Group(*items))
 
     def _get_template(self):

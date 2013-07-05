@@ -21,14 +21,17 @@ class LinePlot(HasTraits):
 
     @on_trait_change('scaling_factor')
     def _update_plot(self):
-        x = linspace(-14, 14, 100)
+        x = linspace(-14, 14, 1000)
         y = sin(self.scaling_factor * x) * x**3
-        plotdata = ArrayPlotData(x=x, y=y)
-        plot = Plot(plotdata)
-        plot.plot(("x", "y"), type="line", color="blue")
-        plot.title = "sin(%s * x) * x^3" % self.scaling_factor
-
-        self.plot = plot
+        if self.plot is None:
+            plotdata = ArrayPlotData(x=x, y=y)
+            plot = Plot(plotdata)
+            plot.plot(("x", "y"), type="line", color="blue")
+            plot.title = "sin(%s * x) * x^3" % self.scaling_factor
+            self.plot = plot
+        else:
+            self.plot.data.set_data('y', y)
+            self.plot.title = "sin(%s * x) * x^3" % self.scaling_factor
 
 line_plot = LinePlot()
 ui = line_plot.edit_traits()

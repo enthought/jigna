@@ -100,8 +100,12 @@ class Session(HasTraits):
         model = registry.registry['models'].get(model_id)
         if model:
             oldval = getattr(model, tname)
-            value = type(oldval)(value)
-            setattr(model, tname, value)
+            try:
+                value = type(oldval)(value)
+            except ValueError:
+                pass
+            else:
+                setattr(model, tname, value)
 
     def get_trait(self, model_id, tname):
         model = registry.registry['models'].get(model_id)
