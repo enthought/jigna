@@ -1,6 +1,7 @@
 # Standard library imports
 from mako.template import Template
 from textwrap import dedent
+import json
 
 # Enthought library imports
 from traits.api import HasTraits, Instance, Str, Property, Int, Dict, Bool, List
@@ -45,6 +46,8 @@ class HTMLView(HasTraits):
 
     editors = Property(List, depends_on='layout', cached=True)
 
+    visible_traits = Property(List, depends_on='layout', cached=True)
+
     ## Trait property getters/setters and default methods ###################
 
     def _get_model_id(self):
@@ -72,6 +75,19 @@ class HTMLView(HasTraits):
             editors.append(jitem.editor)
         return editors
 
+    def _get_visible_traits(self):
+        visible_traits = []
+        for item in get_items(self.layout):
+            value = getattr(self.model, item.name)
+            try:
+                json.dumps(value)
+            except TypeError:
+                # catch unserializable traits here
+                pass
+            else:
+                visible_traits.append(item.name)
+        return visible_traits
+
     def _js_default(self):
         if not self._registered:
             registry.add_model(self.model)
@@ -91,7 +107,7 @@ class HTMLView(HasTraits):
                 window.${obj_class}_Ctrl = function($scope) {
                     $scope.init = function(obj_id) {
                         $scope.obj_id = obj_id;
-                        % for tname in obj.editable_traits():
+                        % for tname in visible_traits:
                             $scope.${tname} = JSON.parse(${pyobj}.get_trait($scope.obj_id, '${tname}'));
                             $scope.$watch('${tname}', function(newValue, oldValue) {
                                 ${pyobj}.set_trait($scope.obj_id, '${tname}', JSON.stringify(newValue));
@@ -120,7 +136,8 @@ class HTMLView(HasTraits):
                 }
                 """)
             template = Template(template_str)
-            return template.render(obj=self.model, editors=self.editors)
+            return template.render(obj=self.model, editors=self.editors, 
+                                   visible_traits=self.visible_traits)
 
     def _html_default(self):
         template_str = dedent("""

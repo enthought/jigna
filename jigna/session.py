@@ -72,26 +72,27 @@ class Session(HasTraits):
         self.widget.load_html(self.html)
         d = registry.registry['models']
         for model_id, model in d.iteritems():
-            self._bind_trait_change_events(model)
             view = registry.registry['views'][model_id]
+            for tname in view.visible_traits:
+                self._bind_trait_change_events(model, tname)
             for editor in view.editors:
                 editor.setup_session(session=self)
 
-    def _bind_trait_change_events(self, model):
-        def handler(model, tname, oldValue, newValue):
+    def _bind_trait_change_events(self, model, tname):
+        def handler(model, tname, newValue):
             template = Template("""
                                 $('[data-id=${obj_id}]').each(function(index) {
                                     scope = $(this).scope();
                                     scope.scoped(function() {
-                                        scope.${tname} = JSON.parse(${value});
+                                        scope.${tname} = JSON.parse(${pyobj}.get_trait(${obj_id}, '${tname}'));
                                     })
                                 })
                                 """)
             traitchange_js = template.render(obj_id=id(model), tname=tname,
-                                             value=self.get_trait(id(model), tname))
+                                             pyobj=PYNAME)
             self.widget.execute_js(traitchange_js)
 
-        model.on_trait_change(handler)
+        model.on_trait_change(handler, tname)
 
     ## Callbacks exposed to the QWebView ####################################
 
@@ -110,9 +111,6 @@ class Session(HasTraits):
         if model:
             try:
                 value = json.dumps(getattr(model, tname))
-            except TypeError:
-                # catch unserializable traits here
-                pass
             except AttributeError:
                 # catch event traits write only errors here
                 pass

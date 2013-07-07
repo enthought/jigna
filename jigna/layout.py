@@ -79,9 +79,10 @@ class JItem(object):
         if getattr(self.tu_item, 'editor'):
             editor_factory = tu_to_jigna_mapping[self.tu_item.editor.__class__]
             editor_args = getattr(self.tu_item, 'editor_args')
-        if not editor_factory:
+        else:
             ttype = self.model.trait(self.tu_item.name).trait_type
             editor_factory = get_editor(ttype)
+            editor_args = getattr(self.tu_item, 'editor_args')
         self.editor = editor_factory(obj=self.model, 
                                      tname=self.tu_item.name, 
                                      **editor_args)

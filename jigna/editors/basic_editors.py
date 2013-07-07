@@ -127,9 +127,9 @@ class InstanceEditor(BasicEditor):
 
     def __init__(self, **traits):
         super(InstanceEditor, self).__init__(**traits)
-        self.instance = getattr(self.obj, self.tname)
+        self._instance = getattr(self.obj, self.tname)
         from jigna.html_view import HTMLView
-        self.instance_view = HTMLView(model=self.instance)
+        self._instance_view = HTMLView(model=self._instance)
 
     def html(self):
         return Template("""
@@ -138,8 +138,8 @@ class InstanceEditor(BasicEditor):
                              class="editor bool-editor">
                             ${instance_html}
                         </div>
-                        """).render(instance_html=self.instance_view.html,
+                        """).render(instance_html=self._instance_view.html,
                                     tname=self.tname)
 
     def js(self):
-        return self.instance_view.js
+        return self._instance_view.js
