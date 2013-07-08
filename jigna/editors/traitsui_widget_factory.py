@@ -1,6 +1,13 @@
-from pyface.qt import QtWebKit, QtGui
+# Standard library imports
+from textwrap import dedent
+from mako.template import Template
 
+# Enthougt library imports.
+from pyface.qt import QtWebKit, QtGui
 from traitsui.api import View, Item
+
+# Local imports.
+from basic_editors import BasicEditor
 
 ###############################################################################
 # TraitsUIWidget class.
@@ -26,11 +33,8 @@ class TraitsUIWidget(QtGui.QWidget):
         height: int: Optional height of widget.
         """
         super(TraitsUIWidget, self).__init__()
-        self.trait_name = trait_name
-        self.model = model
         layout = QtGui.QVBoxLayout()
         self.setLayout(layout)
-        self.show()
 
         if view is not None:
             if view.height > 0:
@@ -48,7 +52,8 @@ class TraitsUIWidget(QtGui.QWidget):
 
         self.setMinimumWidth(width)
         self.setMinimumHeight(height)
-        e = self.model.edit_traits(view=view, parent=self, kind='subpanel')
+        e = model.edit_traits(view=view, parent=self, kind='subpanel')
+        self.traits_ui = e
         layout.addChildWidget(e.control)
 
 
@@ -141,3 +146,28 @@ class TraitsUIWidgetFactory(QtWebKit.QWebPluginFactory):
         """
         key = (model_id, trait_name)
         cls.registry[key] = widget_factory
+
+###############################################################################
+# TraitsUIEditor class.
+###############################################################################
+class TraitsUIEditor(BasicEditor):
+
+    def html(self):
+        template_str = dedent("""
+                        <div class="editor ${editor_name}">
+                        <object type="application/x-traitsuiwidget"
+                                data=${obj_id} trait_name="${trait_name}"
+                                width="400" height="400">
+                        </object>
+                        </div>
+                       """)
+        return Template(template_str).render(obj_id=id(self.obj),
+                                        trait_name=self.tname,
+                                        editor_name=self.__class__.__name__)
+
+    def setup_session(self, session=None):
+        webview = session.widget.control
+        TraitsUIWidgetFactory.setup_session(webview)
+        my_id = id(self.obj)
+        TraitsUIWidgetFactory.register_factory(my_id, self.tname,
+                                               self.create_widget)

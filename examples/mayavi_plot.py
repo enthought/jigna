@@ -55,20 +55,14 @@ my_model = MyModel()
 from jigna.html_view import HTMLView
 from jigna.session import show_simple_view
 
-from jigna.layout import View, Item, Group
-from jigna.editors.api import RangeEditor
-from jigna.editors.mayavi_editors import MayaviPlotEditor
+from jigna.editor_factories import _TU_RangeEditor
+from jigna.editors.mayavi_editors import TUMayaviEditor
 
-layout = View(Group(Item('scene', editor=MayaviPlotEditor),
-                    Item('n_meridional', editor=RangeEditor),
-                    Item('n_longitudinal', editor=RangeEditor),
+layout = View(Group(Item('scene', editor=TUMayaviEditor()),
+                    Item('n_meridional', editor=_TU_RangeEditor()),
+                    Item('n_longitudinal', editor=_TU_RangeEditor()),
                     ),
                     )
 
-view = HTMLView(model=my_model, layout=layout,
-                editors={'scene': MayaviPlotEditor,
-                         'n_meridional': RangeEditor,
-                         'n_longitudinal': RangeEditor,
-                         }
-                         )
+view = HTMLView(model=my_model, layout=layout)
 show_simple_view(view)

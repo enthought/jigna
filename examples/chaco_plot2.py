@@ -1,5 +1,5 @@
 from traits.api import HasTraits, Instance, on_trait_change, Range, Float
-from traitsui.api import View, Item
+from traitsui.api import View, Item, Group
 from chaco.api import Plot, ArrayPlotData
 from chaco.tools.api import ZoomTool, PanTool
 from enable.api import ComponentEditor
@@ -49,17 +49,13 @@ class LinePlot(HasTraits):
 line_plot = LinePlot()
 ui = line_plot.edit_traits()
 
-from jigna.layout import View, Item, Group
-from jigna.editors.api import ChacoPlotEditor, RangeEditor
+from jigna.editor_factories import _TU_ChacoPlotEditor, _TU_RangeEditor
 
-layout = View(Group(Item('scaling_factor', editor=RangeEditor),
-                    Item('plot', editor=ChacoPlotEditor),
-                    Item('plot2', editor=ChacoPlotEditor)
+layout = View(Group(Item('scaling_factor', editor=_TU_RangeEditor()),
+                    Item('plot', editor=_TU_ChacoPlotEditor()),
+                    Item('plot2', editor=_TU_ChacoPlotEditor())
                     ),
                     )
 
-view = HTMLView(model=line_plot, layout=layout,
-                editors={'plot': ChacoPlotEditor,
-                         'plot2': ChacoPlotEditor,
-                         'scaling_factor': RangeEditor})
+view = HTMLView(model=line_plot, layout=layout)
 show_simple_view(view)
