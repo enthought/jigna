@@ -100,22 +100,21 @@ class EnumEditor(BasicEditor):
 
 class RangeEditor(BasicEditor):
 
-    min = Float(0.0)
-
-    max = Float(100.0)
-
     def html(self):
+        trait = self.obj.trait(self.tname)
+        low = trait.trait_type._low
+        high = trait.trait_type._high
         template_str = dedent("""
                         <div class="editor float-editor">
                             <label for="${tname}"> ${tname}
                                 <input type='range' ng-model='${tname}' name='${tname}'
-                                value="${getattr(obj, tname)}" min="${min}"
-                                max="${max}">
+                                value="${getattr(obj, tname)}" min="${low}"
+                                max="${high}">
                             </label>
                         </div>
                         """)
         return Template(template_str).render(obj=self.obj, tname=self.tname,
-                                             min=self.min, max=self.max)
+                                             low=low, high=high)
 
 class ListEditor(BasicEditor):
 
