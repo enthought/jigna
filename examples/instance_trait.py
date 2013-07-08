@@ -19,7 +19,7 @@ bruce = Manager(first_name="Dark",
                 last_name="Knight",
                 is_manager=True,
                 subordinate=rachel)
-bruce.edit_traits()
+ui = bruce.edit_traits()
 
 view = HTMLView(model=bruce)
 show_simple_view(view)

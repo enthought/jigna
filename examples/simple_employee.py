@@ -14,6 +14,6 @@ sam = SimpleEmployee(first_name="Dark",
                      last_name="Knight",
                      department="Engineering",
                      salary=50000)
-sam.edit_traits()
+ui = sam.edit_traits()
 view = HTMLView(model=sam)
 show_simple_view(view)
