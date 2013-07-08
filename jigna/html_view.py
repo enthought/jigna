@@ -1,12 +1,14 @@
 # Standard library imports
 from mako.template import Template
 from textwrap import dedent
+import json
 
 # Enthought library imports
-from traits.api import HasTraits, Instance, Str, Property, Int, Dict, Bool
+from traits.api import HasTraits, Instance, Str, Property, Int, Dict, Bool, List
+from traitsui.api import View, Item, Group
 
 # Local imports
-from jigna.layout import View, Group, Item
+from jigna.layout import JItem, get_items, render_layout
 from jigna.session import Session
 from jigna.util.misc import serialize
 from jigna.editor_factories import get_editor
@@ -38,12 +40,13 @@ class HTMLView(HasTraits):
     # CSS styles for the view
     css = Str
 
-    # Dictionary representing the editors for each model trait
-    editors = Dict
-
     ## Private traits #######################################################
 
     _registered = Bool(False)
+
+    editors = Property(List, depends_on='layout', cached=True)
+
+    visible_traits = Property(List, depends_on='layout', cached=True)
 
     ## Trait property getters/setters and default methods ###################
 
@@ -58,19 +61,32 @@ class HTMLView(HasTraits):
 
     def _get_template(self):
         if not len(self._template):
-            return self.layout.render(self.model)
+            return render_layout(self.layout, self.model)
         else:
             return self._template
 
     def _set_template(self, template):
         self._template = template
 
-    def _editors_default(self):
-        editors = {}
-        for tname in self.model.editable_traits():
-            ttype = self.model.trait(tname).trait_type
-            editors[tname] = get_editor(ttype)
+    def _get_editors(self):
+        editors = []
+        for item in get_items(self.layout):
+            jitem = JItem(item, self.model)
+            editors.append(jitem.editor)
         return editors
+
+    def _get_visible_traits(self):
+        visible_traits = []
+        for item in get_items(self.layout):
+            value = getattr(self.model, item.name)
+            try:
+                json.dumps(value)
+            except TypeError:
+                # catch unserializable traits here
+                pass
+            else:
+                visible_traits.append(item.name)
+        return visible_traits
 
     def _js_default(self):
         if not self._registered:
@@ -88,27 +104,31 @@ class HTMLView(HasTraits):
                 <%
                         obj_class = obj.__class__.__name__
                 %>
-                window.${obj_class}_Ctrl = function($scope) {
-                    $scope.init = function(obj_id) {
+                window.${obj_class}_Ctrl = function ${obj_class}_Ctrl($scope) {
+                    $scope.init = function ${obj_class}_Ctrl_init(obj_id) {
                         $scope.obj_id = obj_id;
-                        % for tname in obj.editable_traits():
-                            $scope.${tname} = ${pyobj}.get_trait($scope.obj_id, '${tname}');
+                        % for tname in visible_traits:
+                            $scope.${tname} = JSON.parse(${pyobj}.get_trait($scope.obj_id, '${tname}'));
+                            $scope.$watch('${tname}', function watch_${tname}(newValue, oldValue) {
+                                ${pyobj}.set_trait($scope.obj_id, '${tname}', JSON.stringify(newValue));
+                            });
                         % endfor
                     }
 
-                    % for tname in obj.editable_traits():
-                            ${editors[tname](obj=obj, tname=tname).js()}
+                    // editor specific JS
+                    % for editor in editors:
+                        ${editor.js()}
                     % endfor
 
                     // utility functions
-                    $scope.scoped = function() {
+                    $scope.scoped = function scoped() {
                         var func, largs;
                         func = arguments[0], largs = 2 <= arguments.length ? \
                                 __slice.call(arguments, 1) : [];
                         if ($scope.$$phase) {
                         return func.apply(this, largs);
                         } else {
-                        return $scope.$apply(function() {
+                        return $scope.$apply(function apply_in_scope() {
                             return func.apply(this, largs);
                         });
                         }
@@ -116,7 +136,8 @@ class HTMLView(HasTraits):
                 }
                 """)
             template = Template(template_str)
-            return template.render(obj=self.model, editors=self.editors)
+            return template.render(obj=self.model, editors=self.editors, 
+                                   visible_traits=self.visible_traits)
 
     def _html_default(self):
         template_str = dedent("""

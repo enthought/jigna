@@ -1,3 +1,5 @@
 jigna.egg-info/
 
 *.py[cod]
+
+*.DS_Store

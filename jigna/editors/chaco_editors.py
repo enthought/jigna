@@ -1,4 +1,3 @@
-# Standard library imports
 from textwrap import dedent
 from mako.template import Template
 
