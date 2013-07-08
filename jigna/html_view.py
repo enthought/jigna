@@ -104,12 +104,12 @@ class HTMLView(HasTraits):
                 <%
                         obj_class = obj.__class__.__name__
                 %>
-                window.${obj_class}_Ctrl = function($scope) {
-                    $scope.init = function(obj_id) {
+                window.${obj_class}_Ctrl = function ${obj_class}_Ctrl($scope) {
+                    $scope.init = function ${obj_class}_Ctrl_init(obj_id) {
                         $scope.obj_id = obj_id;
                         % for tname in visible_traits:
                             $scope.${tname} = JSON.parse(${pyobj}.get_trait($scope.obj_id, '${tname}'));
-                            $scope.$watch('${tname}', function(newValue, oldValue) {
+                            $scope.$watch('${tname}', function watch_${tname}(newValue, oldValue) {
                                 ${pyobj}.set_trait($scope.obj_id, '${tname}', JSON.stringify(newValue));
                             });
                         % endfor
@@ -121,14 +121,14 @@ class HTMLView(HasTraits):
                     % endfor
 
                     // utility functions
-                    $scope.scoped = function() {
+                    $scope.scoped = function scoped() {
                         var func, largs;
                         func = arguments[0], largs = 2 <= arguments.length ? \
                                 __slice.call(arguments, 1) : [];
                         if ($scope.$$phase) {
                         return func.apply(this, largs);
                         } else {
-                        return $scope.$apply(function() {
+                        return $scope.$apply(function apply_in_scope() {
                             return func.apply(this, largs);
                         });
                         }

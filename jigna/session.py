@@ -81,12 +81,12 @@ class Session(HasTraits):
     def _bind_trait_change_events(self, model, tname):
         def handler(model, tname, newValue):
             template = Template("""
-                                $('[data-id=${obj_id}]').each(function(index) {
+                                setTimeout(function$('[data-id=${obj_id}]').each(function set_trait_in_scope(index) {
                                     scope = $(this).scope();
-                                    scope.scoped(function() {
+                                    scope.scoped(function set_trait_func() {
                                         scope.${tname} = JSON.parse(${pyobj}.get_trait(${obj_id}, '${tname}'));
                                     })
-                                })
+                                }, 0)
                                 """)
             traitchange_js = template.render(obj_id=id(model), tname=tname,
                                              pyobj=PYNAME)
