@@ -10,8 +10,7 @@ from traitsui_editor import TraitsUIWidget, TraitsUIEditor
 class ChacoPlotEditor(TraitsUIEditor):
 
     def create_widget(self, model_id, args):
-        width = int(args.get('width', 400))
-        height = int(args.get('height', 400))
+        width, height = self.get_size(args)
         view = View(Item(self.tname, style='custom', show_label=False,
                          editor=ComponentEditor()),
                          width=width, height=height, resizable=True)

@@ -154,7 +154,7 @@ class TraitsUIEditor(BasicEditor):
                         <div class="editor ${editor_name}">
                         <object type="application/x-traitsuiwidget"
                                 data=${obj_id} trait_name="${trait_name}"
-                                width="400" height="400">
+                                width="100%" height="60%">
                         </object>
                         </div>
                        """)
@@ -168,3 +168,17 @@ class TraitsUIEditor(BasicEditor):
         my_id = id(self.obj)
         TraitsUIWidgetFactory.register_widget_factory(my_id, self.tname,
                                                       self.create_widget)
+
+    def _get_int(self, name, args):
+        if name in args:
+            try:
+                value = int(args.get(name))
+                return value
+            except ValueError:
+                return -10000
+        return -10000
+
+    def get_size(self, args):
+        """Return width and height.  None if they are defaults.
+        """
+        return self._get_int('width', args), self._get_int('height', args)
