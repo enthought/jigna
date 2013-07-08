@@ -74,11 +74,6 @@ class TraitsUIWidgetFactory(QtWebKit.QWebPluginFactory):
         -----------
 
         webview: the webview in which our widget is embedded.
-
-        widget_factory: callable: A factory for our widget.
-
-            This callable is passed the model_id (i.e. the QURL of the item)
-            and the arguments from the object tag used in the HTML.
         """
 
         super(TraitsUIWidgetFactory, self).__init__(webview)
@@ -137,7 +132,9 @@ class TraitsUIWidgetFactory(QtWebKit.QWebPluginFactory):
         Parameters
         -----------
 
-        model_id: The ID of the model we are editing.
+        model_id: int: The ID of the model we are editing.
+
+        trait_name: str: The name of the trait that is being edited.
 
         widget_factory: callable: A factory for our widget.
 
