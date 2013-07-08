@@ -2,7 +2,7 @@
 from traitsui.api import View, Item
 from mayavi.core.ui.api import MayaviScene, SceneEditor
 
-from traitsui_widget_factory import TraitsUIWidget, TraitsUIEditor
+from traitsui_editor import TraitsUIWidget, TraitsUIEditor
 
 ###############################################################################
 # MayaviPlotEditor class.

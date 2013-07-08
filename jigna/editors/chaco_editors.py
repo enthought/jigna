@@ -2,7 +2,7 @@
 from traitsui.api import View, Item
 from enable.component_editor import ComponentEditor
 
-from traitsui_widget_factory import TraitsUIWidget, TraitsUIEditor
+from traitsui_editor import TraitsUIWidget, TraitsUIEditor
 
 ###############################################################################
 # ChacoPlotEditor class.
