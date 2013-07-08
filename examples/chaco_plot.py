@@ -1,6 +1,7 @@
 from traits.api import HasTraits, Instance, on_trait_change, Range, Float
 from traitsui.api import View, Item, Group
 from chaco.api import Plot, ArrayPlotData
+from chaco.tools.api import ZoomTool, PanTool
 from enable.api import ComponentEditor
 from numpy import sin, linspace
 from jigna.html_view import HTMLView
@@ -29,6 +30,8 @@ class LinePlot(HasTraits):
             plot = Plot(plotdata)
             plot.plot(("x", "y"), type="line", color="blue")
             plot.title = "sin(%s * x) * x^3" % self.scaling_factor
+            plot.tools.append(ZoomTool(component=plot))
+            plot.tools.append(PanTool(component=plot))
             self.plot = plot
         else:
             self.plot.data.set_data('y', y)
