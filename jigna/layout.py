@@ -6,7 +6,7 @@ from mako.template import Template
 from traitsui.api import View, Item, Group
 
 # Local imports
-from jigna.editor_factories import get_editor, tu_to_jigna_mapping
+from jigna.editors.factory_mapping import FactoryMapping
 
 class JView(object):
 
@@ -76,13 +76,8 @@ class JItem(object):
         """
         self.tu_item = tu_item
         self.model = model
-        if getattr(self.tu_item, 'editor'):
-            editor_factory = tu_to_jigna_mapping[self.tu_item.editor.__class__]
-            editor_args = getattr(self.tu_item, 'editor_args')
-        else:
-            ttype = self.model.trait(self.tu_item.name).trait_type
-            editor_factory = get_editor(ttype)
-            editor_args = getattr(self.tu_item, 'editor_args')
+        editor_factory = FactoryMapping.get_editor_factory(model, tu_item)
+        editor_args = getattr(self.tu_item, 'editor_args')
         self.editor = editor_factory(obj=self.model, 
                                      tname=self.tu_item.name, 
                                      **editor_args)

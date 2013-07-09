@@ -17,12 +17,3 @@ class MayaviPlotEditor(TraitsUIEditor):
                          width=width, height=height, resizable=True)
         widget = TraitsUIWidget(self.obj, self.tname, view=view)
         return getattr(self.obj, self.tname).scene_editor.control
-
-
-from traitsui.api import EditorFactory
-class TUMayaviEditor(EditorFactory):
-    pass
-
-from jigna import editor_factories
-
-editor_factories.tu_to_jigna_mapping[TUMayaviEditor] = MayaviPlotEditor

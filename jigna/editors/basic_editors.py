@@ -4,12 +4,11 @@ from textwrap import dedent
 
 # Enthought library imports
 from traits.api import HasTraits, Instance, Str, Float
-from traitsui.api import EditorFactory
 
 # Local imports
 from jigna.api import PYNAME
 
-class BasicEditor(EditorFactory):
+class BasicEditor(HasTraits):
 
     obj = Instance(HasTraits)
 

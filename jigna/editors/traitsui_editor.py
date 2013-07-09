@@ -127,7 +127,7 @@ class TraitsUIWidgetFactory(QtWebKit.QWebPluginFactory):
             page.setPluginFactory(factory)
 
     @classmethod
-    def register_factory(cls, model_id, trait_name, widget_factory):
+    def register_widget_factory(cls, model_id, trait_name, widget_factory):
         """
         Parameters
         -----------
@@ -166,5 +166,5 @@ class TraitsUIEditor(BasicEditor):
         webview = session.widget.control
         TraitsUIWidgetFactory.setup_session(webview)
         my_id = id(self.obj)
-        TraitsUIWidgetFactory.register_factory(my_id, self.tname,
-                                               self.create_widget)
+        TraitsUIWidgetFactory.register_widget_factory(my_id, self.tname,
+                                                      self.create_widget)

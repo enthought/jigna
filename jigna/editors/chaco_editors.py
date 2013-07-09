@@ -1,6 +1,6 @@
 # Enthought library imports
 from traitsui.api import View, Item
-from enable.component_editor import ComponentEditor
+from enable.api import ComponentEditor
 
 from traitsui_editor import TraitsUIWidget, TraitsUIEditor
 

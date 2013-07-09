@@ -2,7 +2,7 @@ from numpy import arange, pi, cos, sin
 
 from traits.api import HasTraits, Range, Instance, \
         on_trait_change
-from traitsui.api import View, Item, Group
+from traitsui.api import View, Item, Group, RangeEditor
 
 from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import MayaviScene, SceneEditor, \
@@ -55,14 +55,10 @@ my_model = MyModel()
 from jigna.html_view import HTMLView
 from jigna.session import show_simple_view
 
-from jigna.editor_factories import _TU_RangeEditor
-from jigna.editors.mayavi_editors import TUMayaviEditor
-
-layout = View(Group(Item('scene', editor=TUMayaviEditor()),
-                    Item('n_meridional', editor=_TU_RangeEditor()),
-                    Item('n_longitudinal', editor=_TU_RangeEditor()),
-                    ),
-                    )
+layout = View(Group(Item('scene', editor=SceneEditor()),
+                    Item('n_meridional', editor=RangeEditor()),
+                    Item('n_longitudinal', editor=RangeEditor()),
+                    ))
 
 view = HTMLView(model=my_model, layout=layout)
 show_simple_view(view)
