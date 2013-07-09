@@ -102,7 +102,7 @@ class Session(HasTraits):
         model = registry.registry['models'].get(model_id)
         if model:
             value = json.loads(value)
-            if value:
+            if value is not None:
                 oldval = getattr(model, tname)
                 value = type(oldval)(value)
                 setattr(model, tname, value)
