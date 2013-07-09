@@ -11,7 +11,6 @@ from traitsui.api import View, Item, Group
 from jigna.layout import JItem, get_items, render_layout
 from jigna.session import Session
 from jigna.util.misc import serialize
-from jigna.editor_factories import get_editor
 import jigna.registry as registry
 
 class HTMLView(HasTraits):
@@ -141,9 +140,6 @@ class HTMLView(HasTraits):
 
     def _html_default(self):
         template_str = dedent("""
-            <%!
-                from jigna.editor_factories import get_editor
-            %>
             <%
                 obj_class = obj.__class__.__name__
                 obj_id = id(obj)
