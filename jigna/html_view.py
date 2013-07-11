@@ -107,7 +107,7 @@ class HTMLView(HasTraits):
                     $scope.init = function ${obj_class}_Ctrl_init(obj_id) {
                         $scope.obj_id = obj_id;
                         % for tname in visible_traits:
-                            $scope.${tname} = JSON.parse(${pyobj}.get_trait($scope.obj_id, '${tname}'));
+                            $scope.${tname} = JSON.parse('${dumps(getattr(obj, tname))}');
                             $scope.$watch('${tname}', function watch_${tname}(newValue, oldValue) {
                                 ${pyobj}.set_trait($scope.obj_id, '${tname}', JSON.stringify(newValue));
                             });
@@ -136,7 +136,8 @@ class HTMLView(HasTraits):
                 """)
             template = Template(template_str)
             return template.render(obj=self.model, editors=self.editors, 
-                                   visible_traits=self.visible_traits)
+                                   visible_traits=self.visible_traits,
+                                   dumps=json.dumps)
 
     def _html_default(self):
         template_str = dedent("""
