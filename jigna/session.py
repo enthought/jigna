@@ -6,13 +6,12 @@ import json
 
 # Enthought library imports
 from pyface.qt import QtGui
-from traits.api import HasTraits, List, Instance, Str, Property, Any
+from traits.api import Bool, HasTraits, List, Instance, Str, Property, Any
 
 # Local imports
 from jigna.core.html_widget import HTMLWidget
 from jigna.util.wsgi import JinjaRenderer
 from jigna.api import PYNAME
-from jigna.util.misc import serialize
 import jigna.registry as registry
 
 
@@ -39,6 +38,10 @@ class Session(HasTraits):
     # Location relative to which the resource urls (css/js/images) are given in
     # the html_template
     base_url = Str
+
+    ######################################
+    # Private traits.
+    _setting_trait = Bool(False)
 
     def _get_resource_url(self):
         return 'http://{0}/'.format(self.resource_host)
@@ -78,34 +81,52 @@ class Session(HasTraits):
             for editor in view.editors:
                 editor.setup_session(session=self)
 
-    def _bind_trait_change_events(self, model, tname):
-        def handler(model, tname, newValue):
-            template = Template("""
-                                setTimeout(function set_trait_later() {
-                                    $('[data-id=${obj_id}]').each(function set_trait_in_scope(index) {
-                                        scope = $(this).scope();
-                                        scope.scoped(function set_trait_func() {
-                                            scope.${tname} = JSON.parse(${pyobj}.get_trait(${obj_id}, '${tname}'));
-                                        });
-                                    })
-                                }, 0)
-                                """)
-            traitchange_js = template.render(obj_id=id(model), tname=tname,
-                                             pyobj=PYNAME)
-            self.widget.execute_js(traitchange_js)
+    def _get_trait_change_js(self, model, tname):
+        template = Template("""
+            setTimeout(function set_trait_later() {
+                $('[data-id=${obj_id}]').each(function set_trait_in_scope(index) {
+                    scope = $(this).scope();
+                    scope.scoped(function set_trait_func() {
+                    scope.${tname} = JSON.parse('${new_value}');
+                    });
+                })
+            }, 0)
+                """)
+        obj_id = id(model)
+        new_value_json = self.get_trait(obj_id, tname)
+        traitchange_js = template.render(obj_id=obj_id, tname=tname,
+                                         new_value=new_value_json)
+        return traitchange_js
 
-        model.on_trait_change(handler, tname)
+    def _bind_trait_change_events(self, model, tname):
+        model.on_trait_change(self._update_web_ui, tname)
+
+    def _update_web_ui(self, model, tname, new_value):
+        if not self._setting_trait:
+            traitchange_js = self._get_trait_change_js(model, tname)
+            try:
+                self._setting_trait = True
+                self.widget.execute_js(traitchange_js)
+            finally:
+                self._setting_trait = False
 
     ## Callbacks exposed to the QWebView ####################################
 
     def set_trait(self, model_id, tname, value):
+        if self._setting_trait:
+            self._setting_trait = False
+            return
         model = registry.registry['models'].get(model_id)
         if model:
             value = json.loads(value)
             if value is not None:
                 oldval = getattr(model, tname)
                 value = type(oldval)(value)
-                setattr(model, tname, value)
+                self._setting_trait = True
+                try:
+                    setattr(model, tname, value)
+                finally:
+                    self._setting_trait = False
 
     def get_trait(self, model_id, tname):
         model = registry.registry['models'].get(model_id)
