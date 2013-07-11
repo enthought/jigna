@@ -7,7 +7,7 @@ from textwrap import dedent
 import json
 
 # Enthought imports.
-from traits.api import List, Int, Any, Str
+from traits.api import List, Any
 
 # Local imports.
 from jigna.api import PYNAME
@@ -18,10 +18,6 @@ import registry
 # WebSession class.
 ###############################################################################
 class WebSession(Session):
-
-    port = Int(8888)
-
-    address = Str
 
     ######################################
     # Private traits.
@@ -112,7 +108,7 @@ class WebSession(Session):
 
                 <script type="text/javascript">
 
-                var jigna_ws = new WebSocket("${ws_url}");
+                var jigna_ws = new WebSocket("ws://" + window.location.host + "/jigna");
                 jigna_ws.onmessage = function(evt) {
                     eval(evt.data);
                 };
@@ -144,8 +140,6 @@ class WebSession(Session):
         </html>
             """)
         template = Template(template_str)
-        address = 'localhost' if self.address == '' else self.address
-        ws_url = 'ws://%s:%d/jigna'%(address, self.port)
 
         return template.render(views=self.views,
                                jquery=self.resource_url+'js/jquery.min.js',
@@ -153,18 +147,14 @@ class WebSession(Session):
                                bootstrapjs=self.resource_url+'bootstrap/js/bootstrap.min.js',
                                bootstrapcss=self.resource_url+'bootstrap/css/bootstrap.min.css',
                                jignajs=self.js, jignacss=self.css,
-                               pyobj=PYNAME,
-                               ws_url=ws_url
+                               pyobj=PYNAME
                                )
 
     def __current_sockets_default(self):
         return set()
 
     def _get_resource_url(self):
-        return 'http://{0}/static/'.format(self.resource_host)
-
-    def _resource_host_default(self):
-        return 'localhost:%d'%self.port
+        return '/static/'
 
 
 def serve_session(session, port=8888, thread=False, address=''):
@@ -178,8 +168,6 @@ def serve_session(session, port=8888, thread=False, address=''):
     thread: bool: If True, start the server on a separate thread.
     address: str: Address where we listen.  Defaults to localhost.
     """
-    session.port = port
-    session.address = address
     from os.path import join, dirname
     from tornado.websocket import WebSocketHandler
     from tornado.web import Application, RequestHandler
