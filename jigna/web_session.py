@@ -109,6 +109,10 @@ class WebSession(Session):
                 <script type="text/javascript">
 
                 var jigna_ws = new WebSocket("ws://" + window.location.host + "/jigna");
+                var jigna_ws_opened = new $.Deferred
+                jigna_ws.onopen = function() {
+                    jigna_ws_opened.resolve()
+                }
                 jigna_ws.onmessage = function(evt) {
                     eval(evt.data);
                 };
@@ -118,7 +122,9 @@ class WebSession(Session):
                                             model_id: model_id,
                                             tname: tname,
                                             value: value};
-                                    jigna_ws.send(JSON.stringify(data));
+                                    jigna_ws_opened.done(function() {
+                                        jigna_ws.send(JSON.stringify(data));
+                                    })
                                     }
                                 };
                 </script>
