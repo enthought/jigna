@@ -1,7 +1,7 @@
 # Copyright (c) 2013 by Enthought, Inc.
 # All rights reserved.
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='jigna',
@@ -11,11 +11,16 @@ setup(
     url='https://bitbucket.org/agrawalprash/jigna',
     description='HTML/CSS/JS based frontend for Traits.',
     long_description=open('README.rst').read(),
-    requires=['traits', 'pyface', 'Mako'],
+    requires=['traits', 'pyface', 'Mako', 'traitsui', 'tornado', 'jinja2'],
     install_requires=['distribute'],
-    packages=['jigna'],
+    packages=find_packages(),
     package_dir={'jigna':'jigna'},
-    package_data={'jigna': ['resources/*.html', 'resources/*.js', 'templates/*.html', 'templates/*.js', 
-                            'templates/*.mako']}
+    include_package_data=True,
+    package_data={'jigna': ['*.css', '*.png', '*.js', 
+                            'resources/bootstrap/css/*.css', 
+                            'resources/bootstrap/img/*.png', 
+                            'resources/bootstrap/js/*.js', 
+                            'resources/js/*.js']},
+    zip_safe=False
 )
 
