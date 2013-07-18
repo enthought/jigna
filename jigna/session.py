@@ -1,5 +1,6 @@
 # Standard library imports
 from mako.template import Template
+from mako.lookup import TemplateLookup
 from textwrap import dedent
 import os
 import json
@@ -15,8 +16,8 @@ from jigna.api import PYNAME
 import jigna.registry as registry
 
 
-def show_simple_view(view):
-    session = Session(views=[view])
+def show_simple_view(view, *args, **kwargs):
+    session = Session(views=[view], *args, **kwargs)
     session.start()
     return session
 
@@ -29,11 +30,14 @@ class Session(HasTraits):
 
     resource_url = Property(Str, depends_on='resource_host')
 
-    html = Str
+    html = Property(Str, depends_on='html_template')
 
     js = Str
 
     css = Str
+
+    html_template = Property(Str, depends_on='_base_template')
+    _html_template = Str
 
     # Location relative to which the resource urls (css/js/images) are given in
     # the html_template
@@ -43,11 +47,56 @@ class Session(HasTraits):
     # Private traits.
     _setting_trait = Bool(False)
 
+    _base_template = Str
+
     def _get_resource_url(self):
         return 'http://{0}/'.format(self.resource_host)
 
     def _base_url_default(self):
         return os.getcwd()
+
+    def __base_template_default(self):
+        return dedent("""
+            <html ng-app>
+                <head>
+                    <script type="text/javascript" src="${jquery}"></script>
+                    <script type="text/javascript" src="${angular}"></script>
+
+                    % for view in views:
+                        <script type="text/javascript">
+                            ${view.js}
+                        </script>
+                    % endfor
+
+                    % for view in views:
+                        <style type="text/css">
+                            ${view.css}
+                        </style>
+                    % endfor
+
+                    <%block name="session_css"></%block>
+
+                </head>
+                <body>
+                    <%block name="session_html">
+                        % for view in views:
+                            ${view.html}
+                        % endfor
+                    </%block>
+
+                    <%block name="session_js"></%block>
+                </body>
+            </html>
+            """)
+
+    def _get_html_template(self):
+        if not len(self._html_template):
+            return self._base_template
+        else:
+            return "<%inherit file='base.html' /> \n" + self._html_template
+
+    def _set_html_template(self, html_template):
+        self._html_template = html_template
 
     ## Private interface ####################################################
 
@@ -55,10 +104,8 @@ class Session(HasTraits):
         hosts = {self.resource_host: JinjaRenderer(
                         package='jigna',
                         template_root='resources'
-                    ),
-                 'file.jigna': JinjaRenderer(
-                        template_root=self.base_url
-                    )}
+                    )
+                }
         self.widget = HTMLWidget(callbacks=[('set_trait', self.set_trait),
                                             ('get_trait', self.get_trait)],
                                  python_namespace=PYNAME,
@@ -72,7 +119,7 @@ class Session(HasTraits):
         # NOTE: Loading the widget html before binding trait change events is
         # necessary since we need atleast one access to view.html and view.js
         # to have them registered in the registry
-        self.widget.load_html(self.html)
+        self.widget.load_html(self.html, self.base_url)
         d = registry.registry['models']
         for model_name, model in d.iteritems():
             view = registry.registry['views'][model_name]
@@ -169,34 +216,17 @@ class Session(HasTraits):
             self.widget.execute_js(set_html_cmd)
             self.widget.execute_js(view.js)
 
-    def _html_default(self):
-        template_str = dedent("""
-            <html ng-app>
-                <head>
-                    <script type="text/javascript" src="${jquery}"></script>
-                    <script type="text/javascript" src="${angular}"></script>
+    def _get_html(self):
+        lookup = TemplateLookup()
+        lookup.put_string("base.html", self._base_template)
+        lookup.put_string("template.html", self.html_template)
+        template = lookup.get_template("template.html")
 
-                    % for view in views:
-                        <script type="text/javascript">
-                            ${view.js}
-                        </script>
-                    % endfor
+        raw_html = template.render(views=self.views,
+                                   jquery=self.resource_url+'js/jquery.min.js',
+                                   angular=self.resource_url+'js/angular.min.js')
 
-                    % for view in views:
-                        <style type="text/css">
-                            ${view.css}
-                        </style>
-                    % endfor
-
-                </head>
-                <body>
-                    % for view in views:
-                        ${view.html}
-                    % endfor
-                </body>
-            </html>
-            """)
-        template = Template(template_str)
-        return template.render(views=self.views,
-                               jquery=self.resource_url+'js/jquery.min.js',
-                               angular=self.resource_url+'js/angular.min.js')
+        html = raw_html
+        for view in self.views:
+            html = view.jignify(html)
+        return html
