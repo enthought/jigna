@@ -62,6 +62,8 @@ class Session(HasTraits):
                     <script type="text/javascript" src="${jquery}"></script>
                     <script type="text/javascript" src="${angular}"></script>
 
+                    <%block name="extra_jigna_js"></%block>
+
                     % for view in views:
                         <script type="text/javascript">
                             ${view.js}
@@ -93,7 +95,7 @@ class Session(HasTraits):
         if not len(self._html_template):
             return self._base_template
         else:
-            return "<%inherit file='base.html' /> \n" + self._html_template
+            return self._html_template
 
     def _set_html_template(self, html_template):
         self._html_template = html_template
@@ -217,9 +219,10 @@ class Session(HasTraits):
             self.widget.execute_js(view.js)
 
     def _get_html(self):
+        html_template = "<%inherit file='base.html' /> \n" + self.html_template
         lookup = TemplateLookup()
         lookup.put_string("base.html", self._base_template)
-        lookup.put_string("template.html", self.html_template)
+        lookup.put_string("template.html", html_template)
         template = lookup.get_template("template.html")
 
         raw_html = template.render(views=self.views,
