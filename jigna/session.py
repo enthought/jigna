@@ -74,8 +74,8 @@ class Session(HasTraits):
         # to have them registered in the registry
         self.widget.load_html(self.html)
         d = registry.registry['models']
-        for model_id, model in d.iteritems():
-            view = registry.registry['views'][model_id]
+        for model_name, model in d.iteritems():
+            view = registry.registry['views'][model_name]
             for tname in view.visible_traits:
                 self._bind_trait_change_events(model, tname)
             for editor in view.editors:
@@ -84,7 +84,7 @@ class Session(HasTraits):
     def _get_trait_change_js(self, model, tname):
         template = Template("""
             setTimeout(function set_trait_later() {
-                $('[data-id=${obj_id}]').each(function set_trait_in_scope(index) {
+                $("[data-objname='${obj_name}']").each(function set_trait_in_scope(index) {
                     scope = $(this).scope();
                     scope.scoped(function set_trait_func() {
                     scope.${tname} = JSON.parse('${new_value}');
@@ -92,9 +92,9 @@ class Session(HasTraits):
                 })
             }, 0)
                 """)
-        obj_id = id(model)
-        new_value_json = self.get_trait(obj_id, tname)
-        traitchange_js = template.render(obj_id=obj_id, tname=tname,
+        obj_name = registry.registry['model_names'][id(model)]
+        new_value_json = self.get_trait(obj_name, tname)
+        traitchange_js = template.render(obj_name=obj_name, tname=tname,
                                          new_value=new_value_json)
         return traitchange_js
 
@@ -112,11 +112,11 @@ class Session(HasTraits):
 
     ## Callbacks exposed to the QWebView ####################################
 
-    def set_trait(self, model_id, tname, value):
+    def set_trait(self, model_name, tname, value):
         if self._setting_trait:
             self._setting_trait = False
             return
-        model = registry.registry['models'].get(model_id)
+        model = registry.registry['models'].get(model_name)
         if model:
             value = json.loads(value)
             if value is not None:
@@ -128,8 +128,8 @@ class Session(HasTraits):
                 finally:
                     self._setting_trait = False
 
-    def get_trait(self, model_id, tname):
-        model = registry.registry['models'].get(model_id)
+    def get_trait(self, model_name, tname):
+        model = registry.registry['models'].get(model_name)
         value = json.dumps(None)
         if model:
             try:

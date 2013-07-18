@@ -24,5 +24,5 @@ html_template = """
         Rs. <input ng-model="salary" type="number"> per month.
     </div>
     """
-view = HTMLView(model=sam, template=html_template)
+view = HTMLView(model=sam, template=html_template, model_name="sam")
 show_simple_view(view)

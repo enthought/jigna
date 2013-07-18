@@ -126,8 +126,11 @@ class InstanceEditor(BasicEditor):
     def __init__(self, **traits):
         super(InstanceEditor, self).__init__(**traits)
         self._instance = getattr(self.obj, self.tname)
+        import jigna.registry as registry
+        self._instance_name = "%s.%s"%(registry.registry['model_names'][id(self.obj)],
+                                       self.tname)
         from jigna.html_view import HTMLView
-        self._instance_view = HTMLView(model=self._instance)
+        self._instance_view = HTMLView(model=self._instance, model_name=self._instance_name)
 
     def html(self):
         return Template("""

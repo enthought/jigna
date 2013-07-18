@@ -21,7 +21,8 @@ class HTMLView(HasTraits):
 
     session = Instance(Session)
 
-    model_id = Property(Int, depends_on='model')
+    model_name = Property(Str, depends_on='model')
+    _model_name = Str
 
     # TraitsUI View object to dictate layout
     layout = Instance(View)
@@ -49,8 +50,14 @@ class HTMLView(HasTraits):
 
     ## Trait property getters/setters and default methods ###################
 
-    def _get_model_id(self):
-        return id(self.model)
+    def _get_model_name(self):
+        if not len(self._model_name):
+            return str(id(self.model))
+        else:
+            return self._model_name
+
+    def _set_model_name(self, model_name):
+        self._model_name = model_name
 
     def _layout_default(self):
         items = []
@@ -89,8 +96,8 @@ class HTMLView(HasTraits):
 
     def _js_default(self):
         if not self._registered:
-            registry.add_model(self.model)
-            registry.add_view(self.model, self)
+            registry.add_model(self.model_name, self.model)
+            registry.add_view(self.model_name, self)
             self._registered = True
         if self.model.__class__ in registry.registry['model_classes']:
             return ""
@@ -104,12 +111,12 @@ class HTMLView(HasTraits):
                         obj_class = obj.__class__.__name__
                 %>
                 window.${obj_class}_Ctrl = function ${obj_class}_Ctrl($scope) {
-                    $scope.init = function ${obj_class}_Ctrl_init(obj_id) {
-                        $scope.obj_id = obj_id;
+                    $scope.init = function ${obj_class}_Ctrl_init(obj_name) {
+                        $scope.obj_name = obj_name;
                         % for tname in visible_traits:
                             $scope.${tname} = JSON.parse('${dumps(getattr(obj, tname))}');
                             $scope.$watch('${tname}', function watch_${tname}(newValue, oldValue) {
-                                ${pyobj}.set_trait($scope.obj_id, '${tname}', JSON.stringify(newValue));
+                                ${pyobj}.set_trait($scope.obj_name, '${tname}', JSON.stringify(newValue));
                             });
                         % endfor
                     }
@@ -135,24 +142,20 @@ class HTMLView(HasTraits):
                 }
                 """)
             template = Template(template_str)
-            return template.render(obj=self.model, editors=self.editors, 
+            return template.render(obj=self.model, editors=self.editors,
                                    visible_traits=self.visible_traits,
                                    dumps=json.dumps)
 
     def _html_default(self):
         template_str = dedent("""
-            <%
-                obj_class = obj.__class__.__name__
-                obj_id = id(obj)
-            %>
-
             <div ng-controller="window.${obj_class}_Ctrl"
-                data-id=${obj_id}
+                data-objname=${obj_name}
                 class="class_${obj_class}"
-                ng-init="init(${obj_id})">
+                ng-init="init('${obj_name}')">
                     ${template}
             </div>
             """)
         template = Template(template_str)
-        return template.render(obj=self.model,
+        return template.render(obj_class=self.model.__class__.__name__,
+                               obj_name=self.model_name,
                                template=self.template)
