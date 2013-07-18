@@ -175,15 +175,19 @@ class Session(HasTraits):
                 <head>
                     <script type="text/javascript" src="${jquery}"></script>
                     <script type="text/javascript" src="${angular}"></script>
-                    <!--script type="text/javascript" src="${bootstrapjs}"></script-->
-                    <script type="text/javascript">
-                        ${jignajs}
-                    </script>
 
-                    <!--link rel="stylesheet" href="${bootstrapcss}"></link-->
-                    <style>
-                        ${jignacss}
-                    </style>
+                    % for view in views:
+                        <script type="text/javascript">
+                            ${view.js}
+                        </script>
+                    % endfor
+
+                    % for view in views:
+                        <style type="text/css">
+                            ${view.css}
+                        </style>
+                    % endfor
+
                 </head>
                 <body>
                     % for view in views:
@@ -195,13 +199,4 @@ class Session(HasTraits):
         template = Template(template_str)
         return template.render(views=self.views,
                                jquery=self.resource_url+'js/jquery.min.js',
-                               angular=self.resource_url+'js/angular.min.js',
-                               bootstrapjs=self.resource_url+'bootstrap/js/bootstrap.min.js',
-                               bootstrapcss=self.resource_url+'bootstrap/css/bootstrap.min.css',
-                               jignajs=self.js, jignacss=self.css)
-
-    def _js_default(self):
-        js = ""
-        for view in self.views:
-            js += view.js + "\n"
-        return js
+                               angular=self.resource_url+'js/angular.min.js')
