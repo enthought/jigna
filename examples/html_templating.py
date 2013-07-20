@@ -17,7 +17,7 @@ sam = SimpleEmployee(first_name="Dark",
 ui = sam.edit_traits()
 
 html = """
-    <div data-objname='sam'>
+    <div data-model-name='sam'>
         <h3>Employee's name is <input ng-model="first_name"> {{last_name}}</h3>
         He works in the <span style="color: #0645AD">{{department}}</span>
         department, and obtains a salary of

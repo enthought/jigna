@@ -43,7 +43,7 @@ class HTMLView(HasTraits):
         work.
         """
         soup = BeautifulSoup(raw_html)
-        for tag in soup.find_all(attrs={'data-objname': self.model_name}):
+        for tag in soup.find_all(attrs={'data-model-name': self.model_name}):
             model_class = self.model.__class__.__name__
             tag['ng-controller'] = "window.%s_Ctrl" % model_class
             tag['class'] = "class_%s" % model_class
@@ -150,7 +150,7 @@ class HTMLView(HasTraits):
     def _get_html(self):
         if not len(self._html):
             template_str = dedent("""
-                            <div data-objname="${obj_name}">
+                            <div data-model-name="${obj_name}">
                                 ${rendered_layout}
                             </div>
                             """)

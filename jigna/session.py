@@ -133,7 +133,7 @@ class Session(HasTraits):
     def _get_trait_change_js(self, model, tname):
         template = Template("""
             setTimeout(function set_trait_later() {
-                $("[data-objname='${obj_name}']").each(function set_trait_in_scope(index) {
+                $("[data-model-name='${obj_name}']").each(function set_trait_in_scope(index) {
                     scope = $(this).scope();
                     scope.scoped(function set_trait_func() {
                     scope.${tname} = JSON.parse('${new_value}');
