@@ -1,3 +1,5 @@
+from os.path import dirname, abspath
+
 from traits.api import HasTraits, Str, Bool, Float, Enum
 from jigna.html_view import HTMLView
 from jigna.session import show_simple_view
@@ -16,13 +18,7 @@ sam = SimpleEmployee(first_name="Dark",
                      salary=50000)
 ui = sam.edit_traits()
 
-html = """
-    <div data-model-name='sam'>
-        <h3>Employee's name is <input ng-model="first_name"> {{last_name}}</h3>
-        He works in the <span style="color: #0645AD">{{department}}</span>
-        department, and obtains a salary of
-        Rs. <input ng-model="salary" type="number"> per month.
-    </div>
-    """
-view = HTMLView(model=sam, html=html, model_name="sam")
-show_simple_view(view)
+view = HTMLView(model=sam, model_name="sam")
+show_simple_view(view,
+                 html_template=open('test.html').read(),
+                 base_url=abspath(dirname(__file__)))

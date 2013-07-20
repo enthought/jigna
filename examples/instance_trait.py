@@ -21,5 +21,5 @@ bruce = Manager(first_name="Dark",
                 subordinate=rachel)
 ui = bruce.edit_traits()
 
-view = HTMLView(model=bruce)
+view = HTMLView(model=bruce, model_name="bruce")
 show_simple_view(view)

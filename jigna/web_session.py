@@ -3,7 +3,9 @@
 
 # External imports.
 from mako.template import Template
+from mako.lookup import TemplateLookup
 from textwrap import dedent
+from os.path import join
 import json
 
 # Enthought imports.
@@ -98,69 +100,58 @@ class WebSession(Session):
                 self._current_sockets.add(socket)
                 socket.write_message(unicode(traitchange_js))
 
-    def _html_default(self):
-        template_str = dedent("""
-        <html ng-app>
-            <head>
-                <script type="text/javascript" src="${jquery}"></script>
-                <script type="text/javascript" src="${angular}"></script>
-                <!--script type="text/javascript" src="${bootstrapjs}"></script-->
-
-                <script type="text/javascript">
-
-                var jigna_ws = new WebSocket("ws://" + window.location.host + "/jigna");
-                var jigna_ws_opened = new $.Deferred
-                jigna_ws.onopen = function() {
-                    jigna_ws_opened.resolve()
-                }
-                jigna_ws.onmessage = function(evt) {
-                    eval(evt.data);
-                };
-                var ${pyobj} = {set_trait:
-                                    function (model_id, tname, value) {
-                                    data = {type: "set_trait",
-                                            model_id: model_id,
-                                            tname: tname,
-                                            value: value};
-                                    jigna_ws_opened.done(function() {
-                                        jigna_ws.send(JSON.stringify(data));
-                                    })
-                                    }
-                                };
-                </script>
-
-                <script type="text/javascript">
-                    ${jignajs}
-                </script>
-
-                <!--link rel="stylesheet" href="${bootstrapcss}"></link-->
-                <style>
-                    ${jignacss}
-                </style>
-            </head>
-            <body>
-                % for view in views:
-                    ${view.html}
-                % endfor
-            </body>
-        </html>
-            """)
-        template = Template(template_str)
-
-        return template.render(views=self.views,
-                               jquery=self.resource_url+'js/jquery.min.js',
-                               angular=self.resource_url+'js/angular.min.js',
-                               bootstrapjs=self.resource_url+'bootstrap/js/bootstrap.min.js',
-                               bootstrapcss=self.resource_url+'bootstrap/css/bootstrap.min.css',
-                               jignajs=self.js, jignacss=self.css,
-                               pyobj=PYNAME
-                               )
-
     def __current_sockets_default(self):
         return set()
 
     def _get_resource_url(self):
         return '/static/'
+
+    def _get_html(self):
+        html_template = "<%inherit file='base.html' /> \n" + self.html_template
+        websocket_template = dedent("""
+            <%inherit file='template.html' />
+
+            <%!
+                from jigna.api import PYNAME as pyobj
+            %>
+
+            <%block name="extra_jigna_js">
+                <script type="text/javascript">
+                    var jigna_ws = new WebSocket("ws://" + window.location.host + "/jigna");
+                    var jigna_ws_opened = new $.Deferred
+                    jigna_ws.onopen = function() {
+                        jigna_ws_opened.resolve()
+                    }
+                    jigna_ws.onmessage = function(evt) {
+                        eval(evt.data);
+                    };
+                    var ${pyobj} = {set_trait:
+                                        function (model_id, tname, value) {
+                                        data = {type: "set_trait",
+                                                model_id: model_id,
+                                                tname: tname,
+                                                value: value};
+                                        jigna_ws_opened.done(function() {
+                                            jigna_ws.send(JSON.stringify(data));
+                                        })
+                                        }
+                                    };
+                </script>
+            </%block>
+            """)
+        lookup = TemplateLookup()
+        lookup.put_string("base.html", self._base_template)
+        lookup.put_string("template.html", html_template)
+        lookup.put_string("websocket_template.html", websocket_template)
+        template = lookup.get_template("websocket_template.html")
+
+        raw_html = template.render(views=self.views,
+                                   jquery=self.resource_url+'js/jquery.min.js',
+                                   angular=self.resource_url+'js/angular.min.js')
+        html = raw_html
+        for view in self.views:
+            html = view.jignify(html)
+        return html
 
 
 def serve_session(session, port=8888, thread=False, address=''):
@@ -180,9 +171,13 @@ def serve_session(session, port=8888, thread=False, address=''):
     from tornado.ioloop import IOLoop
 
     ###########################################################################
-    class IndexPage(RequestHandler):
+    class MainHandler(RequestHandler):
         def get(self):
-            self.write(session.html)
+            path = self.request.path[1:]
+            if not len(path):
+                self.write(session.html)
+            else:
+                self.write(open(join(session.base_url, path)).read())
 
     ###########################################################################
     class JignaSocket(WebSocketHandler):
@@ -204,8 +199,8 @@ def serve_session(session, port=8888, thread=False, address=''):
     "static_path": join(dirname(__file__), "resources")
     }
     application = Application([
-            (r"/", IndexPage),
             (r"/jigna", JignaSocket),
+            (r".*", MainHandler),
         ], **settings)
 
     application.listen(port, address=address)
@@ -219,7 +214,7 @@ def serve_session(session, port=8888, thread=False, address=''):
         ioloop.start()
 
 
-def serve(views, port=8888, thread=False, address=''):
+def serve(views, port=8888, thread=False, address='', **kwargs):
     """Serve the given views on a websocket.
 
     Parameters
@@ -230,6 +225,6 @@ def serve(views, port=8888, thread=False, address=''):
     thread: bool: If True, start the server on a separate thread.
     address: str: Address where we listen.  Defaults to localhost.
     """
-    session = WebSession(port=port, views=views)
+    session = WebSession(port=port, views=views, **kwargs)
     session.start()
     serve_session(session, thread=thread)

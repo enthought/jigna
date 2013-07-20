@@ -10,7 +10,7 @@ world for the user interface. The HTML UI can be displayed both in the same
 Python process as well as remotely, allowing us to view and manipulate a
 Traits-based-object seamlessly from the web.
 
-For the in-process implementation one requires PySide or PyQt and we rely on 
+For the in-process implementation one requires PySide or PyQt and we rely on
 Qt-Webkit support to do this.
 
 For the web interface we require tornado.
@@ -26,13 +26,14 @@ You will require the following packages:
  - Pyface.
  - Working Qt backend for Traits (either PySide or PyQt4).
  - Mako and Jinja2.
+ - BeautifulSoup4.
  - Tornado for the websocket implementation.
- 
+
 You can install this either via pip or the usual means::
 
     python setup.py install
     python setup.py develop
-    
+
 or::
 
     pip install -r requirements.txt
@@ -41,5 +42,5 @@ or::
 Examples
 =========
 
-If you have set `ETS_TOOLKIT`, remember to set it to `qt4`.  There are 
+If you have set `ETS_TOOLKIT`, remember to set it to `qt4`.  There are
 several examples to play with in the `examples` directory.

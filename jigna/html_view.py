@@ -2,6 +2,7 @@
 from mako.template import Template
 from textwrap import dedent
 import json
+from bs4 import BeautifulSoup
 
 # Enthought library imports
 from traits.api import HasTraits, Instance, Str, Property, Int, Dict, Bool, List
@@ -21,23 +22,33 @@ class HTMLView(HasTraits):
 
     session = Instance(Session)
 
-    model_id = Property(Int, depends_on='model')
+    model_name = Property(Str, depends_on='model')
+    _model_name = Str
 
     # TraitsUI View object to dictate layout
     layout = Instance(View)
 
-    # Scoped HTML template (an angularjs template)
-    template = Property(Str, depends_on='layout')
-    _template = Str
-
     # HTML string for the view
-    html = Str
+    html = Property(Str, depends_on='layout')
+    _html = Str
 
     # JS code for the view
     js = Str
 
     # CSS styles for the view
     css = Str
+
+    def jignify(self, raw_html):
+        """ Adds some magic attributes to a raw html file to make all the bindings
+        work.
+        """
+        soup = BeautifulSoup(raw_html)
+        for tag in soup.find_all(attrs={'data-model-name': self.model_name}):
+            model_class = self.model.__class__.__name__
+            tag['ng-controller'] = "window.%s_Ctrl" % model_class
+            tag['class'] = "class_%s" % model_class
+            tag['ng-init'] = "init('%s')" % self.model_name
+        return soup.prettify()
 
     ## Private traits #######################################################
 
@@ -49,23 +60,20 @@ class HTMLView(HasTraits):
 
     ## Trait property getters/setters and default methods ###################
 
-    def _get_model_id(self):
-        return id(self.model)
+    def _get_model_name(self):
+        if not len(self._model_name):
+            return str(id(self.model))
+        else:
+            return self._model_name
+
+    def _set_model_name(self, model_name):
+        self._model_name = model_name
 
     def _layout_default(self):
         items = []
         for tname in self.model.editable_traits():
             items.append(Item(name=tname))
         return View(Group(*items))
-
-    def _get_template(self):
-        if not len(self._template):
-            return render_layout(self.layout, self.model)
-        else:
-            return self._template
-
-    def _set_template(self, template):
-        self._template = template
 
     def _get_editors(self):
         editors = []
@@ -89,8 +97,8 @@ class HTMLView(HasTraits):
 
     def _js_default(self):
         if not self._registered:
-            registry.add_model(self.model)
-            registry.add_view(self.model, self)
+            registry.add_model(self.model_name, self.model)
+            registry.add_view(self.model_name, self)
             self._registered = True
         if self.model.__class__ in registry.registry['model_classes']:
             return ""
@@ -104,12 +112,12 @@ class HTMLView(HasTraits):
                         obj_class = obj.__class__.__name__
                 %>
                 window.${obj_class}_Ctrl = function ${obj_class}_Ctrl($scope) {
-                    $scope.init = function ${obj_class}_Ctrl_init(obj_id) {
-                        $scope.obj_id = obj_id;
+                    $scope.init = function ${obj_class}_Ctrl_init(obj_name) {
+                        $scope.obj_name = obj_name;
                         % for tname in visible_traits:
                             $scope.${tname} = JSON.parse('${dumps(getattr(obj, tname))}');
                             $scope.$watch('${tname}', function watch_${tname}(newValue, oldValue) {
-                                ${pyobj}.set_trait($scope.obj_id, '${tname}', JSON.stringify(newValue));
+                                ${pyobj}.set_trait($scope.obj_name, '${tname}', JSON.stringify(newValue));
                             });
                         % endfor
                     }
@@ -135,24 +143,22 @@ class HTMLView(HasTraits):
                 }
                 """)
             template = Template(template_str)
-            return template.render(obj=self.model, editors=self.editors, 
+            return template.render(obj=self.model, editors=self.editors,
                                    visible_traits=self.visible_traits,
                                    dumps=json.dumps)
 
-    def _html_default(self):
-        template_str = dedent("""
-            <%
-                obj_class = obj.__class__.__name__
-                obj_id = id(obj)
-            %>
+    def _get_html(self):
+        if not len(self._html):
+            template_str = dedent("""
+                            <div data-model-name="${obj_name}">
+                                ${rendered_layout}
+                            </div>
+                            """)
+            raw_html = Template(template_str).render(obj_name=self.model_name,
+                              rendered_layout=render_layout(self.layout, self.model))
+        else:
+            raw_html = self._html
+        return self.jignify(raw_html)
 
-            <div ng-controller="window.${obj_class}_Ctrl"
-                data-id=${obj_id}
-                class="class_${obj_class}"
-                ng-init="init(${obj_id})">
-                    ${template}
-            </div>
-            """)
-        template = Template(template_str)
-        return template.render(obj=self.model,
-                               template=self.template)
+    def _set_html(self, html):
+        self._html = html
