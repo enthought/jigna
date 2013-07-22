@@ -8,6 +8,7 @@ from traitsui.api import View, Item
 
 # Local imports.
 from basic_editors import BasicEditor
+import jigna.registry as registry
 
 ###############################################################################
 # TraitsUIWidget class.
@@ -90,7 +91,7 @@ class TraitsUIWidgetFactory(QtWebKit.QWebPluginFactory):
         plugin.mimeTypes = [mimeType]
         return [plugin]
 
-    def create(self, mimeType, model_id, argNames, argValues):
+    def create(self, mimeType, url, argNames, argValues):
         if mimeType != self.MIME_TYPE:
             return None
 
@@ -101,12 +102,12 @@ class TraitsUIWidgetFactory(QtWebKit.QWebPluginFactory):
         for name, value in zip(argNames, argValues):
             args[name] = value
 
-        model_id = int(model_id.path())
+        model_name = args.get('model_name', '')
         trait_name = args.get('trait_name', '')
-        key = (model_id, trait_name)
+        key = '%s.%s' % (model_name, trait_name)
         widget_factory = self.__class__.registry.get(key)
         if widget_factory is not None:
-            plugin_widget = widget_factory(model_id, args)
+            plugin_widget = widget_factory(model_name, args)
             return plugin_widget
         else:
             return None
@@ -127,21 +128,21 @@ class TraitsUIWidgetFactory(QtWebKit.QWebPluginFactory):
             page.setPluginFactory(factory)
 
     @classmethod
-    def register_widget_factory(cls, model_id, trait_name, widget_factory):
+    def register_widget_factory(cls, model_name, trait_name, widget_factory):
         """
         Parameters
         -----------
 
-        model_id: int: The ID of the model we are editing.
+        model_name: str: The unique name of the model we are editing.
 
         trait_name: str: The name of the trait that is being edited.
 
         widget_factory: callable: A factory for our widget.
 
-            This callable is passed the model_id (i.e. the QURL of the item)
-            and the arguments from the object tag used in the HTML.
+            This callable is passed the arguments from the object tag used in
+            the HTML.
         """
-        key = (model_id, trait_name)
+        key = '%s.%s' % (model_name, trait_name)
         cls.registry[key] = widget_factory
 
 ###############################################################################
@@ -153,20 +154,21 @@ class TraitsUIEditor(BasicEditor):
         template_str = dedent("""
                         <div class="editor ${editor_name}">
                         <object type="application/x-traitsuiwidget"
-                                data=${obj_id} trait_name="${trait_name}"
+                                model_name=${model_name} trait_name="${trait_name}"
                                 width="100%" height="60%">
                         </object>
                         </div>
                        """)
-        return Template(template_str).render(obj_id=id(self.obj),
+        model_name = registry.registry['model_names'][id(self.obj)]
+        return Template(template_str).render(model_name=model_name,
                                         trait_name=self.tname,
                                         editor_name=self.__class__.__name__)
 
     def setup_session(self, session=None):
         webview = session.widget.control
         TraitsUIWidgetFactory.setup_session(webview)
-        my_id = id(self.obj)
-        TraitsUIWidgetFactory.register_widget_factory(my_id, self.tname,
+        model_name = registry.registry['model_names'][id(self.obj)]
+        TraitsUIWidgetFactory.register_widget_factory(model_name, self.tname,
                                                       self.create_widget)
 
     def _get_int(self, name, args):

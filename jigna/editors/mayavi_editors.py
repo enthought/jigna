@@ -8,7 +8,7 @@ from traitsui_editor import TraitsUIWidget, TraitsUIEditor
 ###############################################################################
 class MayaviPlotEditor(TraitsUIEditor):
 
-    def create_widget(self, model_id, args):
+    def create_widget(self, model_name, args):
         width, height = self.get_size(args)
         from mayavi.core.ui.api import MayaviScene, SceneEditor
         view = View(Item(self.tname, show_label=False,

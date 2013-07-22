@@ -8,7 +8,7 @@ from traitsui_editor import TraitsUIWidget, TraitsUIEditor
 ###############################################################################
 class ChacoPlotEditor(TraitsUIEditor):
 
-    def create_widget(self, model_id, args):
+    def create_widget(self, model_name, args):
         from enable.api import ComponentEditor
         width, height = self.get_size(args)
         view = View(Item(self.tname, style='custom', show_label=False,
