@@ -20,7 +20,7 @@ class JView(object):
         self.items = tu_view.content.content
 
     def render(self):
-        template_str = dedent(""" 
+        template_str = dedent("""
             <div class="container">
                 % for item in items:
                     <div class="row">
@@ -29,7 +29,7 @@ class JView(object):
                 % endfor
             </div>
             """)
-        return Template(template_str).render(items=self.items, model=self.model, 
+        return Template(template_str).render(items=self.items, model=self.model,
                                              render_layout=render_layout)
 
 class JGroup(object):
@@ -44,7 +44,7 @@ class JGroup(object):
         self.items = tu_group.content
 
     def render(self):
-        template_str = dedent(""" 
+        template_str = dedent("""
             <%
                 TOTAL_COLUMNS = 12
                 n_columns = TOTAL_COLUMNS // len(items)
@@ -64,7 +64,7 @@ class JGroup(object):
             % endif
             """)
         return Template(template_str).render(items=self.items, model=self.model,
-                                             render_layout=render_layout, 
+                                             render_layout=render_layout,
                                              orientation=self.tu_group.orientation)
 
 class JItem(object):
@@ -78,14 +78,14 @@ class JItem(object):
         self.model = model
         editor_factory = FactoryMapping.get_editor_factory(model, tu_item)
         editor_args = getattr(self.tu_item, 'editor_args')
-        self.editor = editor_factory(obj=self.model, 
-                                     tname=self.tu_item.name, 
+        self.editor = editor_factory(obj=self.model,
+                                     tname=self.tu_item.name,
                                      **editor_args)
 
     def render(self):
         return self.editor.html()
 
-def render_layout(layout, model):    
+def render_layout(layout, model):
     if isinstance(layout, View):
         return JView(layout, model).render()
     elif isinstance(layout, Group):

@@ -3,16 +3,34 @@ from mako.template import Template
 from textwrap import dedent
 
 # Enthought library imports
-from traits.api import HasTraits, Instance, Str, Float
+from traits.api import HasTraits, Instance, Str, Float, Property, Tuple, Any
 
 # Local imports
 from jigna.api import PYNAME
 
 class BasicEditor(HasTraits):
 
+    # model object whose trait we are editing
     obj = Instance(HasTraits)
 
+    # the name of the trait we are editing - this can be an extended trait name
     tname = Str
+
+    # label to refer the trait
+    label = Str
+
+    # value of the trait
+    value = Property(depends_on='[obj, tname]')
+
+    ## Trait handlers #################################################
+
+    def _get_value(self):
+        return eval('obj.' + self.tname, {'obj': self.obj})
+
+    def _label_default(self):
+        return self.tname
+
+    ## Editor API #############################################################
 
     def html(self):
         raise NotImplementedError
@@ -31,13 +49,15 @@ class IntEditor(BasicEditor):
     def html(self):
         template_str = dedent("""
                         <div class="editor int-editor">
-                            <label for="${tname}"> ${tname}
-                                <input type='number' ng-model='${tname}' name='${tname}'
-                                value='${getattr(obj, tname)}'>
+                            <label for="${label}"> ${label}
+                                <input type='number' ng-model='${tname}'
+                                name='${label}' value='${value}'>
                             </label>
                         </div>
                         """)
-        return Template(template_str).render(obj=self.obj, tname=self.tname)
+        return Template(template_str).render(label=self.label,
+                                             value=self.value,
+                                             tname=self.tname)
 
 
 class FloatEditor(BasicEditor):
@@ -45,12 +65,14 @@ class FloatEditor(BasicEditor):
     def html(self):
         template_str = dedent("""
                         <div class="editor float-editor">
-                            <label for="${tname}"> ${tname}
-                                <input type='number' ng-model='${tname}' name='${tname}'
-                                value='${getattr(obj, tname)}'></label>
+                            <label for="${label}"> ${label}
+                                <input type='number' ng-model='${tname}'
+                                name='${label}' value='${value}'></label>
                         </div>
                         """)
-        return Template(template_str).render(obj=self.obj, tname=self.tname)
+        return Template(template_str).render(label=self.label,
+                                             value=self.value,
+                                             tname=self.tname)
 
 
 class StringEditor(BasicEditor):
@@ -58,89 +80,109 @@ class StringEditor(BasicEditor):
     def html(self):
         template_str = dedent("""
                         <div class="editor string-editor">
-                            <label for="${tname}"> ${tname}
-                                <input type='text' ng-model='${tname}' name='${tname}'
-                                value='${getattr(obj, tname)}'>
+                            <label for="${label}"> ${label}
+                                <input type='text' ng-model='${tname}'
+                                name='${label}' value='${value}'>
                             </label>
                         </div>
                         """)
-        return Template(template_str).render(obj=self.obj, tname=self.tname)
+        return Template(template_str).render(label=self.label,
+                                             value=self.value,
+                                             tname=self.tname)
 
 class BoolEditor(BasicEditor):
 
     def html(self):
         template_str = dedent("""
                         <div class="editor bool-editor">
-                            <label for="${tname}">
-                                <input type='checkbox' ng-model='${tname}' name='${tname}'
-                                value='${tname}' checked='${getattr(obj, tname)}'>
-                                ${tname}
+                            <label for="${label}">
+                                <input type='checkbox' ng-model='${tname}'
+                                name='${label}' value='${label}' checked='${value}'>
+                                ${label}
                             </label>
                         </div>
                         """)
-        return Template(template_str).render(obj=self.obj, tname=self.tname)
+        return Template(template_str).render(label=self.label,
+                                             value=self.value,
+                                             tname=self.tname)
 
 class EnumEditor(BasicEditor):
 
+    possible_values = Tuple
+
+    def _possible_values_default(self):
+        return self.obj.trait(self.tname).handler.values
+
     def html(self):
         template_str =  dedent("""
-                        <label for="${tname}"> ${tname} </label>
+                        <label for="${label}"> ${label} </label>
                         <div>
-                            % for value in obj.trait(tname).handler.values:
-                                <input id="${tname}_${value}" type='radio' ng-model='${tname}'
-                                    value='${value}'>
-                                    ${value}
+                            % for i, val in enumerate(possible_values):
+                                <input id="${label}_${i}" type='radio'
+                                   ng-model='${tname}' value='${val}'>
+                                    ${val}
                                 </label>
                             % endfor
                             </div>
                         </div>
                         """)
-        return Template(template_str).render(obj=self.obj, tname=self.tname)
+        return Template(template_str).render(possible_values=self.possible_values,
+                                            label=self.label,
+                                            tname=self.tname)
 
 class RangeEditor(BasicEditor):
 
-    def html(self):
+    low = Float
+
+    high = Float
+
+    def _low_default(self):
         trait = self.obj.trait(self.tname)
-        low = trait.trait_type._low
-        high = trait.trait_type._high
+        return trait.trait_type._low
+
+    def _high_default(self):
+        trait = self.obj.trait(self.tname)
+        return trait.trait_type._high
+
+    def html(self):
         template_str = dedent("""
                         <div class="editor float-editor">
-                            <label for="${tname}"> ${tname}
-                                <input type='range' ng-model='${tname}' name='${tname}'
-                                value="${getattr(obj, tname)}" min="${low}"
-                                max="${high}">
+                            <label for="${label}"> ${label}
+                                <input type='range' ng-model='${tname}'
+                                  name='${label}' value="${value}" min="${low}"
+                                  max="${high}">
                             </label>
                         </div>
                         """)
-        return Template(template_str).render(obj=self.obj, tname=self.tname,
-                                             low=low, high=high)
-
-class ListEditor(BasicEditor):
-
-    def html(self):
-        raise NotImplementedError
+        return Template(template_str).render(label=self.label,
+                                             value=self.value,
+                                             tname=self.tname,
+                                             min=self.low,
+                                             max=self.high)
 
 
 class InstanceEditor(BasicEditor):
 
-    def __init__(self, **traits):
-        super(InstanceEditor, self).__init__(**traits)
-        self._instance = getattr(self.obj, self.tname)
-        import jigna.registry as registry
-        self._instance_name = "%s.%s"%(registry.registry['model_names'][id(self.obj)],
-                                       self.tname)
+    instance_view = Any
+
+    def _instance_view_default(self):
         from jigna.html_view import HTMLView
-        self._instance_view = HTMLView(model=self._instance, model_name=self._instance_name)
+        return HTMLView(model=self.value, model_name=self.label)
+
+    def _label_default(self):
+        import jigna.registry as registry
+        return "%s.%s"%(registry.registry['model_names'][id(self.obj)],
+                                       self.tname)
 
     def html(self):
         return Template("""
-                        <label for="${tname}">${tname}</label>
+                        <label for="${label}">${label}</label>
                         <div style="border:solid 1px #ccc; padding: 5px"
                              class="editor bool-editor">
                             ${instance_html}
                         </div>
-                        """).render(instance_html=self._instance_view.html,
-                                    tname=self.tname)
+                        """).render(instance_html=self.instance_view.html,
+                                    label=self.label)
 
     def js(self):
-        return self._instance_view.js
+        return self.instance_view.js

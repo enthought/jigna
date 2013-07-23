@@ -118,7 +118,7 @@ class HTMLView(HasTraits):
                             $scope.${tname} = JSON.parse('${dumps(getattr(obj, tname))}');
                             $scope.$watch('${tname}', function watch_${tname}(newValue, oldValue) {
                                 ${pyobj}.set_trait($scope.obj_name, '${tname}', JSON.stringify(newValue));
-                            });
+                            }, true);
                         % endfor
                     }
 

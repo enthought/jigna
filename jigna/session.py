@@ -169,8 +169,6 @@ class Session(HasTraits):
         if model:
             value = json.loads(value)
             if value is not None:
-                oldval = getattr(model, tname)
-                value = type(oldval)(value)
                 self._setting_trait = True
                 try:
                     setattr(model, tname, value)
@@ -182,7 +180,8 @@ class Session(HasTraits):
         value = json.dumps(None)
         if model:
             try:
-                value = json.dumps(getattr(model, tname))
+                value = eval('obj.'+tname, {'obj': model})
+                value = json.dumps(value)
             except AttributeError:
                 # catch event traits write only errors here
                 pass
