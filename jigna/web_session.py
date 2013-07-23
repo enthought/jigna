@@ -61,8 +61,6 @@ class WebSession(Session):
             if value is not None:
                 try:
                     self._current_sockets.add(socket)
-                    oldval = getattr(model, tname)
-                    value = type(oldval)(value)
                     setattr(model, tname, value)
                 finally:
                     self._current_sockets.remove(socket)

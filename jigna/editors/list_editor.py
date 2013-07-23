@@ -50,11 +50,7 @@ class ListEditor(BasicEditor):
         def list_handler(obj, name, new_value):
             """ A handler specific to list trait type.
             """
-            try:
-                session._setting_trait = True
-                traitchange_js = session._get_trait_change_js(self.obj, self.tname)
-                session.widget.execute_js(traitchange_js)
-            finally:
-                session._setting_trait = False
+            new_value = eval('obj.'+self.tname, {'obj':self.obj})
+            session._update_web_ui(self.obj, self.tname, new_value)
 
         self.obj.on_trait_change(list_handler, self.tname+'[]')
