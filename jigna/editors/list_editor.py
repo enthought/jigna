@@ -18,7 +18,7 @@ class ListEditor(BasicEditor):
         item_trait_type = item_trait.trait_type.__class__
 
         from jigna.editors.factory_mapping import FactoryMapping
-        self.editor_factory = FactoryMapping.get_editor_factory_for_ttype(item_trait_type)
+        self.editor_factory = FactoryMapping.get_editor_factory_for_trait_type(item_trait_type)
         self.editors = []
         for i, item in enumerate(getattr(self.obj, self.tname)):
             editor = self.editor_factory(obj=self.obj,

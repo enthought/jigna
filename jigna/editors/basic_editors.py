@@ -29,7 +29,11 @@ class BasicEditor(HasTraits):
         return get_value(self.obj, self.tname)
 
     def _label_default(self):
-        return self.tname
+        name_parts = self.tname.split('_')
+        name = ''
+        for part in name_parts:
+            name += part.title() + " "
+        return name
 
     ## Editor API #############################################################
 
@@ -52,7 +56,7 @@ class IntEditor(BasicEditor):
                         <div class="editor int-editor">
                             <label for="${label}"> ${label}
                                 <input type='number' ng-model='${tname}'
-                                name='${label}' value='${value}'>
+                                name='${tname}' value='${value}'>
                             </label>
                         </div>
                         """)
@@ -68,7 +72,7 @@ class FloatEditor(BasicEditor):
                         <div class="editor float-editor">
                             <label for="${label}"> ${label}
                                 <input type='number' ng-model='${tname}'
-                                name='${label}' value='${value}'></label>
+                                name='${tname}' value='${value}'></label>
                         </div>
                         """)
         return Template(template_str).render(label=self.label,
@@ -83,7 +87,7 @@ class StringEditor(BasicEditor):
                         <div class="editor string-editor">
                             <label for="${label}"> ${label}
                                 <input type='text' ng-model='${tname}'
-                                name='${label}' value='${value}'>
+                                name='${tname}' value='${value}'>
                             </label>
                         </div>
                         """)
@@ -98,7 +102,7 @@ class BoolEditor(BasicEditor):
                         <div class="editor bool-editor">
                             <label for="${label}">
                                 <input type='checkbox' ng-model='${tname}'
-                                name='${label}' value='${label}' checked='${value}'>
+                                name='${tname}' value='${value}' checked='${value}'>
                                 ${label}
                             </label>
                         </div>
@@ -116,10 +120,10 @@ class EnumEditor(BasicEditor):
 
     def html(self):
         template_str =  dedent("""
-                        <label for="${label}"> ${label} </label>
+                        <label for="${tname}"> ${label} </label>
                         <div>
                             % for i, val in enumerate(possible_values):
-                                <input id="${label}_${i}" type='radio'
+                                <input id="${tname}_${i}" type='radio'
                                    ng-model='${tname}' value='${val}'>
                                     ${val}
                                 </label>
@@ -148,9 +152,9 @@ class RangeEditor(BasicEditor):
     def html(self):
         template_str = dedent("""
                         <div class="editor float-editor">
-                            <label for="${label}"> ${label}
+                            <label for="${tname}"> ${label}
                                 <input type='range' ng-model='${tname}'
-                                  name='${label}' value="${value}" min="${low}"
+                                  name='${tname}' value="${value}" min="${low}"
                                   max="${high}">
                             </label>
                         </div>

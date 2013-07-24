@@ -30,7 +30,7 @@ class FactoryMapping(object):
                     }
 
     @classmethod
-    def get_editor_factory_for_ttype(cls, trait_type):
+    def get_editor_factory_for_trait_type(cls, trait_type):
       """ Get the editor factory corresponding to the given trait type.
       """
       editor_factory_dict = cls.trait_to_jigna_editor.get(trait_type)
@@ -47,7 +47,7 @@ class FactoryMapping(object):
         editor_factory = cls.traitsui_to_jigna_editor.get(item.editor.__class__)
         if not editor_factory:
             trait_type = obj.trait(item.name).trait_type.__class__
-            editor_factory = cls.get_editor_factory_for_ttype(trait_type)
+            editor_factory = cls.get_editor_factory_for_trait_type(trait_type)
         return editor_factory
 
     @classmethod
