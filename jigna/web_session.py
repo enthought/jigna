@@ -5,7 +5,7 @@
 from mako.template import Template
 from mako.lookup import TemplateLookup
 from textwrap import dedent
-from os.path import join
+from os.path import join, dirname
 import json
 
 # Enthought imports.
@@ -137,7 +137,7 @@ class WebSession(Session):
                 </script>
             </%block>
             """)
-        lookup = TemplateLookup()
+        lookup = TemplateLookup(directories=[join(dirname(__file__), 'util')])
         lookup.put_string("base.html", self._base_template)
         lookup.put_string("template.html", html_template)
         lookup.put_string("websocket_template.html", websocket_template)
