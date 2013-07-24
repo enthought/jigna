@@ -3,6 +3,7 @@ from mako.template import Template
 from mako.lookup import TemplateLookup
 from textwrap import dedent
 import os
+from os.path import abspath, dirname, join
 import json
 
 # Enthought library imports
@@ -12,6 +13,7 @@ from traits.api import Bool, HasTraits, List, Instance, Str, Property, Any
 # Local imports
 from jigna.core.html_widget import HTMLWidget
 from jigna.util.wsgi import JinjaRenderer
+from jigna.util.misc import get_value
 from jigna.api import PYNAME
 import jigna.registry as registry
 
@@ -57,18 +59,25 @@ class Session(HasTraits):
 
     def __base_template_default(self):
         return dedent("""
-            <html ng-app>
+            <%!
+                from jigna.api import APPNAME as appname
+            %>
+            <html ng-app="${appname}">
                 <head>
                     <script type="text/javascript" src="${jquery}"></script>
                     <script type="text/javascript" src="${angular}"></script>
 
                     <%block name="extra_jigna_js"></%block>
 
-                    % for view in views:
-                        <script type="text/javascript">
-                            ${view.js}
+                    <%block name="angular_app">
+                        <script type='text/javascript'>
+                            % for view in views:
+                                ${view.js}
+                            % endfor
+
+                            <%include file="directives.mako" />
                         </script>
-                    % endfor
+                    </%block>
 
                     % for view in views:
                         <style type="text/css">
@@ -127,6 +136,7 @@ class Session(HasTraits):
             view = registry.registry['views'][model_name]
             for tname in view.visible_traits:
                 self._bind_trait_change_events(model, tname)
+                self._update_web_ui(model, tname, eval('obj.'+tname, {'obj': model}))
             for editor in view.editors:
                 editor.setup_session(session=self)
 
@@ -169,8 +179,6 @@ class Session(HasTraits):
         if model:
             value = json.loads(value)
             if value is not None:
-                oldval = getattr(model, tname)
-                value = type(oldval)(value)
                 self._setting_trait = True
                 try:
                     setattr(model, tname, value)
@@ -182,7 +190,8 @@ class Session(HasTraits):
         value = json.dumps(None)
         if model:
             try:
-                value = json.dumps(getattr(model, tname))
+                value = get_value(model, tname)
+                value = json.dumps(value)
             except AttributeError:
                 # catch event traits write only errors here
                 pass
@@ -220,7 +229,7 @@ class Session(HasTraits):
 
     def _get_html(self):
         html_template = "<%inherit file='base.html' /> \n" + self.html_template
-        lookup = TemplateLookup()
+        lookup = TemplateLookup(directories=[join(dirname(__file__), 'util')])
         lookup.put_string("base.html", self._base_template)
         lookup.put_string("template.html", html_template)
         template = lookup.get_template("template.html")

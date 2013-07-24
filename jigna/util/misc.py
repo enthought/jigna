@@ -18,6 +18,13 @@ def serialize(obj):
         serialized = json.dumps(None)
     return serialized
 
+def get_value(obj, extended_trait_name):
+    """ Obtain the value of given extended_trait_name of obj. An `extended_trait_name`
+    should be same as the python syntax that is used to refer to the concerned
+    variable.
+    """
+    return eval('obj.'+extended_trait_name, {'obj': obj})
+
 ###############################################################################
 # Utility functions to generate TraitsUI menus from native menus.
 ###############################################################################
