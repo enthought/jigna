@@ -29,11 +29,7 @@ class BasicEditor(HasTraits):
         return get_value(self.obj, self.tname)
 
     def _label_default(self):
-        name_parts = self.tname.split('_')
-        name = ''
-        for part in name_parts:
-            name += part.title() + " "
-        return name
+        return self.tname.replace('_', " ").capitalize()
 
     ## Editor API #############################################################
 
@@ -153,17 +149,17 @@ class RangeEditor(BasicEditor):
         template_str = dedent("""
                         <div class="editor float-editor">
                             <label for="${tname}"> ${label}
-                                <input type='range' ng-model='${tname}'
-                                  name='${tname}' value="${value}" min="${low}"
-                                  max="${high}">
+                                <input type='number' ng-model='${tname}'
+                                  name='${tname}' value=${value} min=${low}
+                                  max=${high}>
                             </label>
                         </div>
                         """)
         return Template(template_str).render(label=self.label,
                                              value=self.value,
                                              tname=self.tname,
-                                             min=self.low,
-                                             max=self.high)
+                                             low=self.low,
+                                             high=self.high)
 
 
 class InstanceEditor(BasicEditor):

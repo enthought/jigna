@@ -122,6 +122,8 @@ class HTMLView(HasTraits):
                         % endfor
                     }
 
+                    $scope.window = window;
+
                     // editor specific JS
                     % for editor in editors:
                         ${editor.js()}
