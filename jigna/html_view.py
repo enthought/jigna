@@ -115,7 +115,7 @@ class HTMLView(HasTraits):
                     $scope.init = function ${obj_class}_Ctrl_init(obj_name) {
                         $scope.obj_name = obj_name;
                         % for tname in visible_traits:
-                            $scope.${tname} = JSON.parse('${dumps(getattr(obj, tname))}');
+                            $scope.${tname} = null;
                             $scope.$watch('${tname}', function watch_${tname}(newValue, oldValue) {
                                 ${pyobj}.set_trait($scope.obj_name, '${tname}', JSON.stringify(newValue));
                             }, true);

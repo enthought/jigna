@@ -7,6 +7,7 @@ from traits.api import HasTraits, Instance, Str, Float, Property, Tuple, Any
 
 # Local imports
 from jigna.api import PYNAME
+from jigna.util.misc import get_value
 
 class BasicEditor(HasTraits):
 
@@ -25,7 +26,7 @@ class BasicEditor(HasTraits):
     ## Trait handlers #################################################
 
     def _get_value(self):
-        return eval('obj.' + self.tname, {'obj': self.obj})
+        return get_value(self.obj, self.tname)
 
     def _label_default(self):
         return self.tname
@@ -167,12 +168,10 @@ class InstanceEditor(BasicEditor):
 
     def _instance_view_default(self):
         from jigna.html_view import HTMLView
-        return HTMLView(model=self.value, model_name=self.label)
-
-    def _label_default(self):
         import jigna.registry as registry
-        return "%s.%s"%(registry.registry['model_names'][id(self.obj)],
+        model_name = "%s.%s"%(registry.registry['model_names'][id(self.obj)],
                                        self.tname)
+        return HTMLView(model=self.value, model_name=model_name)
 
     def html(self):
         return Template("""

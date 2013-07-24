@@ -7,6 +7,7 @@ from traits.api import HasTraits
 
 # Local imports
 from jigna.editors.basic_editors import BasicEditor
+from jigna.util.misc import get_value
 
 
 class ListEditor(BasicEditor):
@@ -50,7 +51,7 @@ class ListEditor(BasicEditor):
         def list_handler(obj, name, new_value):
             """ A handler specific to list trait type.
             """
-            new_value = eval('obj.'+self.tname, {'obj':self.obj})
+            new_value = get_value(self.obj, self.tname)
             session._update_web_ui(self.obj, self.tname, new_value)
 
         self.obj.on_trait_change(list_handler, self.tname+'[]')

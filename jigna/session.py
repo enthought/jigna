@@ -12,6 +12,7 @@ from traits.api import Bool, HasTraits, List, Instance, Str, Property, Any
 # Local imports
 from jigna.core.html_widget import HTMLWidget
 from jigna.util.wsgi import JinjaRenderer
+from jigna.util.misc import get_value
 from jigna.api import PYNAME
 import jigna.registry as registry
 
@@ -127,6 +128,7 @@ class Session(HasTraits):
             view = registry.registry['views'][model_name]
             for tname in view.visible_traits:
                 self._bind_trait_change_events(model, tname)
+                self._update_web_ui(model, tname, eval('obj.'+tname, {'obj': model}))
             for editor in view.editors:
                 editor.setup_session(session=self)
 
@@ -180,7 +182,7 @@ class Session(HasTraits):
         value = json.dumps(None)
         if model:
             try:
-                value = eval('obj.'+tname, {'obj': model})
+                value = get_value(model, tname)
                 value = json.dumps(value)
             except AttributeError:
                 # catch event traits write only errors here
