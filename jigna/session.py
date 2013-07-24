@@ -3,6 +3,7 @@ from mako.template import Template
 from mako.lookup import TemplateLookup
 from textwrap import dedent
 import os
+from os.path import abspath, dirname, join
 import json
 
 # Enthought library imports
@@ -58,18 +59,25 @@ class Session(HasTraits):
 
     def __base_template_default(self):
         return dedent("""
-            <html ng-app>
+            <%!
+                from jigna.api import APPNAME as appname
+            %>
+            <html ng-app="${appname}">
                 <head>
                     <script type="text/javascript" src="${jquery}"></script>
                     <script type="text/javascript" src="${angular}"></script>
 
                     <%block name="extra_jigna_js"></%block>
 
-                    % for view in views:
-                        <script type="text/javascript">
-                            ${view.js}
+                    <%block name="angular_app">
+                        <script type='text/javascript'>
+                            % for view in views:
+                                ${view.js}
+                            % endfor
+
+                            <%include file="directives.mako" />
                         </script>
-                    % endfor
+                    </%block>
 
                     % for view in views:
                         <style type="text/css">
@@ -221,7 +229,7 @@ class Session(HasTraits):
 
     def _get_html(self):
         html_template = "<%inherit file='base.html' /> \n" + self.html_template
-        lookup = TemplateLookup()
+        lookup = TemplateLookup(directories=[join(dirname(__file__), 'util')])
         lookup.put_string("base.html", self._base_template)
         lookup.put_string("template.html", html_template)
         template = lookup.get_template("template.html")

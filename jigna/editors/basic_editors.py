@@ -149,9 +149,9 @@ class RangeEditor(BasicEditor):
         template_str = dedent("""
                         <div class="editor float-editor">
                             <label for="${tname}"> ${label}
-                                <input type='number' ng-model='${tname}'
+                                <input type='range' ng-model='${tname}'
                                   name='${tname}' value=${value} min=${low}
-                                  max=${high}>
+                                  max=${high} to-number>
                             </label>
                         </div>
                         """)
@@ -160,7 +160,6 @@ class RangeEditor(BasicEditor):
                                              tname=self.tname,
                                              low=self.low,
                                              high=self.high)
-
 
 class InstanceEditor(BasicEditor):
 
