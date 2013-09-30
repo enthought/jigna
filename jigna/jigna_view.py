@@ -71,8 +71,54 @@ $scope.$watch('${obj_name}.${traitname}', function(newValue, oldValue) {
 })
 """
 
+JIGNA_JS = """
+
+jigna = {
+  models = {}
+};
+
+jigna.JignaModel = {};
+
+JignaModel.constructor = function(model) {
+    this.model = model;
+}
+
+JignaModel.set_in_scope = function(traitname, value) {
+    $scope = $(document.body).scope();
+    scoped(
+      $scope,
+      function set_trait_func() {
+        this.model.traitname = JSON.parse(value);
+      }
+    );
+  }
+}
+
+JignaModel._set_trait_later = function(traitname, value) {
+  setTimeout(function() {this.set_in_scope(trait_name, value)}, 0);
+}
+
+"""
+
+TO_GENERATE = """
+
+jigna.add_model('model', ['name', 'age']);
+
+"""
+
 # One per trait (per model).
 PYTHON_TO_JS_BINDING_TEMPLATE = """
+var set_in_scope = function(model, traitname, value) {
+  $scope = $(this).scope();
+  scoped(
+    $scope,
+    function set_trait_func() {
+      $scope.${obj_name}.${traitname} = JSON.parse('${new_value}');
+    }
+  );
+
+}
+
 var set_${traitname}_in_scope = function(index) {
   $scope = $(this).scope();
   scoped(
