@@ -21,7 +21,28 @@ from jigna.core.wsgi import JinjaRenderer
 PYNAME   = "jigna"
 OBJ_NAME = "model"
 
+#### HTML templates ###########################################################
 
+DOCUMENT_HTML_TEMPLATE = """
+<html ng-app>
+  <head>
+    <script type="text/javascript" src="${jquery}"></script>
+    <script type="text/javascript" src="${angular}"></script>
+
+    <script type="text/javascript">
+      ${controller_js}
+    </script>
+  </head>
+
+  <body>
+    ${body_html}
+  </body>
+</html>
+"""
+
+#### JS templates #############################################################
+
+# One per model!
 CONTROLLER_JS_TEMPLATE = """
 <%
   obj_class = obj.__class__.__name__
@@ -42,23 +63,7 @@ window.${obj_class} = function ${obj_class}($scope) {
 };
 """
 
-DOCUMENT_HTML_TEMPLATE = """
-<html ng-app>
-  <head>
-    <script type="text/javascript" src="${jquery}"></script>
-    <script type="text/javascript" src="${angular}"></script>
-
-    <script type="text/javascript">
-      ${controller_js}
-    </script>
-  </head>
-
-  <body>
-    ${body_html}
-  </body>
-</html>
-"""
-
+# One per trait (per model).
 JS_TO_PYTHON_BINDING_TEMPLATE = """
 $scope.${obj_name}.${traitname} = ${value};
 $scope.$watch('${obj_name}.${traitname}', function(newValue, oldValue) {
@@ -66,6 +71,7 @@ $scope.$watch('${obj_name}.${traitname}', function(newValue, oldValue) {
 })
 """
 
+# One per trait (per model).
 PYTHON_TO_JS_BINDING_TEMPLATE = """
 var set_${traitname}_in_scope = function(index) {
   $scope = $(this).scope();
