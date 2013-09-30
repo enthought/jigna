@@ -1,5 +1,5 @@
 from traits.api import HasTraits, Int, Str
-from jigna.jigna_view import JignaView
+from jigna.api import JignaView
 from pyface.qt import QtGui
 from pyface.api import GUI
 

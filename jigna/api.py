@@ -1,2 +1,1 @@
-PYNAME = 'session'
-APPNAME = 'jigna_app'
+from jigna_view import JignaView

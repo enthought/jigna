@@ -1,7 +1,4 @@
 traits
-traitsui
 pyface
 Mako
 jinja2
-tornado
-beautifulsoup4

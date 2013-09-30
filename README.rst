@@ -22,11 +22,9 @@ Installation
 You will require the following packages:
 
  - Traits.
- - TraitsUI.
  - Pyface.
  - Working Qt backend for Traits (either PySide or PyQt4).
  - Mako and Jinja2.
- - BeautifulSoup4.
  - Tornado for the websocket implementation.
 
 You can install this either via pip or the usual means::

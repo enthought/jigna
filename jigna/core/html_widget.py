@@ -23,7 +23,7 @@ from traits.api import ( HasTraits, Any, Bool, Callable, Dict, Either, Event,
     Float )
 
 # Local imports.
-from jigna.util.misc import Menu_from_QMenu
+from jigna.core.misc import Menu_from_QMenu
 from jigna.core.i_html_widget import IHTMLWidget
 from jigna.core.interoperation import create_js_object_wrapper
 from jigna.core.network_access import ProxyAccessManager

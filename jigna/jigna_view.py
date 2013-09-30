@@ -3,7 +3,7 @@ from mako.template import Template
 from traits.api import HasTraits, Str
 
 from jigna.core.html_widget import HTMLWidget
-from jigna.util.wsgi import JinjaRenderer
+from jigna.core.wsgi import JinjaRenderer
 
 PYNAME = "jigna"
 OBJ_NAME = "model"
