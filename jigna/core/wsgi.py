@@ -40,6 +40,9 @@ class JinjaRenderer(HasTraits):
     # context to be handed passed to the template render method
     context = Dict
 
+    # following mimetypes to be rendered using jinja (rest all are served directly)
+    render_mimetypes = ["text/html"]
+
     @on_trait_change('package, template_root')
     def path_changed(self):
         """ Lazy-load an Environment instance and set up the
@@ -62,12 +65,8 @@ class JinjaRenderer(HasTraits):
     def __call__(self, env, start_response):
         path = env['PATH_INFO'].strip('/')
         mime_type = guess_type(path)[0] or 'text/html'
-        logger.debug('Handling request for %s, mime type %s', path,
-                                                                 mime_type)
+        logger.debug('Handling request for %s, mime type %s', path, mime_type)
         path = path.replace('/', sep)
-        if mime_type.startswith('text') or mime_type in (
-                  'application/json', 'application/javascript'):
-            mime_type += '; charset=UTF-8'
 
         localpath = self.template_path(path)
         if not exists(localpath):
@@ -77,9 +76,7 @@ class JinjaRenderer(HasTraits):
 
         start_response('200 OK', [('Content-Type', mime_type)])
 
-        if mime_type.startswith('image/') or mime_type.split(';')[0] in (
-                'application/javascript', 'text/css'):
-            logger.debug('Sending file %s', localpath)
+        if not mime_type in self.render_mimetypes:
             return open(localpath, 'rb').read()
 
         # jinja can not handle windows backslashes:
