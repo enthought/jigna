@@ -1,5 +1,5 @@
 #
-# Canopy product code
+# Enthought product code
 #
 # (C) Copyright 2013 Enthought, Inc., Austin, TX
 # All right reserved.
@@ -18,65 +18,71 @@ from jigna.core.html_widget import HTMLWidget
 from jigna.core.wsgi import JinjaRenderer
 
 
-PYNAME = "jigna"
+PYNAME   = "jigna"
 OBJ_NAME = "model"
 
-CONTROLLER_JS_TEMPLATE = """
-    <%
-        obj_class = obj.__class__.__name__
-    %>
-    window.scoped = function($scope, func, args) {
-        if ($scope.$$phase) {
-            return func.apply(this, args);
-        } else {
-        return $scope.$apply(function apply_in_scope() {
-            return func.apply(this, args);
-        });
-        }
-    };
 
-    window.${obj_class} = function ${obj_class}($scope) {
-        $scope.${OBJ_NAME} = {};
-        ${traitwatcher_js}
-    }
+CONTROLLER_JS_TEMPLATE = """
+<%
+  obj_class = obj.__class__.__name__
+%>
+window.scoped = function($scope, func, args) {
+  if ($scope.$$phase) {
+    return func.apply(this, args);
+  } else {
+    return $scope.$apply(function apply_in_scope() {
+        return func.apply(this, args);
+    });
+  }
+};
+
+window.${obj_class} = function ${obj_class}($scope) {
+  $scope.${OBJ_NAME} = {};
+  ${traitwatcher_js}
+};
 """
 
 DOCUMENT_HTML_TEMPLATE = """
-    <html ng-app>
-        <head>
-            <script type="text/javascript" src="${jquery}"></script>
-            <script type="text/javascript" src="${angular}"></script>
+<html ng-app>
+  <head>
+    <script type="text/javascript" src="${jquery}"></script>
+    <script type="text/javascript" src="${angular}"></script>
 
-            <script type="text/javascript">
-                ${controller_js}
-            </script>
-        </head>
+    <script type="text/javascript">
+      ${controller_js}
+    </script>
+  </head>
 
-        <body>
-            ${body_html}
-        </body>
-    </html>
-
+  <body>
+    ${body_html}
+  </body>
+</html>
 """
 
 JS_TO_PYTHON_BINDING_TEMPLATE = """
-        $scope.${obj_name}.${traitname} = ${value};
-        $scope.$watch('${obj_name}.${traitname}', function(newValue, oldValue) {
-                ${PYNAME}.set_trait('${traitname}', JSON.stringify(newValue))
-            })
+$scope.${obj_name}.${traitname} = ${value};
+$scope.$watch('${obj_name}.${traitname}', function(newValue, oldValue) {
+    ${PYNAME}.set_trait('${traitname}', JSON.stringify(newValue))
+})
 """
 
 PYTHON_TO_JS_BINDING_TEMPLATE = """
-            setTimeout(function set_trait_later() {
-                $("[data-model-name='${obj_name}']").each(function set_trait_in_scope(index) {
-                    $scope = $(this).scope();
-                    scoped($scope, function set_trait_func() {
-                        $scope.${obj_name}.${traitname} = JSON.parse('${new_value}');
-                    });
-                })
-            }, 0)
-"""
+var set_${traitname}_in_scope = function(index) {
+  $scope = $(this).scope();
+  scoped(
+    $scope,
+    function set_trait_func() {
+      $scope.${obj_name}.${traitname} = JSON.parse('${new_value}');
+    }
+  );
+};
 
+var set_${obj_name}_trait_later = function() {
+  $("[data-model-name='${obj_name}']").each(set_${traitname}_in_scope);
+};
+
+setTimeout(set_${obj_name}_trait_later, 0);
+"""
 
 class JignaView(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
@@ -105,8 +111,8 @@ class JignaView(HasTraits):
 
         """
 
-        self._bind_python_to_js(model, widget)
-        self._bind_js_to_python(model, widget)
+        self._bind_python_to_js(widget, model)
+        self._bind_js_to_python(widget, model)
 
         return
 
@@ -131,7 +137,7 @@ class JignaView(HasTraits):
         """ Bind the model from Python->JS. """
 
         for traitname in model.editable_traits():
-            model.on_trait_change(self._on_model_changed, traitname)
+            model.on_trait_change(self._on_model_trait_changed, traitname)
 
         return
 
@@ -199,7 +205,7 @@ class JignaView(HasTraits):
 
     #### Trait change handlers ################################################
 
-    def _on_model_changed(self, model, traitname, new_value):
+    def _on_model_trait_changed(self, model, traitname, new_value):
         """ Called when any trait on the model has been changed. """
 
         js = self._create_traitchange_js(model, traitname, new_value)
