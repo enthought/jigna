@@ -12,7 +12,7 @@ class Person(HasTraits):
 #### UI layer ####
 
 html = """
-    <div data-model-name="model" ng-controller="Person">
+    <div>
         Name: <input ng-model="model.name">
         Age: <input ng-model="model.age" type='number'>
     </div>
