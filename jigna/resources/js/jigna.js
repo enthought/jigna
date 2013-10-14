@@ -3,18 +3,47 @@ $(document).ready(function(){
 
         scope: $(document.body).scope(),
 
-        py_obj: window["python"],
+        bridge: window["python"],
+
+        _make_getter: function(model_name, trait) {
+            return function() {
+                return JSON.parse(
+                    jigna.bridge.get_trait(model_name, trait)
+                );
+            };
+        },
+
+        _make_setter: function(model_name, trait, value) {
+            return function(value) {
+                jigna.bridge.set_trait(
+                    model_name,
+                    trait,
+                    JSON.stringify(value)
+                );
+            };
+        },
 
         add_model: function(model_name, traits) {
             /* Add the model named `model_name` to jigna models. Expose the list of
             * traits to jigna.
             */
-            var self = this;
+            var model = new jigna.JignaModel2(model_name);
 
-            var model = new jigna.JignaModel(model_name, traits);
+            for (var index in traits) {
+                var trait = traits[index];
+
+                var descriptor = {
+                    enumerable: true,
+                    writeable: true,
+                    get: this._make_getter(model_name, trait),
+                    set: this._make_setter(model_name, trait)
+                };
+
+                Object.defineProperty(model, trait, descriptor);
+            }
 
             // Add the model to the scope
-            self._add_in_scope(model_name, model)
+            this._add_in_scope(model_name, model)
 
             return
         },
@@ -22,9 +51,8 @@ $(document).ready(function(){
         /**** Private API ********************************************************************/
 
         _add_in_scope: function(model_name, model) {
-            var self = this;
-            self.scope.$apply(function(){
-                self.scope[model_name] = model;
+            this.scope.$apply(function(){
+                jigna.scope[model_name] = model;
             })
         }
 
@@ -32,19 +60,18 @@ $(document).ready(function(){
 
     /**** JignaModel *************************************************************************/
 
-    jigna.JignaModel = function(model_name, traits) {
-        var self = this;
-        self.model_name = model_name;
+    jigna.JignaModel = function(model_name) {
+        this.model_name = model_name;
     };
 
     jigna.JignaModel.prototype.setup_js_watcher = function(trait_name) {
-        /* Sets up the watcher for communicating change in trait `trait_name` in JS world to 
+        /* Sets up the watcher for communicating change in trait `trait_name` in JS world to
         Python world.
         */
-        var self = this;
-        var watch_expr = self.model_name + '.' + trait_name;
+        var model = this;
+        var watch_expr = model.model_name + '.' + trait_name;
         jigna.scope.$watch(watch_expr, function(value){
-            self.set_trait_in_python(trait_name, value);
+            model.set_trait_in_python(trait_name, value);
         })
 
         return
@@ -53,28 +80,35 @@ $(document).ready(function(){
     jigna.JignaModel.prototype.set_trait_in_python = function(trait_name, value) {
         /* Sets the trait in python.
         */
-        var self = this;
+        var model = this;
         if (!(value === undefined)) {
-            jigna.py_obj.set_trait(self.model_name, trait_name, JSON.stringify(value));
+            jigna.bridge.set_trait(model.model_name, trait_name, JSON.stringify(value));
         }
     };
 
     jigna.JignaModel.prototype.set_trait_in_js = function(trait_name, value) {
         /* Sets the trait in js.
         */
-        var self = this;
+        var model = this;
         setTimeout(function(){
-            self._set_in_scope(trait_name, value)
+            model._set_in_scope(trait_name, value)
         }, 0)
     };
 
     /**** Private protocol ******************************************************************/
 
     jigna.JignaModel.prototype._set_in_scope = function(trait_name, value) {
-        var self = this;
+        var model = this;
         jigna.scope.$apply(function(){
-            self[trait_name] = value;
+            model[trait_name] = value;
         })
     }
+
+    /**** JignaModel2 ****************************************************/
+
+    jigna.JignaModel2 = function(model_name) {
+        this.model_name = model_name;
+    };
+
 
 })

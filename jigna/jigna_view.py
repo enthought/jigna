@@ -102,7 +102,7 @@ class JignaView(HasTraits):
                 MODEL_NAME = MODEL_NAME,
                 traitname  = traitname
             )
-            
+
         self._binding_js = js
 
         return
@@ -133,8 +133,13 @@ class JignaView(HasTraits):
 
             return
 
+        def get_trait(model_name, traitname):
+            return json.dumps(getattr(model, traitname))
+
+
         widget = HTMLWidget(
-            callbacks        = [('set_trait', set_trait)],
+            callbacks        = [('set_trait', set_trait),
+                                ('get_trait', get_trait)],
             python_namespace = PYNAME,
             hosts            = hosts,
             open_externally  = True,
@@ -151,7 +156,7 @@ class JignaView(HasTraits):
 
         js = Template(ADD_MODEL_TO_JS_TEMPLATE).render(
             MODEL_NAME = MODEL_NAME,
-            traits     = traits 
+            traits     = traits
         )
 
         return js
@@ -171,7 +176,7 @@ class JignaView(HasTraits):
         return
 
     def _set_initial_js(self, widget, model, traits):
-        
+
         # First add the model to jigna
         js = self._get_add_model_js(model, traits)
 
@@ -185,7 +190,7 @@ class JignaView(HasTraits):
 
         self._initial_js = js
 
-        return 
+        return
 
 
     #### Trait change handlers ################################################

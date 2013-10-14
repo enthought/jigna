@@ -25,14 +25,14 @@ person_view = JignaView(html=html)
 def main():
     def listener(obj, traitname, old, new):
         print obj, traitname, old, new
-        
+
     fred  = Person(name='Fred', age=42)
     fred.on_trait_change(listener)
     def update_fred():
         fred.name = "Wilma"
         fred.age = 4
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    GUI.invoke_after(3000, update_fred)
+    #GUI.invoke_after(3000, update_fred)
     person_view.show(model=fred)
     app.exec_()
     print fred.name
