@@ -97,11 +97,11 @@ class JignaView(HasTraits):
 
         js = ""
 
-        for traitname in traits:
-            js += Template(SETUP_JS_WATCHER_TEMPLATE).render(
-                MODEL_NAME = MODEL_NAME,
-                traitname  = traitname
-            )
+        #for traitname in traits:
+        #    js += Template(SETUP_JS_WATCHER_TEMPLATE).render(
+        #        MODEL_NAME = MODEL_NAME,
+        #        traitname  = traitname
+        #    )
 
         self._binding_js = js
 
@@ -125,16 +125,17 @@ class JignaView(HasTraits):
             )
         }
 
-        def set_trait(model_name, traitname, value_json):
+        def set_trait(model_name, trait_name, value_json):
             """ Set a trait on the model. """
-
+            print "Python set_trait called", model_name, trait_name, value_json
             value = json.loads(value_json)
-            setattr(model, traitname, value)
+            setattr(model, trait_name, value)
 
             return
 
-        def get_trait(model_name, traitname):
-            return json.dumps(getattr(model, traitname))
+        def get_trait(model_name, trait_name):
+            print "Python get_trait called,", model_name, trait_name
+            return json.dumps(getattr(model, trait_name))
 
 
         widget = HTMLWidget(
