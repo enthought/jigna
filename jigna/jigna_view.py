@@ -205,10 +205,16 @@ class JignaView(HasTraits):
 
     def _on_model_trait_changed(self, model, trait_name, old, new):
         """ Called when any trait on the model has been changed. """
+        if isinstance(new, HasTraits):
+            value = str(id(new))
+            self.id_to_model_map[value] = new
+        else:
+            value = json.dumps(new)
+
         js = Template(ON_TRAIT_CHANGE_JS).render(
             id  = str(id(model)),
             trait_name = trait_name,
-            value = json.dumps(new)
+            value = value
         )
 
         self._widget.execute_js(js)

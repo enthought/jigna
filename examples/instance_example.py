@@ -34,15 +34,24 @@ def main():
     fred  = Person(name='Fred', age=42)
     fred.on_trait_change(listener)
     fred.friend = Person(name='Wilma', age=34)
+
     def update_friend():
         fred.friend.name = "Barney"
         fred.friend.age = 41
+
+    def set_friend():
+        print "Setting friend to Dino"
+        fred.friend = Person(name="Dino", age=10)
+
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
     GUI.invoke_after(3000, update_friend)
+    GUI.invoke_after(4000, set_friend)
+
     person_view.show(model=fred)
     app.exec_()
     print fred.name
     print fred.age
+    print fred.friend.name, fred.friend.age
 
 if __name__ == "__main__":
     main()

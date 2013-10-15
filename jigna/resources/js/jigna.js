@@ -34,7 +34,7 @@ $(document).ready(function(){
         },
 
         on_trait_change: function(id, trait_name, value) {
-            this.scope.$apply(function(){})
+            this.scope.$apply(function(){jigna.id_to_model_map[id][trait_name] = value;})
         },
 
         /***************** Private protocol ********************************/
@@ -80,6 +80,23 @@ $(document).ready(function(){
                 return model;
             };
 
+            var set_instance = function(new_obj_id) {
+                var new_id = String(new_obj_id);
+                var new_model = jigna.id_to_model_map[new_id];
+                if (new_model === undefined) {
+                    var model_info = JSON.parse(
+                        jigna.bridge.get_trait_info(new_id)
+                    );
+                    new_model = jigna.make_model(new_id, model_info);
+                    jigna.id_to_model_map[new_id] = new_model;
+
+                    var model = jigna.id_to_model_map[id];
+                    var info = {type: "instance", id: new_id};
+                    var descriptor = jigna._make_descriptor(id, trait_name, info);
+                    Object.defineProperty(model, trait_name, descriptor);
+                }
+            };
+
             var get, set;
             if (trait_info["type"] === "primitive") {
                 get = get_primitive;
@@ -87,11 +104,12 @@ $(document).ready(function(){
             }
             else {
                 get = get_instance;
-                set = undefined;
+                set = set_instance;
             }
             return {
                 enumerable: true,
                 writeable: true,
+                configurable: true,
                 get: get,
                 set: set
             };
