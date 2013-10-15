@@ -69,7 +69,7 @@ class JignaView(HasTraits):
         """ Create and show a view of the given model. """
 
         self._widget = self._create_widget(model)
-        self._bind(self._widget, model, traits)
+        self._bind(model, traits)
         self._load(self._widget)
         self._widget.control.show()
 
@@ -77,7 +77,7 @@ class JignaView(HasTraits):
 
     #### Private protocol #####################################################
 
-    def _bind(self, widget, model, traits):
+    def _bind(self, model, traits):
         """ Bind the model in the widget.
 
         This sets up the two-way binding from Python->JS and back.
@@ -88,12 +88,12 @@ class JignaView(HasTraits):
         if traits is None:
             traits = model.editable_traits()
 
-        self._set_initial_js(widget, model, traits)
-        self._bind_python_to_js(widget, model, traits)
+        self._set_initial_js(model, traits)
+        self._bind_python_to_js(model, traits)
 
         return
 
-    def _bind_python_to_js(self, widget, model, traits):
+    def _bind_python_to_js(self, model, traits):
         """ Bind the model from Python->JS. """
 
         for trait_name in traits:
@@ -111,6 +111,11 @@ class JignaView(HasTraits):
             )
         }
 
+        def get_trait_info(id):
+            model = self.id_to_model_map.get(id)
+            self._bind_python_to_js(model, model.editable_traits())
+            return json.dumps(self._get_trait_info(model))
+
         def set_trait(id, trait_name, value_json):
             """ Set a trait on the model. """
             print "Python set_trait called", id, trait_name, value_json
@@ -127,8 +132,11 @@ class JignaView(HasTraits):
 
 
         widget = HTMLWidget(
-            callbacks        = [('set_trait', set_trait),
-                                ('get_trait', get_trait)],
+            callbacks        = [
+                ('set_trait', set_trait),
+                ('get_trait', get_trait),
+                ('get_trait_info', get_trait_info)
+            ],
             python_namespace = PYNAME,
             hosts            = hosts,
             open_externally  = True,
@@ -138,15 +146,15 @@ class JignaView(HasTraits):
 
         return widget
 
-    def _get_add_model_js(self, model, traits):
+    def _get_add_model_js(self, model, trait_info):
         ADD_MODEL_TO_JS_TEMPLATE = """
-            jigna.add_model('${ID}', '${MODEL_NAME}', ${traits});
+            jigna.add_model('${ID}', '${MODEL_NAME}', ${trait_info});
         """
 
         js = Template(ADD_MODEL_TO_JS_TEMPLATE).render(
             ID         = id(model),
             MODEL_NAME = MODEL_NAME,
-            traits     = traits
+            trait_info     = trait_info
         )
 
         return js
@@ -165,14 +173,32 @@ class JignaView(HasTraits):
 
         return
 
-    def _set_initial_js(self, widget, model, traits):
+    def _set_initial_js(self, model, traits):
 
         # First add the model to jigna
-        js = self._get_add_model_js(model, traits)
+        trait_info = self._get_trait_info(model, traits)
+        js = self._get_add_model_js(model, trait_info)
 
         self._initial_js = js
 
         return
+
+    def _get_trait_info(self, model, traits=None):
+        """Return a dictionary of traits along with information on the trait.
+        """
+        if traits is None:
+            traits = model.editable_traits()
+
+        info = {}
+        for trait in traits:
+            value = getattr(model, trait)
+            if isinstance(value, HasTraits):
+                value_id = str(id(value))
+                info[trait] = dict(type='instance', id=value_id)
+                self.id_to_model_map[value_id] = value
+            else:
+                info[trait] = dict(type='primitive', value=json.dumps(value))
+        return info
 
 
     #### Trait change handlers ################################################

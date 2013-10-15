@@ -38,7 +38,7 @@ def main():
         fred.friend.name = "Barney"
         fred.friend.age = 41
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    #GUI.invoke_after(3000, update_friend)
+    GUI.invoke_after(3000, update_friend)
     person_view.show(model=fred)
     app.exec_()
     print fred.name
