@@ -11,7 +11,7 @@
 # Standard library.
 import json
 from mako.template import Template
-from traits.api import HasTraits, Str
+from traits.api import Dict, HasTraits, Str
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
@@ -49,13 +49,10 @@ ADD_MODEL_TO_JS_TEMPLATE = """
 jigna.add_model('${MODEL_NAME}', ${traits});
 """
 
-SET_TRAIT_IN_JS_TEMPLATE = """
-jigna.scope.${MODEL_NAME}.set_trait_in_js('${traitname}', ${value});
+ON_TRAIT_CHANGE_JS = """
+jigna.on_trait_change('${id}', '${trait_name}', ${value});
 """
 
-SETUP_JS_WATCHER_TEMPLATE = """
-jigna.scope.${MODEL_NAME}.setup_js_watcher('${traitname}');
-"""
 
 class JignaView(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
@@ -64,6 +61,9 @@ class JignaView(HasTraits):
 
     #: The HTML for the *body* of the view's document.
     html = Str
+
+    #: The ID to model mapping.
+    id_to_model_map = Dict
 
     def show(self, model, traits=None):
         """ Create and show a view of the given model. """
@@ -83,35 +83,21 @@ class JignaView(HasTraits):
         This sets up the two-way binding from Python->JS and back.
 
         """
+        self.id_to_model_map[str(id(model))] = model
+
         if traits is None:
             traits = model.editable_traits()
 
         self._set_initial_js(widget, model, traits)
-        self._bind_js_to_python(widget, model, traits)
         self._bind_python_to_js(widget, model, traits)
-
-        return
-
-    def _bind_js_to_python(self, widget, model, traits):
-        """ Bind the model from JS-> Python. """
-
-        js = ""
-
-        #for traitname in traits:
-        #    js += Template(SETUP_JS_WATCHER_TEMPLATE).render(
-        #        MODEL_NAME = MODEL_NAME,
-        #        traitname  = traitname
-        #    )
-
-        self._binding_js = js
 
         return
 
     def _bind_python_to_js(self, widget, model, traits):
         """ Bind the model from Python->JS. """
 
-        for traitname in traits:
-            model.on_trait_change(self._on_model_trait_changed, traitname)
+        for trait_name in traits:
+            model.on_trait_change(self._on_model_trait_changed, trait_name)
 
         return
 
@@ -125,16 +111,18 @@ class JignaView(HasTraits):
             )
         }
 
-        def set_trait(model_name, trait_name, value_json):
+        def set_trait(id, trait_name, value_json):
             """ Set a trait on the model. """
-            print "Python set_trait called", model_name, trait_name, value_json
+            print "Python set_trait called", id, trait_name, value_json
+            model = self.id_to_model_map.get(id)
             value = json.loads(value_json)
             setattr(model, trait_name, value)
 
             return
 
-        def get_trait(model_name, trait_name):
-            print "Python get_trait called,", model_name, trait_name
+        def get_trait(id, trait_name):
+            print "Python get_trait called,", id, trait_name
+            model = self.id_to_model_map.get(id)
             return json.dumps(getattr(model, trait_name))
 
 
@@ -152,10 +140,11 @@ class JignaView(HasTraits):
 
     def _get_add_model_js(self, model, traits):
         ADD_MODEL_TO_JS_TEMPLATE = """
-            jigna.add_model('${MODEL_NAME}', ${traits});
+            jigna.add_model('${ID}', '${MODEL_NAME}', ${traits});
         """
 
         js = Template(ADD_MODEL_TO_JS_TEMPLATE).render(
+            ID         = id(model),
             MODEL_NAME = MODEL_NAME,
             traits     = traits
         )
@@ -181,14 +170,6 @@ class JignaView(HasTraits):
         # First add the model to jigna
         js = self._get_add_model_js(model, traits)
 
-        # Now set the traits in JS to give them initial value
-        for traitname in traits:
-            js += Template(SET_TRAIT_IN_JS_TEMPLATE).render(
-                MODEL_NAME = MODEL_NAME,
-                traitname  = traitname,
-                value      = repr(getattr(model, traitname))
-            )
-
         self._initial_js = js
 
         return
@@ -196,13 +177,12 @@ class JignaView(HasTraits):
 
     #### Trait change handlers ################################################
 
-    def _on_model_trait_changed(self, model, traitname, new_value):
+    def _on_model_trait_changed(self, model, trait_name, old, new):
         """ Called when any trait on the model has been changed. """
-
-        js = Template(SET_TRAIT_IN_JS_TEMPLATE).render(
-            MODEL_NAME  = MODEL_NAME,
-            traitname = traitname,
-            value = json.dumps(new_value)
+        js = Template(ON_TRAIT_CHANGE_JS).render(
+            id  = str(id(model)),
+            trait_name = trait_name,
+            value = json.dumps(new)
         )
 
         self._widget.execute_js(js)
