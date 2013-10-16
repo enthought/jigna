@@ -43,15 +43,6 @@ DOCUMENT_HTML_TEMPLATE = """
 </html>
 """
 
-#### JS templates #############################################################
-
-ADD_MODEL_TO_JS_TEMPLATE = """
-jigna.add_model('${MODEL_NAME}', ${traits});
-"""
-
-ON_TRAIT_CHANGE_JS = """
-jigna.on_trait_change('${id}', '${trait_name}', ${value});
-"""
 
 
 class JignaView(HasTraits):
@@ -210,6 +201,10 @@ class JignaView(HasTraits):
             self.id_to_model_map[value] = new
         else:
             value = json.dumps(new)
+
+        ON_TRAIT_CHANGE_JS = """
+        jigna.on_trait_change('${id}', '${trait_name}', ${value});
+        """
 
         js = Template(ON_TRAIT_CHANGE_JS).render(
             id  = str(id(model)),
