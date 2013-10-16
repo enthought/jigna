@@ -26,7 +26,7 @@ $(document).ready(function(){
 
         /***************** Private protocol ********************************/
 
-        _bridge: window["python"],
+        _bridge: window["python_bridge"],
 
         _id_to_model_map: {},
 
