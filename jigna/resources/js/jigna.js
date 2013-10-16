@@ -80,21 +80,10 @@ $(document).ready(function(){
                 return model;
             };
 
-            var set_instance = function(new_obj_id) {
-                var new_id = String(new_obj_id);
-                var new_model = jigna.id_to_model_map[new_id];
-                if (new_model === undefined) {
-                    var model_info = JSON.parse(
-                        jigna.bridge.get_trait_info(new_id)
-                    );
-                    new_model = jigna.make_model(new_id, model_info);
-                    jigna.id_to_model_map[new_id] = new_model;
-
-                    var model = jigna.id_to_model_map[id];
-                    var info = {type: "instance", id: new_id};
-                    var descriptor = jigna._make_descriptor(id, trait_name, info);
-                    Object.defineProperty(model, trait_name, descriptor);
-                }
+            var set_instance = function(new_id) {
+                var info = {type: "instance", id: String(new_id)};
+                var descriptor = jigna._make_descriptor(id, trait_name, info);
+                Object.defineProperty(this, trait_name, descriptor);
             };
 
             var get, set;
