@@ -77,6 +77,10 @@ class JignaView(HasTraits):
 
         for trait_name in traits:
             model.on_trait_change(self._on_model_trait_changed, trait_name)
+            value = getattr(model, trait_name)
+            if isinstance(value, list):
+                model.on_trait_change(self._on_model_list_items_changed,
+                                      trait_name + '_items')
 
         return
 
@@ -188,6 +192,27 @@ class JignaView(HasTraits):
         """
 
         js = Template(ON_TRAIT_CHANGE_JS).render(
+            id  = str(id(model)),
+            trait_name = trait_name,
+            value = value
+        )
+
+        self._widget.execute_js(js)
+
+        return
+
+    def _on_model_list_items_changed(self, model, trait_name, old, new):
+        """ Called when any trait on the model has been changed. """
+
+        trait_name = trait_name[:-6]
+        splice_args = [new.index, len(new.removed)] + new.added
+        value = json.dumps(splice_args)
+
+        on_list_items_change_js = """
+        jigna.on_list_items_change('${id}', '${trait_name}', ${value});
+        """
+
+        js = Template(on_list_items_change_js).render(
             id  = str(id(model)),
             trait_name = trait_name,
             value = value

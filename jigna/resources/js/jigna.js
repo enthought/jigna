@@ -16,6 +16,15 @@ $(document).ready(function(){
             this._add_in_scope(model_name, model)
         },
 
+        on_list_items_change: function(id, trait_name, value) {
+            jigna.scope.$apply(
+                function() {
+                    var list = jigna._id_to_model_map[id][trait_name];
+                    list.splice.apply(list, value);
+                }
+            );
+        },
+
         on_trait_change: function(id, trait_name, value) {
             this.scope.$apply(
                 function() {
