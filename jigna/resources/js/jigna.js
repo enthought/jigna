@@ -19,8 +19,8 @@ $(document).ready(function(){
         on_list_items_change: function(id, trait_name, value) {
             jigna.scope.$apply(
                 function() {
-                    var list = jigna._id_to_model_map[id][trait_name];
-                    list.splice.apply(list, value);
+                    //var list = jigna._id_to_model_map[id][trait_name];
+                    //list.splice.apply(list, value);
                 }
             );
         },
@@ -52,10 +52,24 @@ $(document).ready(function(){
             Object.defineProperty(model, trait_name, descriptor);
         },
 
+        _get_model_from_id: function(id) {
+            var model = jigna._id_to_model_map[id];
+            if (model === undefined) {
+                var model_info = JSON.parse(
+                    jigna._bridge.get_trait_info(id)
+                );
+                model = jigna._make_model(id, model_info);
+                jigna._id_to_model_map[id] = model;
+            }
+            return model;
+        },
+
         _make_descriptor: function(id, trait_name, trait_info) {
             var factories = {
                 "instance": this._make_instance_descriptor,
                 "primitive": this._make_primitive_descriptor,
+                "list_instance": this._make_list_instance_descriptor,
+                "list_primitive": this._make_primitive_descriptor
             };
             var factory = factories[trait_info["type"]];
 
@@ -65,19 +79,39 @@ $(document).ready(function(){
         _make_instance_descriptor: function(id, trait_name, trait_info) {
             var get = function() {
                 var id = trait_info["id"];
-                var model = jigna._id_to_model_map[id];
-                if (model === undefined) {
-                    var model_info = JSON.parse(
-                        jigna._bridge.get_trait_info(id)
-                    );
-                    model = jigna._make_model(id, model_info);
-                    jigna._id_to_model_map[id] = model;
-                }
-                return model;
+                return jigna._get_model_from_id(id);
             };
 
             var set = function(new_id) {
                 var info = {type: "instance", id: String(new_id)};
+                var descriptor = jigna._make_descriptor(id, trait_name, info);
+                Object.defineProperty(this, trait_name, descriptor);
+            };
+
+            return {
+                enumerable: true,
+                writeable: true,
+                configurable: true,
+                get: get,
+                set: set
+            };
+        },
+
+        _make_list_instance_descriptor: function(id, trait_name, trait_info) {
+            var get = function() {
+                var result = [];
+                var list_info = JSON.parse(
+                    jigna._bridge.get_trait(id, trait_name)
+                );
+                for (var index in list_info) {
+                    result.push(jigna._get_model_from_id(list_info[index]));
+                }
+                return result;
+            };
+
+            var set = function(new_ids) {
+                var info = {type: "list_instance",
+                            value: JSON.stringify(new_ids)};
                 var descriptor = jigna._make_descriptor(id, trait_name, info);
                 Object.defineProperty(this, trait_name, descriptor);
             };

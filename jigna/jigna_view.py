@@ -11,7 +11,7 @@
 # Standard library.
 import json
 from mako.template import Template
-from traits.api import Dict, HasTraits, Str
+from traits.api import Dict, HasTraits, Instance, Str, TraitInstance
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
@@ -147,15 +147,32 @@ class JignaView(HasTraits):
             traits = model.editable_traits()
 
         info = {}
-        for trait in traits:
-            value = getattr(model, trait)
+        for trait_name in traits:
+            value = getattr(model, trait_name)
             if isinstance(value, HasTraits):
                 value_id = str(id(value))
-                info[trait] = dict(type='instance', id=value_id)
+                info[trait_name] = dict(type='instance', id=value_id)
                 self.id_to_model_map[value_id] = value
+            elif isinstance(value, list):
+                trait = model.trait(trait_name)
+                info[trait_name] = self._get_list_trait_info(value, trait)
             else:
-                info[trait] = dict(type='primitive', value=json.dumps(value))
+                info[trait_name] = dict(type='primitive',
+                                        value=json.dumps(value))
         return info
+
+    def _get_list_trait_info(self, lst, trait):
+        if isinstance(trait.inner_traits[0].trait_type,
+                      (TraitInstance, Instance)):
+            obj_ids = []
+            for obj in lst:
+                obj_id = str(id(obj))
+                self.id_to_model_map.setdefault(obj_id, obj)
+                obj_ids.append(obj_id)
+            data = dict(type='list_instance', value=json.dumps(obj_ids))
+        else:
+            data = dict(type='list_primitive', value=json.dumps(lst))
+        return data
 
     def _bridge_get_trait_info(self, id):
         model = self.id_to_model_map.get(id)
@@ -171,10 +188,18 @@ class JignaView(HasTraits):
 
         return
 
-    def _bridge_get_trait(self, id, trait_name):
-        print "Python get_trait called,", id, trait_name
-        model = self.id_to_model_map.get(id)
-        return json.dumps(getattr(model, trait_name))
+    def _bridge_get_trait(self, obj_id, trait_name):
+        print "Python get_trait called,", obj_id, trait_name
+        model = self.id_to_model_map.get(obj_id)
+        value = getattr(model, trait_name)
+        trait = model.trait(trait_name)
+        if (isinstance(value, list) and
+            isinstance(trait.inner_traits[0].trait_type,
+                      (TraitInstance, Instance))):
+            result = json.dumps([str(id(x)) for x in value])
+        else:
+            result = json.dumps(value)
+        return result
 
 
     #### Trait change handlers ################################################
@@ -184,6 +209,9 @@ class JignaView(HasTraits):
         if isinstance(new, HasTraits):
             value = str(id(new))
             self.id_to_model_map[value] = new
+        elif isinstance(new, list):
+            data = self._get_list_trait_info(new, model.trait(trait_name))
+            value = data['value']
         else:
             value = json.dumps(new)
 
@@ -201,12 +229,17 @@ class JignaView(HasTraits):
 
         return
 
-    def _on_model_list_items_changed(self, model, trait_name, old, new):
+    def _on_model_list_items_changed(self, model, trait_items_name, old, new):
         """ Called when any trait on the model has been changed. """
 
-        trait_name = trait_name[:-6]
-        splice_args = [new.index, len(new.removed)] + new.added
-        value = json.dumps(splice_args)
+        trait_name = trait_items_name[:-6]
+
+        for x in new.added:
+            self.id_to_model_map.setdefault(str(id(x)), x)
+
+        #splice_args = [new.index, len(new.removed)] + new.added
+        #value = json.dumps(splice_args)
+        value = "null"
 
         on_list_items_change_js = """
         jigna.on_list_items_change('${id}', '${trait_name}', ${value});
