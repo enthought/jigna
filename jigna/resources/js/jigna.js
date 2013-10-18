@@ -1,6 +1,6 @@
 var jigna = {};
 
-jigna.Controller = function(scope){
+jigna.ProxyManager = function(scope){
 
     this.scope = scope;
 
@@ -10,7 +10,7 @@ jigna.Controller = function(scope){
 
 }
 
-jigna.Controller.prototype.add_model = function(id, model_name, trait_info) {
+jigna.ProxyManager.prototype.add_model = function(id, model_name, trait_info) {
     /* Add the model named `model_name` to jigna models. Expose the
     ** list of traits to jigna.
     */
@@ -21,7 +21,7 @@ jigna.Controller.prototype.add_model = function(id, model_name, trait_info) {
     this._add_in_scope(model_name, proxy)
 };
 
-jigna.Controller.prototype.on_list_items_change = function(id, trait_name, value) {
+jigna.ProxyManager.prototype.on_list_items_change = function(id, trait_name, value) {
     this.scope.$apply(
         function() {
             //var list = jigna._id_to_proxy_map[id][trait_name];
@@ -30,31 +30,31 @@ jigna.Controller.prototype.on_list_items_change = function(id, trait_name, value
     );
 };
 
-jigna.Controller.prototype.on_trait_change = function(id, trait_name, value) {
+jigna.ProxyManager.prototype.on_trait_change = function(id, trait_name, value) {
     console.log("this, scope:", this, this.scope);
     this.scope.$apply(
         function() {
-            jigna.controller._id_to_proxy_map[id][trait_name] = value;
+            jigna.proxy_manager._id_to_proxy_map[id][trait_name] = value;
         }
     );
 };
 
 /***************** Private protocol ********************************/
 
-jigna.Controller.prototype._add_in_scope = function(model_name, proxy) {
+jigna.ProxyManager.prototype._add_in_scope = function(model_name, proxy) {
     this.scope.$apply(
         function() {
-            jigna.controller.scope[model_name] = proxy;
+            jigna.proxy_manager.scope[model_name] = proxy;
         }
     )
 };
 
-jigna.Controller.prototype._add_property_to_proxy = function(id, proxy, trait_name, trait_info) {
+jigna.ProxyManager.prototype._add_property_to_proxy = function(id, proxy, trait_name, trait_info) {
     var descriptor = this._make_descriptor(id, trait_name, trait_info);
     Object.defineProperty(proxy, trait_name, descriptor);
 };
 
-jigna.Controller.prototype._get_model_from_id = function(id) {
+jigna.ProxyManager.prototype._get_model_from_id = function(id) {
     var model = this._id_to_proxy_map[id];
     if (model === undefined) {
         var model_info = JSON.parse(
@@ -66,7 +66,7 @@ jigna.Controller.prototype._get_model_from_id = function(id) {
     return model;
 };
 
-jigna.Controller.prototype._make_descriptor = function(id, trait_name, trait_info) {
+jigna.ProxyManager.prototype._make_descriptor = function(id, trait_name, trait_info) {
     var factories = {
         "instance": this._make_instance_descriptor,
         "primitive": this._make_primitive_descriptor,
@@ -78,15 +78,15 @@ jigna.Controller.prototype._make_descriptor = function(id, trait_name, trait_inf
     return factory(id, trait_name);
 };
 
-jigna.Controller.prototype._make_instance_descriptor = function(id, trait_name) {
+jigna.ProxyManager.prototype._make_instance_descriptor = function(id, trait_name) {
     var get = function() {
         var id = trait_info["id"];
-        return jigna.controller._get_model_from_id(id);
+        return jigna.proxy_manager._get_model_from_id(id);
     };
 
     var set = function(new_id) {
         var info = {type: "instance", id: String(new_id)};
-        var descriptor = jigna.controller._make_descriptor(id, trait_name, info);
+        var descriptor = jigna.proxy_manager._make_descriptor(id, trait_name, info);
         Object.defineProperty(this, trait_name, descriptor);
     };
 
@@ -99,14 +99,14 @@ jigna.Controller.prototype._make_instance_descriptor = function(id, trait_name) 
     };
 };
 
-jigna.Controller.prototype._make_list_instance_descriptor = function(id, trait_name) {
+jigna.ProxyManager.prototype._make_list_instance_descriptor = function(id, trait_name) {
     var get = function() {
         var result = [];
         var list_info = JSON.parse(
-            jigna.controller._bridge.get_trait(id, trait_name)
+            jigna.proxy_manager._bridge.get_trait(id, trait_name)
         );
         for (var index in list_info) {
-            result.push(jigna.controller._get_model_from_id(list_info[index]));
+            result.push(jigna.proxy_manager._get_model_from_id(list_info[index]));
         }
         return result;
     };
@@ -114,7 +114,7 @@ jigna.Controller.prototype._make_list_instance_descriptor = function(id, trait_n
     var set = function(new_ids) {
         var info = {type: "list_instance",
                     value: JSON.stringify(new_ids)};
-        var descriptor = jigna.controller._make_descriptor(id, trait_name, info);
+        var descriptor = jigna.proxy_manager._make_descriptor(id, trait_name, info);
         Object.defineProperty(this, trait_name, descriptor);
     };
 
@@ -127,7 +127,7 @@ jigna.Controller.prototype._make_list_instance_descriptor = function(id, trait_n
     };
 };
 
-jigna.Controller.prototype._make_proxy = function(id, trait_info) {
+jigna.ProxyManager.prototype._make_proxy = function(id, trait_info) {
     /* Add the model named `model_name` to jigna models. Expose the
      * list of traits to jigna.
     */
@@ -142,15 +142,15 @@ jigna.Controller.prototype._make_proxy = function(id, trait_info) {
     return proxy;
 };
 
-jigna.Controller.prototype._make_primitive_descriptor = function(id, trait_name) {
+jigna.ProxyManager.prototype._make_primitive_descriptor = function(id, trait_name) {
     var get = function() {
         return JSON.parse(
-            jigna.controller._bridge.get_trait(id, trait_name)
+            jigna.proxy_manager._bridge.get_trait(id, trait_name)
         );
     };
 
     var set = function(value) {
-        jigna.controller._bridge.set_trait(
+        jigna.proxy_manager._bridge.set_trait(
             id,
             trait_name,
             JSON.stringify(value)
@@ -178,5 +178,5 @@ jigna.ListProxy = function(id) {
 
 $(document).ready(function(){
     var scope = $(document.body).scope();
-    jigna.controller = new jigna.Controller(scope);
+    jigna.proxy_manager = new jigna.ProxyManager(scope);
 })

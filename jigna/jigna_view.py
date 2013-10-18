@@ -45,15 +45,12 @@ class JignaView(HasTraits):
     #: The HTML for the *body* of the view's document.
     html = Str
 
-    #: The ID to model mapping.
-    id_to_model_map = Dict
-
     def show(self, model, traits=None):
         """ Create and show a view of the given model. """
         if traits is None:
             traits = model.editable_traits()
 
-        self.id_to_model_map[str(id(model))] = model
+        self._id_to_object_map[str(id(model))] = model
 
         self._bind_python_to_js(model, traits)
 
@@ -73,6 +70,9 @@ class JignaView(HasTraits):
         return
 
     #### Private protocol #####################################################
+    
+    #: The ID to model mapping.
+    _id_to_object_map = Dict
 
     def _bind_python_to_js(self, model, traits):
         """ Bind the model from Python->JS. """
@@ -117,7 +117,7 @@ class JignaView(HasTraits):
 
 
         ADD_MODEL_TO_JS_TEMPLATE = """
-            jigna.controller.add_model('${id}', '${model_name}', ${trait_info});
+            jigna.proxy_manager.add_model('${id}', '${model_name}', ${trait_info});
         """
 
         js = Template(ADD_MODEL_TO_JS_TEMPLATE).render(
@@ -152,7 +152,7 @@ class JignaView(HasTraits):
             if isinstance(value, HasTraits):
                 value_id = str(id(value))
                 info[trait_name] = dict(type='instance', id=value_id)
-                self.id_to_model_map[value_id] = value
+                self._id_to_object_map[value_id] = value
             elif isinstance(value, list):
                 trait = model.trait(trait_name)
                 info[trait_name] = self._get_list_trait_info(value, trait)
@@ -167,7 +167,7 @@ class JignaView(HasTraits):
             obj_ids = []
             for obj in lst:
                 obj_id = str(id(obj))
-                self.id_to_model_map.setdefault(obj_id, obj)
+                self._id_to_object_map.setdefault(obj_id, obj)
                 obj_ids.append(obj_id)
             data = dict(type='list_instance', value=json.dumps(obj_ids))
         else:
@@ -175,14 +175,14 @@ class JignaView(HasTraits):
         return data
 
     def _bridge_get_trait_info(self, id):
-        model = self.id_to_model_map.get(id)
+        model = self._id_to_object_map.get(id)
         self._bind_python_to_js(model, model.editable_traits())
         return json.dumps(self._get_trait_info(model))
 
     def _bridge_set_trait(self, id, trait_name, value_json):
         """ Set a trait on the model. """
         print "Python set_trait called", id, trait_name, value_json
-        model = self.id_to_model_map.get(id)
+        model = self._id_to_object_map.get(id)
         value = json.loads(value_json)
         setattr(model, trait_name, value)
 
@@ -190,7 +190,7 @@ class JignaView(HasTraits):
 
     def _bridge_get_trait(self, obj_id, trait_name):
         print "Python get_trait called,", obj_id, trait_name
-        model = self.id_to_model_map.get(obj_id)
+        model = self._id_to_object_map.get(obj_id)
         value = getattr(model, trait_name)
         trait = model.trait(trait_name)
         if (isinstance(value, list) and
@@ -208,7 +208,7 @@ class JignaView(HasTraits):
         """ Called when any trait on the model has been changed. """
         if isinstance(new, HasTraits):
             value = str(id(new))
-            self.id_to_model_map[value] = new
+            self._id_to_object_map[value] = new
         elif isinstance(new, list):
             data = self._get_list_trait_info(new, model.trait(trait_name))
             value = data['value']
@@ -216,7 +216,7 @@ class JignaView(HasTraits):
             value = json.dumps(new)
 
         ON_TRAIT_CHANGE_JS = """
-        jigna.controller.on_trait_change('${id}', '${trait_name}', ${value});
+        jigna.proxy_manager.on_trait_change('${id}', '${trait_name}', ${value});
         """
 
         js = Template(ON_TRAIT_CHANGE_JS).render(
@@ -235,14 +235,14 @@ class JignaView(HasTraits):
         trait_name = trait_items_name[:-6]
 
         for x in new.added:
-            self.id_to_model_map.setdefault(str(id(x)), x)
+            self._id_to_object_map.setdefault(str(id(x)), x)
 
         #splice_args = [new.index, len(new.removed)] + new.added
         #value = json.dumps(splice_args)
         value = "null"
 
         on_list_items_change_js = """
-        jigna.controller.on_list_items_change('${id}', '${trait_name}', ${value});
+        jigna.proxy_manager.on_list_items_change('${id}', '${trait_name}', ${value});
         """
 
         js = Template(on_list_items_change_js).render(
