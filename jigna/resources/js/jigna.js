@@ -73,10 +73,10 @@ $(document).ready(function(){
             };
             var factory = factories[trait_info["type"]];
 
-            return factory(id, trait_name, trait_info);
+            return factory(id, trait_name);
         },
 
-        _make_instance_descriptor: function(id, trait_name, trait_info) {
+        _make_instance_descriptor: function(id, trait_name) {
             var get = function() {
                 var id = trait_info["id"];
                 return jigna._get_model_from_id(id);
@@ -97,7 +97,7 @@ $(document).ready(function(){
             };
         },
 
-        _make_list_instance_descriptor: function(id, trait_name, trait_info) {
+        _make_list_instance_descriptor: function(id, trait_name) {
             var get = function() {
                 var result = [];
                 var list_info = JSON.parse(
@@ -129,7 +129,7 @@ $(document).ready(function(){
             /* Add the model named `model_name` to jigna models. Expose the
              * list of traits to jigna.
             */
-            var model = new jigna.JignaModel(id);
+            var model = new jigna.InstanceProxy(id);
 
             for (var trait_name in trait_info) {
                 this._add_property_to_model(
@@ -140,7 +140,7 @@ $(document).ready(function(){
             return model;
         },
 
-        _make_primitive_descriptor: function(id, trait_name, trait_info) {
+        _make_primitive_descriptor: function(id, trait_name) {
             var get = function() {
                 return JSON.parse(
                     jigna._bridge.get_trait(id, trait_name)
@@ -166,9 +166,13 @@ $(document).ready(function(){
 
     }
 
-    /**** JignaModel ******************************************************/
+    /**** InstanceProxy ******************************************************/
 
-    jigna.JignaModel = function(id) {
+    jigna.InstanceProxy = function(id) {
+        this.__id = id;
+    };
+
+    jigna.ListProxy = function(id) {
         this.__id = id;
     };
 
