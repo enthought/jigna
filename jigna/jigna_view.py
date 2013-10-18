@@ -26,11 +26,6 @@ DOCUMENT_HTML_TEMPLATE = """
     <script type="text/javascript" src="${jquery}"></script>
     <script type="text/javascript" src="${angular}"></script>
     <script type="text/javascript" src="${jigna}"></script>
-    <script type='text/javascript'>
-        $(document).ready(function(){
-            ${initial_js}
-        })
-    </script>
   </head>
 
   <body>
@@ -39,6 +34,7 @@ DOCUMENT_HTML_TEMPLATE = """
 </html>
 """
 
+MODEL_NAME = "model"
 
 
 class JignaView(HasTraits):
@@ -65,6 +61,12 @@ class JignaView(HasTraits):
 
         html = self._generate_html(model, traits)
         self._widget.load_html(html)
+
+        def add_model():
+            print "adding model"
+            self._widget.execute_js("console.log($(document.body).scope())")
+            self._add_model(model, MODEL_NAME, traits)
+        self._widget.on_trait_change(add_model, 'loaded')
 
         self._widget.control.show()
 
@@ -109,11 +111,13 @@ class JignaView(HasTraits):
 
         return widget
 
-    def _get_add_model_js(self, model, trait_info):
-        model_name = "model"
+    def _add_model(self, model, model_name, traits):
+        
+        trait_info = self._get_trait_info(model, traits)
+
 
         ADD_MODEL_TO_JS_TEMPLATE = """
-            jigna.add_model('${id}', '${model_name}', ${trait_info});
+            jigna.controller.add_model('${id}', '${model_name}', ${trait_info});
         """
 
         js = Template(ADD_MODEL_TO_JS_TEMPLATE).render(
@@ -122,19 +126,15 @@ class JignaView(HasTraits):
             trait_info = trait_info
         )
 
-        return js
+        self._widget.execute_js(js)
 
     def _generate_html(self, model, traits):
-        # First add the model to jigna
-        trait_info = self._get_trait_info(model, traits)
-        initial_js = self._get_add_model_js(model, trait_info)
-
+        
         document_html_template = Template(DOCUMENT_HTML_TEMPLATE)
         document_html = document_html_template.render(
             jquery        = 'http://resources.jigna/js/jquery.min.js',
             angular       = 'http://resources.jigna/js/angular.min.js',
             jigna         = 'http://resources.jigna/js/jigna.js',
-            initial_js    = initial_js,
             body_html     = self.html
         )
 
@@ -216,7 +216,7 @@ class JignaView(HasTraits):
             value = json.dumps(new)
 
         ON_TRAIT_CHANGE_JS = """
-        jigna.on_trait_change('${id}', '${trait_name}', ${value});
+        jigna.controller.on_trait_change('${id}', '${trait_name}', ${value});
         """
 
         js = Template(ON_TRAIT_CHANGE_JS).render(
@@ -242,7 +242,7 @@ class JignaView(HasTraits):
         value = "null"
 
         on_list_items_change_js = """
-        jigna.on_list_items_change('${id}', '${trait_name}', ${value});
+        jigna.controller.on_list_items_change('${id}', '${trait_name}', ${value});
         """
 
         js = Template(on_list_items_change_js).render(
