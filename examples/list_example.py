@@ -29,7 +29,7 @@ html = """
             <ul>
                 <li ng-repeat="friend in model.friends">
                     Name: <input ng-model="friend.name">
-                    Age: <input ng-model="friend.age"> </li>
+                    Age: <input ng-model="friend.age" type="number"> </li>
             </ul>
     </div>
 """
