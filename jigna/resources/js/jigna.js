@@ -6,7 +6,7 @@ jigna.Controller = function(scope){
 
     this._bridge = window["python_bridge"];
 
-    this._id_to_model_map = {};
+    this._id_to_proxy_map = {};
 
 }
 
@@ -16,7 +16,7 @@ jigna.Controller.prototype.add_model = function(id, model_name, trait_info) {
     */
     var proxy = this._make_proxy(id, trait_info);
 
-    this._id_to_model_map[id] = proxy;
+    this._id_to_proxy_map[id] = proxy;
 
     this._add_in_scope(model_name, proxy)
 };
@@ -24,7 +24,7 @@ jigna.Controller.prototype.add_model = function(id, model_name, trait_info) {
 jigna.Controller.prototype.on_list_items_change = function(id, trait_name, value) {
     this.scope.$apply(
         function() {
-            //var list = jigna._id_to_model_map[id][trait_name];
+            //var list = jigna._id_to_proxy_map[id][trait_name];
             //list.splice.apply(list, value);
         }
     );
@@ -34,7 +34,7 @@ jigna.Controller.prototype.on_trait_change = function(id, trait_name, value) {
     console.log("this, scope:", this, this.scope);
     this.scope.$apply(
         function() {
-            jigna.controller._id_to_model_map[id][trait_name] = value;
+            jigna.controller._id_to_proxy_map[id][trait_name] = value;
         }
     );
 };
@@ -55,13 +55,13 @@ jigna.Controller.prototype._add_property_to_proxy = function(id, proxy, trait_na
 };
 
 jigna.Controller.prototype._get_model_from_id = function(id) {
-    var model = this._id_to_model_map[id];
+    var model = this._id_to_proxy_map[id];
     if (model === undefined) {
         var model_info = JSON.parse(
             this._bridge.get_trait_info(id)
         );
-        model = this._make_proxy(id, model_info);
-        this._id_to_model_map[id] = model;
+        proxy = this._make_proxy(id, model_info);
+        this._id_to_proxy_map[id] = proxy;
     }
     return model;
 };
