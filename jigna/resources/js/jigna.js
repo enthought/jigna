@@ -12,11 +12,11 @@ jigna.ProxyManager = function(scope){
 
 }
 
-jigna.ProxyManager.prototype.add_model = function(id, model_name, trait_info) {
+jigna.ProxyManager.prototype.add_model = function(model_name, id) {
     /* Add the model named `model_name` to jigna models. Expose the
     ** list of traits to jigna.
     */
-    var proxy = this._proxy_factory.make_proxy(id, trait_info);
+    var proxy = this._proxy_factory.make_proxy("instance", id);
 
     this._id_to_proxy_map[id] = proxy;
 
@@ -54,10 +54,7 @@ jigna.ProxyManager.prototype._add_in_scope = function(model_name, proxy) {
 jigna.ProxyManager.prototype._get_proxy_from_id = function(id) {
     var proxy = this._id_to_proxy_map[id];
     if (proxy === undefined) {
-        var trait_info = JSON.parse(
-            this._bridge.get_trait_info(id)
-        );
-        proxy = this._proxy_factory.make_proxy(id, trait_info);
+        proxy = this._proxy_factory.make_proxy("instance", id);
         this._id_to_proxy_map[id] = proxy;
     }
     return proxy;
@@ -69,19 +66,19 @@ jigna.ProxyFactory = function(proxy_manager) {
     this.proxy_manager = proxy_manager;
 };
 
-jigna.ProxyFactory.prototype.make_proxy = function(id, trait_info) {
+jigna.ProxyFactory.prototype.make_proxy = function(proxy_type, obj) {
     /* Add the model named `model_name` to jigna models. Expose the
      * list of traits to jigna.
     */
-    var proxy = new jigna.InstanceProxy(id);
+    console.log("proxy manager:", this.proxy_manager);
+    var factories = {
+        "instance": this._make_instance_proxy,
+        "primitive": this._make_primitive_proxy,
+        "list": this._make_list_proxy,
+    };
+    var factory = factories[proxy_type];
 
-    for (var trait_name in trait_info) {
-        this._add_property_to_proxy(
-            id, proxy, trait_name, trait_info[trait_name]
-        );
-    }
-
-    return proxy;
+    return factory.apply(this, [obj]);
 };
 
 jigna.ProxyFactory.prototype._add_property_to_proxy = function(id, proxy, trait_name, trait_info) {
@@ -100,6 +97,29 @@ jigna.ProxyFactory.prototype._make_descriptor = function(id, trait_name, trait_i
 
     return factory(id, trait_name);
 };
+
+jigna.ProxyFactory.prototype._make_instance_proxy = function(id) {
+    console.log("proxy_manager (make instance proxy)", this.proxy_manager);
+    var proxy = new jigna.InstanceProxy(id);
+    var trait_info = JSON.parse(
+        this.proxy_manager._bridge.get_trait_info(id)
+    );
+
+    for (var trait_name in trait_info) {
+        this._add_property_to_proxy(
+            id, proxy, trait_name, trait_info[trait_name]
+        );
+    }
+
+    return proxy;
+}
+
+jigna.ProxyFactory.prototype._make_primitive_proxy = function(value) {
+    var proxy = value;
+
+    return proxy;
+}
+
 
 jigna.ProxyFactory.prototype._make_instance_descriptor = function(id, trait_name) {
     var proxy_factory = this;

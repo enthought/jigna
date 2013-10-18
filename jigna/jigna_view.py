@@ -62,7 +62,7 @@ class JignaView(HasTraits):
         def add_model():
             print "adding model"
             self._widget.execute_js("console.log($(document.body).scope())")
-            self._add_model(model, MODEL_NAME, traits)
+            self._add_model(model, MODEL_NAME)
         self._widget.on_trait_change(add_model, 'loaded')
 
         self._widget.control.show()
@@ -111,19 +111,15 @@ class JignaView(HasTraits):
 
         return widget
 
-    def _add_model(self, model, model_name, traits):
-        
-        trait_info = self._get_trait_info(model, traits)
-
+    def _add_model(self, model, model_name):
 
         ADD_MODEL_TO_JS_TEMPLATE = """
-            jigna.proxy_manager.add_model('${id}', '${model_name}', ${trait_info});
+            jigna.proxy_manager.add_model('${model_name}', '${id}');
         """
 
         js = Template(ADD_MODEL_TO_JS_TEMPLATE).render(
-            id         = id(model),
             model_name = model_name,
-            trait_info = trait_info
+            id         = id(model),
         )
 
         self._widget.execute_js(js)
