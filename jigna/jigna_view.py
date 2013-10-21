@@ -10,7 +10,12 @@
 
 # Standard library.
 import json
+import sys
+
+# 3rd party library.
 from mako.template import Template
+
+# Enthought library.
 from traits.api import Dict, HasTraits, Instance, Str, TraitInstance
 
 # Jigna libary.
@@ -47,11 +52,14 @@ class JignaView(HasTraits):
 
     def show(self, model, traits=None):
         """ Create and show a view of the given model. """
+
+        print 'show', model, id(model)
         if traits is None:
             traits = model.editable_traits()
 
         self._id_to_object_map[str(id(model))] = model
 
+        
         self._bind_python_to_js(model, traits)
 
         self._widget = self._create_widget()
@@ -60,8 +68,6 @@ class JignaView(HasTraits):
         self._widget.load_html(html)
 
         def add_model():
-            print "adding model"
-            self._widget.execute_js("console.log($(document.body).scope())")
             self._add_model(model, MODEL_NAME)
         self._widget.on_trait_change(add_model, 'loaded')
 
@@ -98,8 +104,8 @@ class JignaView(HasTraits):
 
         widget = HTMLWidget(
             callbacks        = [
-                ('set_trait', self._bridge_set_trait),
-                ('get_trait', self._bridge_get_trait),
+                ('set_trait',      self._bridge_set_trait),
+                ('get_trait',      self._bridge_get_trait),
                 ('get_trait_info', self._bridge_get_trait_info)
             ],
             python_namespace = "python_bridge",
@@ -124,92 +130,169 @@ class JignaView(HasTraits):
 
         self._widget.execute_js(js)
 
+        return
+    
     def _generate_html(self, model, traits):
         
-        document_html_template = Template(DOCUMENT_HTML_TEMPLATE)
-        document_html = document_html_template.render(
-            jquery        = 'http://resources.jigna/js/jquery.min.js',
-            angular       = 'http://resources.jigna/js/angular.min.js',
-            jigna         = 'http://resources.jigna/js/jigna.js',
-            body_html     = self.html
+        template = Template(DOCUMENT_HTML_TEMPLATE)
+        html     = template.render(
+            jquery    = 'http://resources.jigna/js/jquery.min.js',
+            angular   = 'http://resources.jigna/js/angular.min.js',
+            jigna     = 'http://resources.jigna/js/jigna.js',
+            body_html = self.html
         )
 
-        return document_html
+        return html
 
-    def _get_trait_info(self, model, traits=None):
-        """Return a dictionary of traits along with information on the trait.
-        """
-        if traits is None:
-            traits = model.editable_traits()
+    # def _get_trait_info(self, model, traits=None):
+    #     """Return a dictionary of traits along with information on the trait.
+    #     """
+    #     if traits is None:
+    #         traits = model.editable_traits()
 
-        info = {}
-        for trait_name in traits:
-            value = getattr(model, trait_name)
-            if isinstance(value, HasTraits):
-                value_id = str(id(value))
-                info[trait_name] = dict(type='instance', id=value_id)
-                self._id_to_object_map[value_id] = value
-            elif isinstance(value, list):
-                trait = model.trait(trait_name)
-                info[trait_name] = self._get_list_trait_info(value, trait)
-            else:
-                info[trait_name] = dict(type='primitive',
-                                        value=json.dumps(value))
-        return info
+    #     info = {}
+    #     for trait_name in traits:
+    #         value = getattr(model, trait_name)
+    #         if isinstance(value, HasTraits):
+    #             value_id = str(id(value))
+    #             info[trait_name] = dict(type='instance', id=value_id)
+    #             self._id_to_object_map[value_id] = value
+    #         elif isinstance(value, list):
+    #             trait = model.trait(trait_name)
+    #             info[trait_name] = self._get_list_trait_info(value, trait)
+    #         else:
+    #             info[trait_name] = dict(type='primitive',
+    #                                     value=json.dumps(value))
+    #     return info
 
-    def _get_list_trait_info(self, lst, trait):
-        if isinstance(trait.inner_traits[0].trait_type,
-                      (TraitInstance, Instance)):
-            obj_ids = []
-            for obj in lst:
-                obj_id = str(id(obj))
-                self._id_to_object_map.setdefault(obj_id, obj)
-                obj_ids.append(obj_id)
-            data = dict(type='list_instance', value=json.dumps(obj_ids))
-        else:
-            data = dict(type='list_primitive', value=json.dumps(lst))
-        return data
+    ## def _get_list_trait_info(self, lst, trait):
+    ##     if isinstance(trait.inner_traits[0].trait_type,
+    ##                   (TraitInstance, Instance)):
+    ##         obj_ids = []
+    ##         for obj in lst:
+    ##             obj_id = str(id(obj))
+    ##             self._id_to_object_map.setdefault(obj_id, obj)
+    ##             obj_ids.append(obj_id)
+    ##         data = dict(type='list_instance', value=json.dumps(obj_ids))
+    ##     else:
+    ##         data = dict(type='list_primitive', value=json.dumps(lst))
+    ##     return data
 
     def _bridge_get_trait_info(self, id):
-        model = self._id_to_object_map.get(id)
-        self._bind_python_to_js(model, model.editable_traits())
-        return json.dumps(self._get_trait_info(model))
 
-    def _bridge_set_trait(self, id, trait_name, value_json):
+        print '_bridge_get_trait_info', id, type(id),
+
+        obj = self._id_to_object_map.get(id)
+
+        print 'obj', obj,
+
+        if isinstance(obj, HasTraits):
+            info = obj.editable_traits()
+
+        else:
+            info = [str(i) for i in range(len(obj))]
+
+        print 'info:', info
+        
+        #self._bind_python_to_js(model, model.editable_traits())
+        
+        #return json.dumps(self._get_trait_info(model))
+        return info
+
+    def _bridge_get_trait(self, obj_id, trait_name):
+
+        print '--------------------------------------------------------------'
+        print 'Bridge: get trait:', 'id:', obj_id,
+        print 'trait_name:', trait_name,
+
+        obj = self._id_to_object_map.get(obj_id)
+        try:
+            if isinstance(obj, HasTraits):
+                value = getattr(obj, trait_name)
+
+            else:
+                value = obj[int(trait_name)]
+
+            exception = None,
+            type, value = self._get_value(value)
+            
+        except Exception, e:
+            exception = repr(sys.exc_type),
+            type      = 'exception',
+            value     = repr(sys.exc_value)
+
+        print 'Exception:', exception, 'type:', type, 'value:', value
+        print '--------------------------------------------------------------'
+        
+        return dict(exception=None, type=type, value=value)
+
+    def _bridge_set_trait(self, id, trait_name, value):
         """ Set a trait on the model. """
-        print "Python set_trait called", id, trait_name, value_json
-        model = self._id_to_object_map.get(id)
-        value = json.loads(value_json)
-        setattr(model, trait_name, value)
+
+        print 'Bridge: SET trait:', 'id:', id, 'trait_name:', trait_name,
+        print 'value:', value, type(value)
+
+        obj = self._id_to_object_map.get(id)
+
+        #value = json.loads(value_json)
+        setattr(obj, trait_name, value)
 
         return
 
-    def _bridge_get_trait(self, obj_id, trait_name):
-        print "Python get_trait called,", obj_id, trait_name
-        model = self._id_to_object_map.get(obj_id)
-        value = getattr(model, trait_name)
-        trait = model.trait(trait_name)
-        if (isinstance(value, list) and
-            isinstance(trait.inner_traits[0].trait_type,
-                      (TraitInstance, Instance))):
-            result = json.dumps([str(id(x)) for x in value])
+    def _get_value(self, value):
+
+        if isinstance(value, HasTraits):
+            value_id                         = str(id(value))
+            self._id_to_object_map[value_id] = value
+
+            type  = 'instance'
+            value = value_id
+                
+        elif isinstance(value, list):
+            value_id                         = str(id(value))
+            self._id_to_object_map[value_id] = value
+
+            type = 'list'
+            
+            value = value_id
+            #value = [
+            #    self._get_value(v) for v in value
+            #]
+
         else:
-            result = json.dumps(value)
-        return result
+            type = 'primitive'
+
+        return type, value
+        
+        ##         trait = obj.trait(trait_name)
+
+        ## if isinstance(
+        ## if (isinstance(value, list) and
+        ##     isinstance(trait.inner_traits[0].trait_type,
+        ##               (TraitInstance, Instance))):
+        ##     result = json.dumps([str(id(x)) for x in value])
+        ## else:
+        ##     result = json.dumps(value)
+        ## return result
 
 
     #### Trait change handlers ################################################
 
     def _on_model_trait_changed(self, model, trait_name, old, new):
         """ Called when any trait on the model has been changed. """
+
         if isinstance(new, HasTraits):
             value = str(id(new))
             self._id_to_object_map[value] = new
+
         elif isinstance(new, list):
-            data = self._get_list_trait_info(new, model.trait(trait_name))
-            value = data['value']
+            value = self._get_value(new)
+            
+            #data = self._get_list_trait_info(new, model.trait(trait_name))
+            #value = data['value']
+
         else:
-            value = json.dumps(new)
+            value = new
 
         ON_TRAIT_CHANGE_JS = """
         jigna.proxy_manager.on_trait_change('${id}', '${trait_name}', ${value});
