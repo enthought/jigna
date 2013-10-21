@@ -37,9 +37,10 @@ html = """
 
 html = """
   <div>
+  Name: <input ng-model="model.name">
     Fruits:
     <ul>
-      <li ng-repeat="fruit in model.fruits"> <input ng-model="fruit"> </li>
+      <li ng-repeat="(index, fruit) in model.fruits"> <input ng-model="fruit"> </li>
     </ul>
   </div>
 """
@@ -70,8 +71,8 @@ def main():
         fred.fruits[0] = 'mango'
         
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    GUI.invoke_after(3000, set_list)
-    GUI.invoke_after(4000, update_list)
+    #GUI.invoke_after(3000, set_list)
+    #GUI.invoke_after(4000, update_list)
 
     person_view.show(model=fred)
     app.exec_()

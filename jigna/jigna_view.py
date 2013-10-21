@@ -104,11 +104,11 @@ class JignaView(HasTraits):
 
         widget = HTMLWidget(
             callbacks        = [
-                ('set_trait',      self._bridge_set_trait),
                 ('get_trait',      self._bridge_get_trait),
-                ('get_trait_info', self._bridge_get_trait_info)
+                ('get_trait_info', self._bridge_get_trait_info),
+                ('set_trait',      self._bridge_set_trait),
             ],
-            python_namespace = "python_bridge",
+            python_namespace = 'python_bridge',
             hosts            = hosts,
             open_externally  = True,
             debug            = True
@@ -180,7 +180,7 @@ class JignaView(HasTraits):
 
     def _bridge_get_trait_info(self, id):
 
-        print '_bridge_get_trait_info', id, type(id),
+        print 'Bridge: get_trait_info:', id, type(id),
 
         obj = self._id_to_object_map.get(id)
 
@@ -190,7 +190,7 @@ class JignaView(HasTraits):
             info = obj.editable_traits()
 
         else:
-            info = [str(i) for i in range(len(obj))]
+            info = [i for i in range(len(obj))]
 
         print 'info:', info
         
