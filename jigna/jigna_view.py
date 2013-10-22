@@ -35,7 +35,7 @@ DOCUMENT_HTML_TEMPLATE = """
     <script type="text/javascript" src="${jigna}"></script>
     <script type="text/javascript">
         $(document).ready(function(){
-           jigna.proxy_manager.add_model('${model_name}', '${id}'); 
+           jigna.proxy_manager.add_model('${model_name}', '${id}');
         });
     </script>
   </head>
@@ -59,7 +59,7 @@ class JignaView(HasTraits):
 
     def show(self, model):
         """ Create and show a view of the given model. """
-        
+
         self._bind_python_to_js(model)
 
         self._widget = self._create_widget(model)
@@ -69,17 +69,17 @@ class JignaView(HasTraits):
         return
 
     #### Private protocol #####################################################
-    
+
     #: The ID to model mapping.
     _id_to_object_map = Dict
 
     def _bind_python_to_js(self, model):
         """ Bind the model from Python->JS. """
-        
+
         self._id_to_object_map[str(id(model))] = model
 
         model.on_trait_change(self._on_model_trait_changed)
-        
+
         return
 
     def _create_widget(self, model):
@@ -108,9 +108,9 @@ class JignaView(HasTraits):
         widget.load_html(self._generate_html(model))
 
         return widget
-    
+
     def _generate_html(self, model):
-        
+
         template = Template(DOCUMENT_HTML_TEMPLATE)
         html     = template.render(
             jquery     = 'http://resources.jigna/js/jquery.min.js',
@@ -130,6 +130,7 @@ class JignaView(HasTraits):
         """
 
         obj = self._id_to_object_map.get(id)
+        print 'Get info for', obj, type(obj), id
 
         if isinstance(obj, HasTraits):
             info = obj.editable_traits()
@@ -137,12 +138,12 @@ class JignaView(HasTraits):
 
         else:
             info = [i for i in range(len(obj))]
-        
+
         return info
 
     def _bridge_get_trait(self, obj_id, trait_name):
-        """ Return the value of a trait on an object in the form: 
-        {exception, type, value}. 
+        """ Return the value of a trait on an object in the form:
+        {exception, type, value}.
         """
 
         obj = self._id_to_object_map.get(obj_id)
@@ -155,12 +156,12 @@ class JignaView(HasTraits):
 
             exception = None,
             type, value = self._get_type_and_value(value)
-            
+
         except Exception, e:
             exception = repr(sys.exc_type),
             type      = 'exception',
             value     = repr(sys.exc_value)
-        
+
         return dict(exception=None, type=type, value=value)
 
     def _bridge_set_trait(self, id, trait_name, value):
@@ -170,7 +171,7 @@ class JignaView(HasTraits):
         try:
             index = int(trait_name)
             obj[index] = value
-            
+
         except:
             setattr(obj, trait_name, value)
 
@@ -189,7 +190,7 @@ class JignaView(HasTraits):
 
             type  = 'instance'
             value = value_id
-                
+
         elif isinstance(value, list):
             value_id                         = str(id(value))
             self._id_to_object_map[value_id] = value
@@ -211,21 +212,22 @@ class JignaView(HasTraits):
         if isinstance(new, TraitListEvent):
             trait_name = trait_name[:-len('_items')]
             value = getattr(model, trait_name)
+
         else:
             value = new
             if isinstance(value, HasTraits):
                 self._id_to_object_map[str(id(value))] = value
 
-            elif isinstance(value, list):            
+            elif isinstance(value, list):
                 self._id_to_object_map[str(id(value))] = value
 
         type, value = self._get_type_and_value(value)
-        
+
         js = Template("""
-           jigna.proxy_manager.on_model_changed('${type}', ${value});
+        jigna.proxy_manager.on_model_changed('${type}', ${value});
         """).render(
             type   = type,
-            value  = value
+            value  = repr(value)
         )
 
         self._widget.execute_js(js)

@@ -42,7 +42,7 @@ jigna.ProxyManager.prototype.get_proxy = function(type, obj) {
 
 jigna.ProxyManager.prototype.on_model_changed = function(type, value) {
     console.log("on_model_changed:", type, value);
-    
+
     if (type != 'primitive') {
         var proxy = this._proxy_factory.create_proxy(type, value);
         this._id_to_proxy_map[value] = proxy;
@@ -52,7 +52,6 @@ jigna.ProxyManager.prototype.on_model_changed = function(type, value) {
         this.scope.$digest()
     }
 };
-
 
 // Private protocol ///////////////////////////////////////////////////////////
 
@@ -90,10 +89,10 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, value) {
     var proxy;
 
     if (type === 'instance') {
-    proxy = this._create_instance_proxy(value)
+        proxy = this._create_instance_proxy(value)
     }
     else if (type === 'list') {
-    proxy = this._create_list_proxy(value);
+        proxy = this._create_list_proxy(value);
     }
     else {
     }
@@ -107,7 +106,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var proxy = new jigna.InstanceProxy(id, this.proxy_manager);
     var trait_names = this.proxy_manager.bridge_get_trait_info(id);
     for (var index in trait_names) {
-    this._add_property(proxy, trait_names[index]);
+        this._add_property(proxy, trait_names[index]);
     }
 
     return proxy;
@@ -117,7 +116,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var proxy = new jigna.ListProxy(id, this.proxy_manager);
     var trait_names = this.proxy_manager.bridge_get_trait_info(id);
     for (var index in trait_names) {
-    this._add_property(proxy, trait_names[index]);
+        this._add_property(proxy, trait_names[index]);
     }
 
     return proxy;
@@ -134,7 +133,7 @@ jigna.ProxyFactory.prototype._make_descriptor = function(proxy, trait_name){
     result = this.proxy_manager.bridge_get_trait(this.id, trait_name)
     if (result.exception != null) {
         console.log('exception!!!!!!!!!!!', result.exception)
-        }
+    }
     //console.log('get', this.id, trait_name, 'result', result);
 
     var value;
