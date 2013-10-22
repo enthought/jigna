@@ -36,6 +36,20 @@ html = """
     </div>
 """
 
+htmlXXX = """
+    <div>
+        Name: <input ng-model="model.name">
+        Age: <input ng-model="model.age" type='number'>
+        <br/>
+        Fruits:
+            <ul>
+                <li ng-repeat="(index, fruit) in model.fruits"> 
+                   <input ng-model="model.fruits[index]"> 
+                </li>
+            </ul>
+    </div>
+"""
+
 
 person_view = JignaView(html=html)
 
@@ -51,19 +65,19 @@ def main():
     barney = Person(name="Barney", age=40)
 
     fred.fruits = ['peach', 'pear']
-    
+
     def set_list():
         fred.fruits = ["banana", "kiwi"]
-        fred.friends = [wilma]
+        #fred.friends = [wilma]
 
     def update_list():
         fred.fruits.append("apple")
-        fred.friends.append(barney)
-        fred.fruits[0] = 'mango'
+        #fred.friends.append(barney)
+        #fred.fruits[0] = 'mango'
         
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    #GUI.invoke_after(3000, set_list)
-    GUI.invoke_after(4000, update_list)
+    GUI.invoke_after(3000, set_list)
+    #GUI.invoke_after(4000, update_list)
 
     person_view.show(model=fred)
     app.exec_()

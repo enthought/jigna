@@ -40,7 +40,14 @@ jigna.ProxyManager.prototype.get_proxy = function(type, obj) {
     return proxy;
 };
 
-jigna.ProxyManager.prototype.on_model_changed = function() {
+jigna.ProxyManager.prototype.on_model_changed = function(type, value) {
+    console.log("on_model_changed:", type, value);
+    
+    if (type != 'primitive') {
+        var proxy = this._proxy_factory.create_proxy(type, value);
+        this._id_to_proxy_map[value] = proxy;
+    }
+
     if (this.scope.$$phase === null){
         this.scope.$digest()
     }

@@ -16,7 +16,9 @@ import sys
 from mako.template import Template
 
 # Enthought library.
-from traits.api import Dict, HasTraits, Instance, Str, TraitInstance
+from traits.api import (
+    Dict, HasTraits, Instance, Str, TraitInstance, TraitListEvent
+)
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
@@ -206,13 +208,27 @@ class JignaView(HasTraits):
         """ Called when any trait on the model has been changed. """
 
         print "on model changed", model, trait_name, old, new
-        if isinstance(new, HasTraits):
-            self._id_to_object_map[str(id(new))] = new
+        if isinstance(new, TraitListEvent):
+            trait_name = trait_name[:-len('_items')]
+            value = getattr(model, trait_name)
+        else:
+            value = new
+            if isinstance(value, HasTraits):
+                self._id_to_object_map[str(id(value))] = value
 
-        elif isinstance(new, list):            
-            self._id_to_object_map[str(id(new))] = new
+            elif isinstance(value, list):            
+                self._id_to_object_map[str(id(value))] = value
 
-        self._widget.execute_js("jigna.proxy_manager.on_model_changed(); ")
+        type, value = self._get_type_and_value(value)
+        
+        js = Template("""
+           jigna.proxy_manager.on_model_changed('${type}', ${value});
+        """).render(
+            type   = type,
+            value  = value
+        )
+
+        self._widget.execute_js(js)
 
         return
 
