@@ -122,6 +122,10 @@ class JignaView(HasTraits):
         return html
 
     def _bridge_get_trait_info(self, id):
+        """ Returns the list of trait names in the object of given id.
+
+        In case of lists, return the list of indices.
+        """
 
         obj = self._id_to_object_map.get(id)
 
@@ -135,6 +139,9 @@ class JignaView(HasTraits):
         return info
 
     def _bridge_get_trait(self, obj_id, trait_name):
+        """ Return the value of a trait on an object in the form: 
+        {exception, type, value}. 
+        """
 
         obj = self._id_to_object_map.get(obj_id)
         try:
@@ -145,7 +152,7 @@ class JignaView(HasTraits):
                 value = obj[int(trait_name)]
 
             exception = None,
-            type, value = self._get_value(value)
+            type, value = self._get_type_and_value(value)
             
         except Exception, e:
             exception = repr(sys.exc_type),
@@ -167,7 +174,12 @@ class JignaView(HasTraits):
 
         return
 
-    def _get_value(self, value):
+    def _get_type_and_value(self, value):
+        """ Return a tuple of the form (type, value) for the value.
+
+        `type` is one of "instance", "list" and "primitive" depending
+        on the trait type of value.
+        """
 
         if isinstance(value, HasTraits):
             value_id                         = str(id(value))
@@ -181,7 +193,6 @@ class JignaView(HasTraits):
             self._id_to_object_map[value_id] = value
 
             type = 'list'
-            
             value = value_id
 
         else:
@@ -194,11 +205,12 @@ class JignaView(HasTraits):
     def _on_model_trait_changed(self, model, trait_name, old, new):
         """ Called when any trait on the model has been changed. """
 
+        print "on model changed", model, trait_name, old, new
         if isinstance(new, HasTraits):
-            self._id_to_object_map[value] = new
+            self._id_to_object_map[str(id(new))] = new
 
         elif isinstance(new, list):            
-            self._id_to_object_map[value] = new
+            self._id_to_object_map[str(id(new))] = new
 
         self._widget.execute_js("jigna.proxy_manager.on_model_changed(); ")
 
