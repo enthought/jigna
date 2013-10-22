@@ -8,11 +8,6 @@ jigna.ProxyManager = function(scope){
     // ProxyManager protocol.
     this.scope = scope;
 
-    function l(event) {
-	console.log('llllllllllllll', event.name);
-    };
-    this.scope.$on('', l);
-
     // Private protocol
     this._bridge          = window['python_bridge'];
     this._id_to_proxy_map = {};
@@ -29,38 +24,24 @@ jigna.ProxyManager.prototype.add_model = function(model_name, id) {
     this._add_in_scope(model_name, proxy);
 };
 
-jigna.ProxyManager.prototype.get_proxy = function(type, value) {
-    console.log('get proxy for', value);
+jigna.ProxyManager.prototype.get_proxy = function(type, obj) {
     var proxy;
     if (type === 'primitive') {
-	proxy = value;
-	console.log('primitive - no proxy');
+    	proxy = obj;
     }
     else {
-	console.log(this._id_to_proxy_map);
-	proxy = this._id_to_proxy_map[value];
-	if (proxy === undefined) {
-	    proxy = this._proxy_factory.create_proxy(type, value);
-	    this._id_to_proxy_map[value] = proxy;
-	}
-	console.log(this._id_to_proxy_map, proxy);
-    };
+    	proxy = this._id_to_proxy_map[obj];
+    	if (proxy === undefined) {
+    	    proxy = this._proxy_factory.create_proxy(type, obj);
+    	    this._id_to_proxy_map[obj] = proxy;
+	    }
+    }
 
     return proxy;
 };
 
-jigna.ProxyManager.prototype.on_trait_change = function(id, trait_name, value) {
-    console.log('on trait change!!!!!!!!!!!!', id, trait_name, value);
-    this.scope.$apply(function(){});
-};
-
-jigna.ProxyManager.prototype.on_list_items_change = function(id, trait_name, value) {
-    this.scope.$apply(
-        function() {
-            //var list = jigna._id_to_proxy_map[id][trait_name];
-            //list.splice.apply(list, value);
-        }
-    );
+jigna.ProxyManager.prototype.on_model_changed = function() {
+    this.scope.$digest();
 };
 
 

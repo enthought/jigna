@@ -31,6 +31,11 @@ DOCUMENT_HTML_TEMPLATE = """
     <script type="text/javascript" src="${jquery}"></script>
     <script type="text/javascript" src="${angular}"></script>
     <script type="text/javascript" src="${jigna}"></script>
+    <script type="text/javascript">
+        $(document).ready(function(){
+           jigna.proxy_manager.add_model('${model_name}', '${id}'); 
+        });
+    </script>
   </head>
 
   <body>
@@ -50,26 +55,12 @@ class JignaView(HasTraits):
     #: The HTML for the *body* of the view's document.
     html = Str
 
-    def show(self, model, traits=None):
+    def show(self, model):
         """ Create and show a view of the given model. """
-
-        print 'show', model, id(model)
-        if traits is None:
-            traits = model.editable_traits()
-
-        self._id_to_object_map[str(id(model))] = model
-
         
-        self._bind_python_to_js(model, traits)
+        self._bind_python_to_js(model)
 
-        self._widget = self._create_widget()
-
-        html = self._generate_html(model, traits)
-        self._widget.load_html(html)
-
-        def add_model():
-            self._add_model(model, MODEL_NAME)
-        self._widget.on_trait_change(add_model, 'loaded')
+        self._widget = self._create_widget(model)
 
         self._widget.control.show()
 
@@ -80,19 +71,16 @@ class JignaView(HasTraits):
     #: The ID to model mapping.
     _id_to_object_map = Dict
 
-    def _bind_python_to_js(self, model, traits):
+    def _bind_python_to_js(self, model):
         """ Bind the model from Python->JS. """
+        
+        self._id_to_object_map[str(id(model))] = model
 
-        for trait_name in traits:
-            model.on_trait_change(self._on_model_trait_changed, trait_name)
-            value = getattr(model, trait_name)
-            if isinstance(value, list):
-                model.on_trait_change(self._on_model_list_items_changed,
-                                      trait_name + '_items')
-
+        model.on_trait_change(self._on_model_trait_changed)
+        
         return
 
-    def _create_widget(self):
+    def _create_widget(self, model):
         """ Create the HTML widget that we use to render the view. """
 
         hosts = {
@@ -115,61 +103,38 @@ class JignaView(HasTraits):
         )
         widget.create()
 
+        widget.load_html(self._generate_html(model))
+
         return widget
-
-    def _add_model(self, model, model_name):
-
-        ADD_MODEL_TO_JS_TEMPLATE = """
-            jigna.proxy_manager.add_model('${model_name}', '${id}');
-        """
-
-        js = Template(ADD_MODEL_TO_JS_TEMPLATE).render(
-            model_name = model_name,
-            id         = id(model),
-        )
-
-        self._widget.execute_js(js)
-
-        return
     
-    def _generate_html(self, model, traits):
+    def _generate_html(self, model):
         
         template = Template(DOCUMENT_HTML_TEMPLATE)
         html     = template.render(
-            jquery    = 'http://resources.jigna/js/jquery.min.js',
-            angular   = 'http://resources.jigna/js/angular.min.js',
-            jigna     = 'http://resources.jigna/js/jigna.js',
-            body_html = self.html
+            jquery     = 'http://resources.jigna/js/jquery.min.js',
+            angular    = 'http://resources.jigna/js/angular.min.js',
+            jigna      = 'http://resources.jigna/js/jigna.js',
+            body_html  = self.html,
+            model_name = MODEL_NAME,
+            id         = id(model)
         )
 
         return html
 
     def _bridge_get_trait_info(self, id):
 
-        print 'Bridge: get_trait_info:', id, type(id),
-
         obj = self._id_to_object_map.get(id)
-
-        print 'obj', obj,
 
         if isinstance(obj, HasTraits):
             info = obj.editable_traits()
+            self._bind_python_to_js(obj)
 
         else:
             info = [i for i in range(len(obj))]
-
-        print 'info:', info
         
-        #self._bind_python_to_js(model, model.editable_traits())
-        
-        #return json.dumps(self._get_trait_info(model))
         return info
 
     def _bridge_get_trait(self, obj_id, trait_name):
-
-        print '--------------------------------------------------------------'
-        print 'Bridge: get trait:', 'id:', obj_id,
-        print 'trait_name:', trait_name,
 
         obj = self._id_to_object_map.get(obj_id)
         try:
@@ -186,17 +151,11 @@ class JignaView(HasTraits):
             exception = repr(sys.exc_type),
             type      = 'exception',
             value     = repr(sys.exc_value)
-
-        print 'Exception:', exception, 'type:', type, 'value:', value
-        print '--------------------------------------------------------------'
         
         return dict(exception=None, type=type, value=value)
 
     def _bridge_set_trait(self, id, trait_name, value):
         """ Set a trait on the model. """
-
-        print 'Bridge: SET trait:', 'id:', id, 'trait_name:', trait_name,
-        print 'value:', value, type(value)
 
         obj = self._id_to_object_map.get(id)
         try:
@@ -236,50 +195,12 @@ class JignaView(HasTraits):
         """ Called when any trait on the model has been changed. """
 
         if isinstance(new, HasTraits):
-            value = str(id(new))
             self._id_to_object_map[value] = new
 
-        elif isinstance(new, list):
-            value = self._get_value(new)
-            
-        else:
-            value = new
+        elif isinstance(new, list):            
+            self._id_to_object_map[value] = new
 
-        ON_TRAIT_CHANGE_JS = """
-        jigna.proxy_manager.on_trait_change('${id}', '${trait_name}', ${value});
-        """
-
-        js = Template(ON_TRAIT_CHANGE_JS).render(
-            id  = str(id(model)),
-            trait_name = trait_name,
-            value = value
-        )
-
-        self._widget.execute_js(js)
-
-        return
-
-    def _on_model_list_items_changed(self, model, trait_items_name, old, new):
-        """ Called when any trait on the model has been changed. """
-
-        trait_name = trait_items_name[:-6]
-
-        for x in new.added:
-            self._id_to_object_map.setdefault(str(id(x)), x)
-
-        value = "null"
-
-        on_list_items_change_js = """
-        jigna.proxy_manager.on_list_items_change('${id}', '${trait_name}', ${value});
-        """
-
-        js = Template(on_list_items_change_js).render(
-            id  = str(id(model)),
-            trait_name = trait_name,
-            value = value
-        )
-
-        self._widget.execute_js(js)
+        self._widget.execute_js("jigna.proxy_manager.on_model_changed(); ")
 
         return
 
