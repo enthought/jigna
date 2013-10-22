@@ -144,40 +144,6 @@ class JignaView(HasTraits):
 
         return html
 
-    # def _get_trait_info(self, model, traits=None):
-    #     """Return a dictionary of traits along with information on the trait.
-    #     """
-    #     if traits is None:
-    #         traits = model.editable_traits()
-
-    #     info = {}
-    #     for trait_name in traits:
-    #         value = getattr(model, trait_name)
-    #         if isinstance(value, HasTraits):
-    #             value_id = str(id(value))
-    #             info[trait_name] = dict(type='instance', id=value_id)
-    #             self._id_to_object_map[value_id] = value
-    #         elif isinstance(value, list):
-    #             trait = model.trait(trait_name)
-    #             info[trait_name] = self._get_list_trait_info(value, trait)
-    #         else:
-    #             info[trait_name] = dict(type='primitive',
-    #                                     value=json.dumps(value))
-    #     return info
-
-    ## def _get_list_trait_info(self, lst, trait):
-    ##     if isinstance(trait.inner_traits[0].trait_type,
-    ##                   (TraitInstance, Instance)):
-    ##         obj_ids = []
-    ##         for obj in lst:
-    ##             obj_id = str(id(obj))
-    ##             self._id_to_object_map.setdefault(obj_id, obj)
-    ##             obj_ids.append(obj_id)
-    ##         data = dict(type='list_instance', value=json.dumps(obj_ids))
-    ##     else:
-    ##         data = dict(type='list_primitive', value=json.dumps(lst))
-    ##     return data
-
     def _bridge_get_trait_info(self, id):
 
         print 'Bridge: get_trait_info:', id, type(id),
@@ -233,9 +199,12 @@ class JignaView(HasTraits):
         print 'value:', value, type(value)
 
         obj = self._id_to_object_map.get(id)
-
-        #value = json.loads(value_json)
-        setattr(obj, trait_name, value)
+        try:
+            index = int(trait_name)
+            obj[index] = value
+            
+        except:
+            setattr(obj, trait_name, value)
 
         return
 
@@ -255,26 +224,11 @@ class JignaView(HasTraits):
             type = 'list'
             
             value = value_id
-            #value = [
-            #    self._get_value(v) for v in value
-            #]
 
         else:
             type = 'primitive'
 
         return type, value
-        
-        ##         trait = obj.trait(trait_name)
-
-        ## if isinstance(
-        ## if (isinstance(value, list) and
-        ##     isinstance(trait.inner_traits[0].trait_type,
-        ##               (TraitInstance, Instance))):
-        ##     result = json.dumps([str(id(x)) for x in value])
-        ## else:
-        ##     result = json.dumps(value)
-        ## return result
-
 
     #### Trait change handlers ################################################
 
@@ -288,9 +242,6 @@ class JignaView(HasTraits):
         elif isinstance(new, list):
             value = self._get_value(new)
             
-            #data = self._get_list_trait_info(new, model.trait(trait_name))
-            #value = data['value']
-
         else:
             value = new
 
@@ -316,8 +267,6 @@ class JignaView(HasTraits):
         for x in new.added:
             self._id_to_object_map.setdefault(str(id(x)), x)
 
-        #splice_args = [new.index, len(new.removed)] + new.added
-        #value = json.dumps(splice_args)
         value = "null"
 
         on_list_items_change_js = """

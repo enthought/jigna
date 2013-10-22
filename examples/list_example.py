@@ -40,7 +40,7 @@ html = """
   Name: <input ng-model="model.name">
     Fruits:
     <ul>
-      <li ng-repeat="(index, fruit) in model.fruits"> <input ng-model="fruit"> </li>
+      <li ng-repeat="(index, fruit) in model.fruits"> <input ng-model="model.fruits[index]"> </li>
     </ul>
   </div>
 """
