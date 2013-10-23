@@ -95,9 +95,11 @@ class JignaView(HasTraits):
         widget = HTMLWidget(
             callbacks        = [
                 ('get_instance_info', self._bridge_get_instance_info),
-                ('get_list_info',     self._bridge_get_list_info),
                 ('get_trait',         self._bridge_get_trait),
                 ('set_trait',         self._bridge_set_trait),
+                ('get_list_info',     self._bridge_get_list_info),
+                ('get_list_item',     self._bridge_get_list_item),
+                ('set_list_item',     self._bridge_set_list_item),
             ],
             python_namespace = 'python_bridge',
             hosts            = hosts,
@@ -141,18 +143,29 @@ class JignaView(HasTraits):
 
         return len(obj)
 
-    def _bridge_get_trait(self, obj_id, trait_name):
-        """ Return the value of a trait on an object in the form:
-        {exception, type, value}.
-        """
+    def _bridge_get_list_item(self, obj_id, index):
+        """ Return the value of a list item. """
 
-        obj = self._id_to_object_map.get(obj_id)
         try:
-            if isinstance(obj, HasTraits):
-                value = getattr(obj, trait_name)
+            obj   = self._id_to_object_map.get(obj_id)
+            value = obj[int(index)]
 
-            else:
-                value = obj[int(trait_name)]
+            exception = None
+            type, value = self._get_type_and_value(value)
+
+        except Exception, e:
+            exception = repr(sys.exc_type),
+            type      = 'exception',
+            value     = repr(sys.exc_value)
+
+        return dict(exception=None, type=type, value=value)
+
+    def _bridge_get_trait(self, obj_id, trait_name):
+        """ Return the value of a trait on an object. """
+
+        try:
+            obj   = self._id_to_object_map.get(obj_id)
+            value = getattr(obj, trait_name)
 
             exception = None,
             type, value = self._get_type_and_value(value)
@@ -164,18 +177,28 @@ class JignaView(HasTraits):
 
         return dict(exception=None, type=type, value=value)
 
+    def _bridge_set_list_item(self, id, index, value):
+        """ Set a trait on the model. """
+
+        obj   = self._id_to_object_map.get(id)
+        value = json.loads(value)
+
+        # fixme: index should be an int already!
+        obj[int(index)] = value
+
+        # fixme: return result? exceptions?
+        return
+
     def _bridge_set_trait(self, id, trait_name, value):
         """ Set a trait on the model. """
 
+        obj   = self._id_to_object_map.get(id)
         value = json.loads(value)
-        obj = self._id_to_object_map.get(id)
-        try:
-            index = int(trait_name)
-            obj[index] = value
 
-        except:
-            setattr(obj, trait_name, value)
 
+        setattr(obj, trait_name, value)
+
+        # fixme: return result? exceptions?
         return
 
     def _get_type_and_value(self, value):

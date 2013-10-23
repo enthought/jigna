@@ -71,14 +71,9 @@ jigna.Bridge = function(proxy_manager) {
     this._proxy_manager = proxy_manager;
 };
 
-// fixme: Bridge object? Maye jigna *is* the bridge!
 jigna.Bridge.prototype.get_instance_info = function(id) {
     return this._bridge.get_instance_info(id);
-}
-
-jigna.Bridge.prototype.get_list_info = function(id) {
-    return this._bridge.get_list_info(id);
-}
+};
 
 jigna.Bridge.prototype.get_trait = function(id, trait_name) {
     result = this._bridge.get_trait(id, trait_name);
@@ -87,11 +82,30 @@ jigna.Bridge.prototype.get_trait = function(id, trait_name) {
     }
 
     return this._proxy_manager.get_proxy(result.type, result.value);
-}
+};
 
-jigna.Bridge.prototype.set_trait = function(id, trait_name,value){
+
+jigna.Bridge.prototype.set_trait = function(id, trait_name, value){
     return this._bridge.set_trait(id, trait_name, JSON.stringify(value));
 }
+
+jigna.Bridge.prototype.get_list_info = function(id) {
+    return this._bridge.get_list_info(id);
+};
+
+jigna.Bridge.prototype.get_list_item = function(id, index) {
+    result = this._bridge.get_list_item(id, index);
+    if (result.exception != null) {
+        throw result.exception;
+    }
+
+    return this._proxy_manager.get_proxy(result.type, result.value);
+};
+
+jigna.Bridge.prototype.set_list_item = function(id, index, value){
+    return this._bridge.set_list_item(id, index, JSON.stringify(value));
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // ProxyFactory
@@ -125,7 +139,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._bridge);
     var trait_names = this._bridge.get_instance_info(id);
     for (var index in trait_names) {
-        this._add_property(proxy, trait_names[index]);
+        this._add_trait(proxy, trait_names[index]);
     }
 
     return proxy;
@@ -135,13 +149,13 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._bridge);
     var list_length = this._bridge.get_list_info(id);
     for (var index=0; index < list_length; index++) {
-        this._add_property(proxy, index);
+        this._add_list_item(proxy, index);
     }
 
     return proxy;
 }
 
-jigna.ProxyFactory.prototype._add_property = function(proxy, trait_name){
+jigna.ProxyFactory.prototype._add_trait = function(proxy, trait_name){
     var get = function() {
         // In here, 'this' refers to the proxy!
         return this._bridge.get_trait(this._id, trait_name)
@@ -161,6 +175,28 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, trait_name){
     };
 
     Object.defineProperty(proxy, trait_name, descriptor);
+};
+
+jigna.ProxyFactory.prototype._add_list_item = function(proxy, index){
+    var get = function() {
+        // In here, 'this' refers to the proxy!
+        return this._bridge.get_list_item(this._id, index)
+    };
+
+    var set = function(value) {
+        // In here, 'this' refers to the proxy!
+        this._bridge.set_list_item(this._id, index, value)
+    };
+
+    descriptor = {
+        get          : get,
+        set          : set,
+        configurable : true,
+        enumerable   : true,
+        writeable    : true
+    };
+
+    Object.defineProperty(proxy, index, descriptor);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
