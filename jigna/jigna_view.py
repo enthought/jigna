@@ -174,6 +174,21 @@ class JignaView(HasTraits):
 
         return dict(exception=None, type=type, value=value)
 
+    def _bridge_on_object_changed(self, type, value):
+        """ Let the JS-side know that a trait has changed. """
+
+        js = Template("""
+            jigna.proxy_manager.on_object_changed('${type}', ${value});
+        """).render(
+            type   = type,
+            value  = repr(value)
+        )
+
+        self._widget.execute_js(js)
+
+        return
+
+
     def _bridge_set_list_item(self, id, index, value):
         """ Set an item in a list. """
 
@@ -200,19 +215,19 @@ class JignaView(HasTraits):
     def _get_type_and_value(self, value):
         """ Return a tuple of the form (type, value) for the value.
 
-        `type` is one of "instance", "list" and "primitive".
+        `type` is either "instance", "list" or "primitive".
 
         """
 
         if isinstance(value, HasTraits):
-            value_id                         = str(id(value))
+            value_id = str(id(value))
             self._id_to_object_map[value_id] = value
 
             type  = 'instance'
             value = value_id
 
         elif isinstance(value, list):
-            value_id                         = str(id(value))
+            value_id = str(id(value))
             self._id_to_object_map[value_id] = value
 
             type = 'list'
@@ -238,15 +253,7 @@ class JignaView(HasTraits):
                 self._id_to_object_map[str(id(value))] = value
 
         type, value = self._get_type_and_value(value)
-
-        js = Template("""
-            jigna.proxy_manager.on_object_changed('${type}', ${value});
-        """).render(
-            type   = type,
-            value  = repr(value)
-        )
-
-        self._widget.execute_js(js)
+        self._bridge_on_object_changed(type, value)
 
         return
 
