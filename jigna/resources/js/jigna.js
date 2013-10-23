@@ -88,7 +88,7 @@ jigna.ProxyManager.prototype.bridge_get_trait = function(id, trait_name) {
 }
 
 jigna.ProxyManager.prototype.bridge_set_trait = function(id, trait_name,value){
-    return this._bridge.set_trait(id, trait_name, value);
+    return this._bridge.set_trait(id, trait_name, JSON.stringify(value));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

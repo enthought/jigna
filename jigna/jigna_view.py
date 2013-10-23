@@ -167,6 +167,7 @@ class JignaView(HasTraits):
     def _bridge_set_trait(self, id, trait_name, value):
         """ Set a trait on the model. """
 
+        value = json.loads(value)
         obj = self._id_to_object_map.get(id)
         try:
             index = int(trait_name)
