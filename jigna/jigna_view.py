@@ -130,11 +130,9 @@ class JignaView(HasTraits):
         """ Return a description of an instance. """
 
         obj = self._id_to_object_map.get(id)
-
-        info = obj.editable_traits()
         self._bind_python_to_js(obj)
 
-        return info
+        return obj.editable_traits()
 
     def _bridge_get_list_info(self, id):
         """ Returns a description of a list. """
@@ -232,23 +230,19 @@ class JignaView(HasTraits):
     def _on_model_trait_changed(self, model, trait_name, old, new):
         """ Called when any trait on the model has been changed. """
 
-        print "on model changed", model, trait_name, old, new
         if isinstance(new, TraitListEvent):
             trait_name = trait_name[:-len('_items')]
-            value = getattr(model, trait_name)
+            value      = getattr(model, trait_name)
 
         else:
             value = new
-            if isinstance(value, HasTraits):
-                self._id_to_object_map[str(id(value))] = value
-
-            elif isinstance(value, list):
+            if isinstance(value, HasTraits) or isinstance(value, list):
                 self._id_to_object_map[str(id(value))] = value
 
         type, value = self._get_type_and_value(value)
 
         js = Template("""
-        jigna.proxy_manager.on_model_changed('${type}', ${value});
+            jigna.proxy_manager.on_model_changed('${type}', ${value});
         """).render(
             type   = type,
             value  = repr(value)
