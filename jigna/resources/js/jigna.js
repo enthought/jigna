@@ -11,7 +11,7 @@ jigna.ProxyManager = function(scope){
     // Private protocol
     this._bridge          = new jigna.Bridge(this);
     this._id_to_proxy_map = {};
-    this._proxy_factory   = new jigna.ProxyFactory(this);
+    this._proxy_factory   = new jigna.ProxyFactory(this._bridge);
 };
 
 // ProxyManager protocol //////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ jigna.ProxyManager.prototype._add_in_scope = function(model_name, proxy) {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// ProxyManager
+// Bridge
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.Bridge = function(proxy_manager) {
@@ -97,8 +97,8 @@ jigna.Bridge.prototype.set_trait = function(id, trait_name,value){
 // ProxyFactory
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.ProxyFactory = function(proxy_manager) {
-    this.proxy_manager = proxy_manager;
+jigna.ProxyFactory = function(bridge) {
+    this._bridge = bridge;
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, value) {
@@ -122,8 +122,8 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, value) {
 //// Private protocol /////////////////////////////////////////////////////////
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
-    var proxy = new jigna.Proxy(id, this.proxy_manager._bridge);
-    var trait_names = this.proxy_manager._bridge.get_instance_info(id);
+    var proxy = new jigna.Proxy(id, this._bridge);
+    var trait_names = this._bridge.get_instance_info(id);
     for (var index in trait_names) {
         this._add_property(proxy, trait_names[index]);
     }
@@ -132,8 +132,8 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 }
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
-    var proxy = new jigna.Proxy(id, this.proxy_manager._bridge);
-    var list_length = this.proxy_manager._bridge.get_list_info(id);
+    var proxy = new jigna.Proxy(id, this._bridge);
+    var list_length = this._bridge.get_list_info(id);
     for (var index=0; index < list_length; index++) {
         this._add_property(proxy, index);
     }
