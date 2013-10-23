@@ -60,25 +60,25 @@ class JignaView(HasTraits):
     def show(self, model):
         """ Create and show a view of the given model. """
 
-        self._bind_python_to_js(model)
+        self._register_object(model)
 
         self._widget = self._create_widget(model)
-
         self._widget.control.show()
 
         return
 
     #### Private protocol #####################################################
 
-    #: The ID to model mapping.
+    #: All instance and lists that have been accessed via the bridge.
+    #:
+    #: { str id : instance_or_list obj }
     _id_to_object_map = Dict
 
-    def _bind_python_to_js(self, model):
-        """ Bind the model from Python->JS. """
+    def _register_object(self, obj):
+        """ Register the given object with the bridge. """
 
-        self._id_to_object_map[str(id(model))] = model
-
-        model.on_trait_change(self._on_model_trait_changed)
+        self._id_to_object_map[str(id(obj))] = obj
+        obj.on_trait_change(self._on_object_trait_changed)
 
         return
 
@@ -107,7 +107,6 @@ class JignaView(HasTraits):
             debug            = True
         )
         widget.create()
-
         widget.load_html(self._generate_html(model))
 
         return widget
@@ -130,7 +129,7 @@ class JignaView(HasTraits):
         """ Return a description of an instance. """
 
         obj = self._id_to_object_map.get(id)
-        self._bind_python_to_js(obj)
+        self._register_object(obj)
 
         return obj.editable_traits()
 
@@ -176,7 +175,7 @@ class JignaView(HasTraits):
         return dict(exception=None, type=type, value=value)
 
     def _bridge_set_list_item(self, id, index, value):
-        """ Set a trait on the model. """
+        """ Set an item in a list. """
 
         obj   = self._id_to_object_map.get(id)
         value = json.loads(value)
@@ -188,11 +187,10 @@ class JignaView(HasTraits):
         return
 
     def _bridge_set_trait(self, id, trait_name, value):
-        """ Set a trait on the model. """
+        """ Set a trait on an object. """
 
         obj   = self._id_to_object_map.get(id)
         value = json.loads(value)
-
 
         setattr(obj, trait_name, value)
 
@@ -202,8 +200,8 @@ class JignaView(HasTraits):
     def _get_type_and_value(self, value):
         """ Return a tuple of the form (type, value) for the value.
 
-        `type` is one of "instance", "list" and "primitive" depending
-        on the trait type of value.
+        `type` is one of "instance", "list" and "primitive".
+
         """
 
         if isinstance(value, HasTraits):
@@ -227,12 +225,12 @@ class JignaView(HasTraits):
 
     #### Trait change handlers ################################################
 
-    def _on_model_trait_changed(self, model, trait_name, old, new):
-        """ Called when any trait on the model has been changed. """
+    def _on_object_trait_changed(self, obj, trait_name, old, new):
+        """ Called when any trait on a registered object has been changed. """
 
         if isinstance(new, TraitListEvent):
             trait_name = trait_name[:-len('_items')]
-            value      = getattr(model, trait_name)
+            value      = getattr(obj, trait_name)
 
         else:
             value = new
@@ -242,7 +240,7 @@ class JignaView(HasTraits):
         type, value = self._get_type_and_value(value)
 
         js = Template("""
-            jigna.proxy_manager.on_model_changed('${type}', ${value});
+            jigna.proxy_manager.on_object_changed('${type}', ${value});
         """).render(
             type   = type,
             value  = repr(value)
