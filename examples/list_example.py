@@ -31,7 +31,14 @@ html = """
             <ul>
                 <li ng-repeat="friend in model.friends">
                     Name: <input ng-model="friend.name">
-                    Age: <input ng-model="friend.age" type="number"> </li>
+                    Age: <input ng-model="friend.age" type="number"> 
+                    Fruits: 
+                    <ul>
+                        <li ng-repeat="fruit in friend.fruits track by $index">
+                           <input ng-model="friend.fruits[$index]">
+                        </li>
+                    </ul>
+                </li>
             </ul>
     </div>
 """
@@ -46,7 +53,7 @@ def main():
 
     fred = Person(name='Fred', age=42)
     fred.on_trait_change(listener)
-    wilma = Person(name="Wilma", age=42)
+    wilma = Person(name="Wilma", age=42, fruits=['pineapple', 'litchi'])
     barney = Person(name="Barney", age=40)
 
     fred.fruits = ['peach', 'pear']
@@ -59,6 +66,8 @@ def main():
         fred.fruits.append("apple")
         fred.friends.append(barney)
         fred.fruits[0] = 'mango'
+        wilma.fruits.append('guava')
+        wilma.fruits[0] = 'strawberry'
 
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
     GUI.invoke_after(3000, set_list)
@@ -67,6 +76,7 @@ def main():
     person_view.show(model=fred)
     app.exec_()
     print fred.fruits
+    print wilma.fruits
     print [x.name for x in fred.friends]
 
 if __name__ == "__main__":
