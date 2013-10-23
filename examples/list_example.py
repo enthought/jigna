@@ -20,8 +20,8 @@ html = """
         <br/>
         Fruits:
             <ul>
-                <li ng-repeat="(index, fruit) in model.fruits">
-                   <input ng-model="model.fruits[index]">
+                <li ng-repeat="fruit in model.fruits track by $index">
+                   <input ng-model="model.fruits[$index]">
                 </li>
             </ul>
 
@@ -35,21 +35,6 @@ html = """
             </ul>
     </div>
 """
-
-htmlXXX = """
-    <div>
-        Name: <input ng-model="model.name">
-        Age: <input ng-model="model.age" type='number'>
-        <br/>
-        Fruits:
-            <ul>
-                <li ng-repeat="(index, fruit) in model.fruits">
-                   <input ng-model="model.fruits[index]">
-                </li>
-            </ul>
-    </div>
-"""
-
 
 person_view = JignaView(html=html)
 
