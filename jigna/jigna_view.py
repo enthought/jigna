@@ -94,9 +94,10 @@ class JignaView(HasTraits):
 
         widget = HTMLWidget(
             callbacks        = [
-                ('get_trait',      self._bridge_get_trait),
-                ('get_trait_info', self._bridge_get_trait_info),
-                ('set_trait',      self._bridge_set_trait),
+                ('get_instance_info', self._bridge_get_instance_info),
+                ('get_list_info',     self._bridge_get_list_info),
+                ('get_trait',         self._bridge_get_trait),
+                ('set_trait',         self._bridge_set_trait),
             ],
             python_namespace = 'python_bridge',
             hosts            = hosts,
@@ -123,23 +124,22 @@ class JignaView(HasTraits):
 
         return html
 
-    def _bridge_get_trait_info(self, id):
-        """ Returns the list of trait names in the object of given id.
-
-        In case of lists, return the list of indices.
-        """
+    def _bridge_get_instance_info(self, id):
+        """ Return a description of an instance. """
 
         obj = self._id_to_object_map.get(id)
-        print 'Get info for', obj, type(obj), id
 
-        if isinstance(obj, HasTraits):
-            info = obj.editable_traits()
-            self._bind_python_to_js(obj)
-
-        else:
-            info = [i for i in range(len(obj))]
+        info = obj.editable_traits()
+        self._bind_python_to_js(obj)
 
         return info
+
+    def _bridge_get_list_info(self, id):
+        """ Returns a description of a list. """
+
+        obj = self._id_to_object_map.get(id)
+
+        return len(obj)
 
     def _bridge_get_trait(self, obj_id, trait_name):
         """ Return the value of a trait on an object in the form:
