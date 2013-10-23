@@ -68,7 +68,23 @@ jigna.ProxyManager.prototype.bridge_get_trait_info = function(id) {
 }
 
 jigna.ProxyManager.prototype.bridge_get_trait = function(id, trait_name) {
-    return this._bridge.get_trait(id, trait_name);
+    result = this._bridge.get_trait(id, trait_name);
+    if (result.exception != null) {
+        console.log('exception!!!!!!!!!!!', result.exception)
+    }
+
+    var value;
+    if (result.type == 'primitive') {
+        value = result.value
+    }
+    else if (result.type == 'list' ) {
+        value = this.get_proxy(result.type, result.value);
+    }
+    else {
+        value = this.get_proxy(result.type, result.value);
+    };
+
+    return value;
 }
 
 jigna.ProxyManager.prototype.bridge_set_trait = function(id, trait_name,value){
@@ -129,30 +145,13 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, trait_name){
 
 jigna.ProxyFactory.prototype._make_descriptor = function(proxy, trait_name){
     var get = function() {
-    // In here, 'this' refers to the proxy!
-    result = this.proxy_manager.bridge_get_trait(this.id, trait_name)
-    if (result.exception != null) {
-        console.log('exception!!!!!!!!!!!', result.exception)
-    }
-    //console.log('get', this.id, trait_name, 'result', result);
-
-    var value;
-    if (result.type == 'primitive') {
-        value = result.value
-    }
-    else if (result.type == 'list' ) {
-        value = this.proxy_manager.get_proxy(result.type, result.value);
-    }
-    else {
-        value = this.proxy_manager.get_proxy(result.type, result.value);
-    };
-
-    return value;
+        // In here, 'this' refers to the proxy!
+        return this.proxy_manager.bridge_get_trait(this.id, trait_name)
     };
 
     var set = function(value) {
-    // In here, 'this' refers to the proxy!
-    this.proxy_manager.bridge_set_trait(this.id, trait_name, value)
+        // In here, 'this' refers to the proxy!
+        this.proxy_manager.bridge_set_trait(this.id, trait_name, value)
     };
 
     descriptor = {
