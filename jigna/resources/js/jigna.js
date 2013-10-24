@@ -9,13 +9,14 @@ jigna.Bridge = function(scope) {
     this.scope = scope;
 
     // Private protocol
-    this._bridge        = window['python_bridge'];
-    this._proxy_factory = new jigna.ProxyFactory(this);
+    this._bridge          = window['python_bridge'];
+    this._id_to_proxy_map = {};
+    this._proxy_factory   = new jigna.ProxyFactory(this);
 };
 
 jigna.Bridge.prototype.initialize = function(model_name, id) {
     // Get a proxy for the object identified by Id...
-    var proxy = this._proxy_factory.get_proxy('instance', id);
+    var proxy = this._create_proxy('instance', id);
 
     // ... and expose it with the name 'model_name' to AngularJS.
     this.scope.$apply(
@@ -24,11 +25,27 @@ jigna.Bridge.prototype.initialize = function(model_name, id) {
 };
 
 jigna.Bridge.prototype.on_object_changed = function(type, value) {
-    this._proxy_factory.create_proxy(type, value);
+    this._create_proxy(type, value);
 
     if (this.scope.$$phase === null){
         this.scope.$digest();
     }
+};
+
+jigna.Bridge.prototype.get_proxy = function(type, obj) {
+    var proxy;
+
+    if (type === 'primitive') {
+        proxy = obj;
+    }
+    else {
+        proxy = this._id_to_proxy_map[obj];
+        if (proxy === undefined) {
+            proxy = this._create_proxy(type, obj);
+        }
+    }
+
+    return proxy;
 };
 
 // Instances...
@@ -42,7 +59,7 @@ jigna.Bridge.prototype.get_trait = function(id, trait_name) {
         throw result.exception;
     }
 
-    return this._proxy_factory.get_proxy(result.type, result.value);
+    return this.get_proxy(result.type, result.value);
 };
 
 jigna.Bridge.prototype.set_trait = function(id, trait_name, value){
@@ -60,11 +77,20 @@ jigna.Bridge.prototype.get_list_item = function(id, index) {
         throw result.exception;
     }
 
-    return this._proxy_factory.get_proxy(result.type, result.value);
+    return this.get_proxy(result.type, result.value);
 };
 
 jigna.Bridge.prototype.set_list_item = function(id, index, value){
     return this._bridge.set_list_item(id, index, JSON.stringify(value));
+};
+
+// Private protocol //////////////////////////////////////////////////////////
+
+jigna.Bridge.prototype._create_proxy = function(type, obj) {
+    var proxy = this._proxy_factory.create_proxy(type, obj);
+    this._id_to_proxy_map[obj] = proxy;
+
+    return proxy;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -74,7 +100,6 @@ jigna.Bridge.prototype.set_list_item = function(id, index, value){
 jigna.ProxyFactory = function(bridge) {
     // Private protocol.
     this._bridge          = bridge;
-    this._id_to_proxy_map = {};
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
@@ -94,24 +119,6 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
         }
         else {
             throw 'cannot create proxy for type: ' + type;
-        }
-
-        this._id_to_proxy_map[obj] = proxy;
-    }
-
-    return proxy;
-};
-
-jigna.ProxyFactory.prototype.get_proxy = function(type, obj) {
-    var proxy;
-
-    if (type === 'primitive') {
-        proxy = obj;
-    }
-    else {
-        proxy = this._id_to_proxy_map[obj];
-        if (proxy === undefined) {
-            proxy = this.create_proxy(type, obj);
         }
     }
 
