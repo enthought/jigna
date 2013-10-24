@@ -35,7 +35,7 @@ DOCUMENT_HTML_TEMPLATE = """
     <script type="text/javascript" src="${jigna}"></script>
     <script type="text/javascript">
         $(document).ready(function(){
-           jigna.proxy_manager.add_model('${model_name}', '${id}');
+           jigna.bridge.initialize('${model_name}', '${id}');
         });
     </script>
   </head>
@@ -178,7 +178,7 @@ class JignaView(HasTraits):
         """ Let the JS-side know that a trait has changed. """
 
         js = Template("""
-            jigna.proxy_manager.on_object_changed('${type}', ${value});
+            jigna.bridge.on_object_changed('${type}', ${value});
         """).render(
             type   = type,
             value  = repr(value)
