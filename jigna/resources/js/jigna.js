@@ -99,7 +99,7 @@ jigna.Bridge.prototype._create_proxy = function(type, obj) {
 
 jigna.ProxyFactory = function(bridge) {
     // Private protocol.
-    this._bridge          = bridge;
+    this._bridge = bridge;
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
