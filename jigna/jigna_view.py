@@ -17,7 +17,7 @@ from mako.template import Template
 
 # Enthought library.
 from traits.api import (
-    Dict, HasTraits, Instance, Str, TraitInstance, TraitListEvent
+    Any, Dict, HasTraits, Instance, Property, Str, TraitInstance, TraitListEvent
 )
 
 # Jigna libary.
@@ -46,101 +46,33 @@ DOCUMENT_HTML_TEMPLATE = """
 </html>
 """
 
-MODEL_NAME = "model"
 
+class Bridge(HasTraits):
+    """ Bridge between AngularJS and Python worlds. """
 
-class JignaView(HasTraits):
-    """ A factory for HTML/AngularJS based user interfaces. """
+    #### 'Bridge' protocol ####################################################
 
-    #### 'JignaView' protocol #################################################
+    #: The underlying toolkit control that renders HTML.
+    control = Property(Any)
+    def _get_control(self):
+        return self._widget.control
 
-    #: The HTML for the *body* of the view's document.
-    html = Str
-
-    def show(self, model):
-        """ Create and show a view of the given model. """
-
-        self._register_object(model)
-
-        self._widget = self._create_widget(model)
-        self._widget.control.show()
-
-        return
-
-    #### Private protocol #####################################################
-
-    #: All instance and lists that have been accessed via the bridge.
-    #:
-    #: { str id : instance_or_list obj }
-    _id_to_object_map = Dict
-
-    def _register_object(self, obj):
-        """ Register the given object with the bridge. """
-
-        self._id_to_object_map[str(id(obj))] = obj
-        obj.on_trait_change(self._on_object_trait_changed)
-
-        return
-
-    def _create_widget(self, model):
-        """ Create the HTML widget that we use to render the view. """
-
-        hosts = {
-            'resources.jigna': JinjaRenderer(
-                package       = 'jigna',
-                template_root = 'resources'
-            )
-        }
-
-        widget = HTMLWidget(
-            callbacks        = [
-                ('get_instance_info', self._bridge_get_instance_info),
-                ('get_trait',         self._bridge_get_trait),
-                ('set_trait',         self._bridge_set_trait),
-                ('get_list_info',     self._bridge_get_list_info),
-                ('get_list_item',     self._bridge_get_list_item),
-                ('set_list_item',     self._bridge_set_list_item),
-            ],
-            python_namespace = 'python_bridge',
-            hosts            = hosts,
-            open_externally  = True,
-            debug            = True
-        )
-        widget.create()
-        widget.load_html(self._generate_html(model))
-
-        return widget
-
-    def _generate_html(self, model):
-
-        template = Template(DOCUMENT_HTML_TEMPLATE)
-        html     = template.render(
-            jquery     = 'http://resources.jigna/js/jquery.min.js',
-            angular    = 'http://resources.jigna/js/angular.min.js',
-            jigna      = 'http://resources.jigna/js/jigna.js',
-            body_html  = self.html,
-            model_name = MODEL_NAME,
-            id         = id(model)
-        )
-
-        return html
-
-    def _bridge_get_instance_info(self, id):
+    def get_instance_info(self, id):
         """ Return a description of an instance. """
 
         obj = self._id_to_object_map.get(id)
-        self._register_object(obj)
+        self.register_object(obj)
 
         return obj.editable_traits()
 
-    def _bridge_get_list_info(self, id):
+    def get_list_info(self, id):
         """ Returns a description of a list. """
 
         obj = self._id_to_object_map.get(id)
 
         return len(obj)
 
-    def _bridge_get_list_item(self, obj_id, index):
+    def get_list_item(self, obj_id, index):
         """ Return the value of a list item. """
 
         try:
@@ -157,7 +89,7 @@ class JignaView(HasTraits):
 
         return dict(exception=None, type=type, value=value)
 
-    def _bridge_get_trait(self, obj_id, trait_name):
+    def get_trait(self, obj_id, trait_name):
         """ Return the value of a trait on an object. """
 
         try:
@@ -174,7 +106,14 @@ class JignaView(HasTraits):
 
         return dict(exception=None, type=type, value=value)
 
-    def _bridge_on_object_changed(self, type, value):
+    def load_html(self, html):
+        """ Load the given HTML into the bridge. """
+
+        self._widget.load_html(html)
+
+        return
+
+    def on_object_changed(self, type, value):
         """ Let the JS-side know that a trait has changed. """
 
         js = Template("""
@@ -188,8 +127,15 @@ class JignaView(HasTraits):
 
         return
 
+    def register_object(self, obj):
+        """ Register the given object with the bridge. """
 
-    def _bridge_set_list_item(self, id, index, value):
+        self._id_to_object_map[str(id(obj))] = obj
+        obj.on_trait_change(self._on_object_trait_changed)
+
+        return
+
+    def set_list_item(self, id, index, value):
         """ Set an item in a list. """
 
         obj   = self._id_to_object_map.get(id)
@@ -201,7 +147,7 @@ class JignaView(HasTraits):
         # fixme: return result? exceptions?
         return
 
-    def _bridge_set_trait(self, id, trait_name, value):
+    def set_trait(self, id, trait_name, value):
         """ Set a trait on an object. """
 
         obj   = self._id_to_object_map.get(id)
@@ -211,6 +157,46 @@ class JignaView(HasTraits):
 
         # fixme: return result? exceptions?
         return
+
+    #### Private protocol #####################################################
+
+    #: All instance and lists that have been accessed via the bridge.
+    #:
+    #: { str id : instance_or_list obj }
+    _id_to_object_map = Dict
+
+    #: The toolkit-specific widget that renders the HTML.
+    _widget = Any
+    def __widget_default(self):
+        return self._create_widget()
+
+    def _create_widget(self):
+        """ Create the HTML widget that we use to render the view. """
+
+        hosts = {
+            'resources.jigna': JinjaRenderer(
+                package       = 'jigna',
+                template_root = 'resources'
+            )
+        }
+
+        widget = HTMLWidget(
+            callbacks        = [
+                ('get_instance_info', self.get_instance_info),
+                ('get_trait',         self.get_trait),
+                ('set_trait',         self.set_trait),
+                ('get_list_info',     self.get_list_info),
+                ('get_list_item',     self.get_list_item),
+                ('set_list_item',     self.set_list_item),
+            ],
+            python_namespace = 'python_bridge',
+            hosts            = hosts,
+            open_externally  = True,
+            debug            = True
+        )
+        widget.create()
+
+        return widget
 
     def _get_type_and_value(self, value):
         """ Return a tuple of the form (type, value) for the value.
@@ -253,8 +239,46 @@ class JignaView(HasTraits):
                 self._id_to_object_map[str(id(value))] = value
 
         type, value = self._get_type_and_value(value)
-        self._bridge_on_object_changed(type, value)
+        self.on_object_changed(type, value)
 
         return
+
+
+class JignaView(HasTraits):
+    """ A factory for HTML/AngularJS based user interfaces. """
+
+    MODEL_NAME = 'model'
+
+    #### 'JignaView' protocol #################################################
+
+    #: The HTML for the *body* of the view's document.
+    html = Str
+
+    def show(self, model):
+        """ Create and show a view of the given model. """
+
+        self._bridge = Bridge()
+        self._bridge.load_html(self._generate_html(model))
+        self._bridge.register_object(model)
+        self._bridge.control.show()
+
+        return
+
+    #### Private protocol #####################################################
+
+    def _generate_html(self, model):
+        """ Generate the HTML document with the given model. """
+
+        template = Template(DOCUMENT_HTML_TEMPLATE)
+        html     = template.render(
+            jquery     = 'http://resources.jigna/js/jquery.min.js',
+            angular    = 'http://resources.jigna/js/angular.min.js',
+            jigna      = 'http://resources.jigna/js/jigna.js',
+            body_html  = self.html,
+            model_name = JignaView.MODEL_NAME,
+            id         = id(model)
+        )
+
+        return html
 
 #### EOF ######################################################################
