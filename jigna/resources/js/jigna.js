@@ -175,7 +175,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     }
 
     return proxy;
-}
+};
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._bridge);
@@ -185,7 +185,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     }
 
     return proxy;
-}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Proxy
@@ -203,13 +203,15 @@ jigna.Proxy = function(id, bridge) {
 
     descriptor.value = bridge;
     Object.defineProperty(this, '_bridge', descriptor);
-}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-$(document).ready(function(){
-    var scope = $(document.body).scope();
-    jigna.bridge = new jigna.Bridge(scope);
-})
+$(document).ready(
+    function() {
+	var scope = $(document.body).scope();
+	jigna.bridge = new jigna.Bridge(scope);
+    }
+);
 
 // EOF ////////////////////////////////////////////////////////////////////////
