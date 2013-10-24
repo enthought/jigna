@@ -1,7 +1,7 @@
 from traits.api import HasTraits, Instance, Int, Str
 from jigna.api import JignaView
 from pyface.qt import QtGui
-from pyface.api import GUI
+from pyface.timer.api import do_after
 
 #### Domain model ####
 
@@ -25,7 +25,7 @@ html = """
 
 person_view = JignaView(html=html)
 
-#### Entry point ###
+#### Entry point ####
 
 def main():
     def listener(obj, traitname, old, new):
@@ -44,8 +44,8 @@ def main():
         fred.friend = Person(name="Dino", age=10)
 
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    GUI.invoke_after(3000, update_friend)
-    GUI.invoke_after(4000, set_friend)
+    do_after(3000, update_friend)
+    do_after(4000, set_friend)
 
     person_view.show(model=fred)
     app.exec_()
@@ -55,3 +55,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#### EOF ######################################################################

@@ -1,7 +1,7 @@
 from traits.api import HasTraits, Instance, Int, Str, List
 from jigna.api import JignaView
 from pyface.qt import QtGui
-from pyface.api import GUI
+from pyface.timer.api import do_after
 
 #### Domain model ####
 
@@ -31,8 +31,8 @@ html = """
             <ul>
                 <li ng-repeat="friend in model.friends">
                     Name: <input ng-model="friend.name">
-                    Age: <input ng-model="friend.age" type="number"> 
-                    Fruits: 
+                    Age: <input ng-model="friend.age" type="number">
+                    Fruits:
                     <ul>
                         <li ng-repeat="fruit in friend.fruits track by $index">
                            <input ng-model="friend.fruits[$index]">
@@ -45,7 +45,7 @@ html = """
 
 person_view = JignaView(html=html)
 
-#### Entry point ###
+#### Entry point ####
 
 def main():
     def listener(obj, traitname, old, new):
@@ -70,8 +70,8 @@ def main():
         wilma.fruits[0] = 'strawberry'
 
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    GUI.invoke_after(3000, set_list)
-    GUI.invoke_after(4000, update_list)
+    do_after(3000, set_list)
+    do_after(4000, update_list)
 
     person_view.show(model=fred)
     app.exec_()
@@ -81,3 +81,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#### EOF ######################################################################
