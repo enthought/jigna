@@ -10,10 +10,12 @@
 
 # Standard library.
 import json
+import os
 import sys
+from os.path import abspath, dirname, join
 
 # 3rd party library.
-from mako.template import Template
+from jinja2 import Template
 
 # Enthought library.
 from traits.api import (
@@ -22,7 +24,7 @@ from traits.api import (
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
-from jigna.core.wsgi import JinjaRenderer
+from jigna.core.wsgi import FileLoader
 
 
 #### HTML templates ###########################################################
@@ -30,18 +32,21 @@ from jigna.core.wsgi import JinjaRenderer
 DOCUMENT_HTML_TEMPLATE = """
 <html ng-app>
   <head>
-    <script type="text/javascript" src="${jquery}"></script>
-    <script type="text/javascript" src="${angular}"></script>
-    <script type="text/javascript" src="${jigna}"></script>
-    <script type="text/javascript">
+      <script type="text/javascript" src="{{jquery}}"></script>
+      <script type="text/javascript" src="{{angular}}"></script>
+      <script type="text/javascript" src="{{jigna}}"></script>
+      <script type="text/javascript">
         $(document).ready(function(){
-           jigna.bridge.initialize('${model_name}', '${id}');
+          jigna.bridge.initialize('{{model_name}}', '{{id}}');
         });
-    </script>
+      </script>
+    
+
+      {{head_html}}
   </head>
 
   <body>
-    ${body_html}
+    {{body_html}}
   </body>
 </html>
 """
@@ -106,10 +111,10 @@ class Bridge(HasTraits):
 
         return dict(exception=None, type=type, value=value)
 
-    def load_html(self, html):
+    def load_html(self, html, base_url):
         """ Load the given HTML into the bridge. """
 
-        self._widget.load_html(html)
+        self._widget.load_html(html, base_url)
 
         return
 
@@ -117,7 +122,7 @@ class Bridge(HasTraits):
         """ Let the JS-side know that a trait has changed. """
 
         js = Template("""
-            jigna.bridge.on_object_changed('${type}', ${value});
+            jigna.bridge.on_object_changed('{{type}}', {{value}});
         """).render(
             type   = type,
             value  = repr(value)
@@ -174,9 +179,8 @@ class Bridge(HasTraits):
         """ Create the HTML widget that we use to render the view. """
 
         hosts = {
-            'resources.jigna': JinjaRenderer(
-                package       = 'jigna',
-                template_root = 'resources'
+            'resources.jigna': FileLoader(
+                root = join(abspath(dirname(__file__)), 'resources')
             )
         }
 
@@ -252,13 +256,21 @@ class JignaView(HasTraits):
     #### 'JignaView' protocol #################################################
 
     #: The HTML for the *body* of the view's document.
-    html = Str
+    body_html = Str
+
+    #: The HTML for the *head* of the view's document.
+    head_html = Str
+
+    #: The base url for all the resources.
+    base_url = Str
+    def _base_url_default(self):
+        return os.getcwd()
 
     def show(self, model):
         """ Create and show a view of the given model. """
 
         self._bridge = Bridge()
-        self._bridge.load_html(self._generate_html(model))
+        self._bridge.load_html(self._generate_html(model), self.base_url)
         self._bridge.register_object(model)
         self._bridge.control.show()
 
@@ -274,9 +286,10 @@ class JignaView(HasTraits):
             jquery     = 'http://resources.jigna/js/jquery.min.js',
             angular    = 'http://resources.jigna/js/angular.min.js',
             jigna      = 'http://resources.jigna/js/jigna.js',
-            body_html  = self.html,
             model_name = JignaView.MODEL_NAME,
-            id         = id(model)
+            id         = id(model),
+            body_html  = self.body_html,
+            head_html  = self.head_html 
         )
 
         return html

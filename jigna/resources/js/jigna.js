@@ -1,3 +1,12 @@
+//
+// Enthought product code
+// 
+// (C) Copyright 2013 Enthought, Inc., Austin, TX
+// All right reserved.
+// 
+// This file is confidential and NOT open source.  Do not distribute.
+// 
+
 var jigna = {};
 
 ///////////////////////////////////////////////////////////////////////////////
