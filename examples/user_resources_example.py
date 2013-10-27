@@ -26,7 +26,7 @@ body_html = """
       </div>
 """
 
-person_view = JignaView(body_html=body_html, head_html=head_html)
+person_view = JignaView(body_html=body_html, head_html=head_html, base_url='')
 
 #### Entry point ####
 

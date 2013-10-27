@@ -262,8 +262,15 @@ class JignaView(HasTraits):
     head_html = Str
 
     #: The base url for all the resources.
-    base_url = Str
-    def _base_url_default(self):
+    base_url = Property(Str)
+    _base_url = Str
+    def _get_base_url(self):
+        return self._base_url
+
+    def _set_base_url(self, url):
+        self._base_url = join(os.getcwd(), url)
+
+    def __base_url_default(self):
         return os.getcwd()
 
     def show(self, model):
