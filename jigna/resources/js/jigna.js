@@ -32,22 +32,6 @@ jigna.Bridge.prototype.on_object_changed = function(type, value) {
     }
 };
 
-jigna.Bridge.prototype.get_proxy = function(type, obj) {
-    var proxy;
-
-    if (type === 'primitive') {
-        proxy = obj;
-    }
-    else {
-        proxy = this._id_to_proxy_map[obj];
-        if (proxy === undefined) {
-            proxy = this._create_proxy(type, obj);
-        }
-    }
-
-    return proxy;
-};
-
 // Instances...
 jigna.Bridge.prototype.get_instance_info = function(id) {
     return this._bridge.get_instance_info(id);
@@ -59,7 +43,7 @@ jigna.Bridge.prototype.get_trait = function(id, trait_name) {
         throw result.exception;
     }
 
-    return this.get_proxy(result.type, result.value);
+    return this._get_proxy(result.type, result.value);
 };
 
 jigna.Bridge.prototype.set_trait = function(id, trait_name, value){
@@ -77,7 +61,7 @@ jigna.Bridge.prototype.get_list_item = function(id, index) {
         throw result.exception;
     }
 
-    return this.get_proxy(result.type, result.value);
+    return this._get_proxy(result.type, result.value);
 };
 
 jigna.Bridge.prototype.set_list_item = function(id, index, value){
@@ -89,6 +73,22 @@ jigna.Bridge.prototype.set_list_item = function(id, index, value){
 jigna.Bridge.prototype._create_proxy = function(type, obj) {
     var proxy = this._proxy_factory.create_proxy(type, obj);
     this._id_to_proxy_map[obj] = proxy;
+
+    return proxy;
+};
+
+jigna.Bridge.prototype._get_proxy = function(type, obj) {
+    var proxy;
+
+    if (type === 'primitive') {
+        proxy = obj;
+    }
+    else {
+        proxy = this._id_to_proxy_map[obj];
+        if (proxy === undefined) {
+            proxy = this._create_proxy(type, obj);
+        }
+    }
 
     return proxy;
 };
