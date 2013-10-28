@@ -13,37 +13,37 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-html = """
+body_html = """
     <div>
-        Name: <input ng-model="model.name">
-        Age: <input ng-model="model.age" type='number'>
-        <br/>
-        Fruits:
-            <ul>
-                <li ng-repeat="fruit in model.fruits track by $index">
-                   <input ng-model="model.fruits[$index]">
-                </li>
-            </ul>
+      Name: <input ng-model="model.name">
+      Age: <input ng-model="model.age" type='number'>
+      <br/>
+      Fruits:
+      <ul>
+        <li ng-repeat="fruit in model.fruits track by $index">
+          <input ng-model="model.fruits[$index]">
+        </li>
+      </ul>
 
-            <br/>
+      <br/>
 
-        Friends:
-            <ul>
-                <li ng-repeat="friend in model.friends">
-                    Name: <input ng-model="friend.name">
-                    Age: <input ng-model="friend.age" type="number">
-                    Fruits:
-                    <ul>
-                        <li ng-repeat="fruit in friend.fruits track by $index">
-                           <input ng-model="friend.fruits[$index]">
-                        </li>
-                    </ul>
-                </li>
-            </ul>
+      Friends:
+      <ul>
+        <li ng-repeat="friend in model.friends">
+          Name: <input ng-model="friend.name">
+          Age: <input ng-model="friend.age" type="number">
+          Fruits:
+          <ul>
+            <li ng-repeat="fruit in friend.fruits track by $index">
+              <input ng-model="friend.fruits[$index]">
+            </li>
+          </ul>
+        </li>
+      </ul>
     </div>
 """
 
-person_view = JignaView(html=html)
+person_view = JignaView(body_html=body_html)
 
 #### Entry point ####
 
