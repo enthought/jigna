@@ -42,8 +42,8 @@ DOCUMENT_HTML_TEMPLATE = """
         });
       </script>
 
-
       {{head_html}}
+
   </head>
 
   <body>
@@ -63,24 +63,18 @@ class Bridge(HasTraits):
     def _get_control(self):
         return self._widget.control
 
+    #### These 2 methods are the only ones that cross the JS-Python divide! ###
+
     def get(self, request):
         """ Handle a request from the JS-side. """
 
         request = json.loads(request)
         try:
             method = getattr(self, request['method_name'])
-            args   = request.get('args', ())
+            args   = self._resolve_object_ids(request.get('args', ()))
+            value  = method(*args)
 
-            actual = []
-            for arg in args:
-                if isinstance(arg, dict) and '__id__' in arg:
-                    arg = self._id_to_object_map[arg['__id__']]
-
-                actual.append(arg)
-
-            value  = method(*actual)
-
-            exception = None
+            exception   = None
             type, value = self._get_type_and_value(value)
 
         except Exception, e:
@@ -90,6 +84,19 @@ class Bridge(HasTraits):
 
         response = dict(exception=exception, type=type, value=value)
         return json.dumps(response)
+
+    def on_object_changed(self, type, value):
+        """ Let the JS-side know that a trait has changed. """
+
+        event = dict(type=type, value=value)
+        js    = 'jigna.bridge.on_object_changed(%r);' % json.dumps(event)
+
+        self._widget.execute_js(js)
+
+        return
+
+
+    ###########################################################################
 
     def call_method(self, id, method_name, *args, **kwargs):
         """ Call a method on a registered object. """
@@ -137,16 +144,6 @@ class Bridge(HasTraits):
         """ Load the given HTML into the bridge. """
 
         self._widget.load_html(html, base_url)
-
-        return
-
-    def on_object_changed(self, type, value):
-        """ Let the JS-side know that a trait has changed. """
-
-        event = dict(type=type, value=value)
-        js    = 'jigna.bridge.on_object_changed(%r);' % json.dumps(event)
-
-        self._widget.execute_js(js)
 
         return
 
@@ -251,6 +248,18 @@ class Bridge(HasTraits):
             type = 'primitive'
 
         return type, value
+
+    def _resolve_object_ids(self, values):
+        """ Resolve any object ids found in the given list of values. """
+
+        actual = []
+        for value in values:
+            if isinstance(value, dict) and '__id__' in value:
+                value = self._id_to_object_map[value['__id__']]
+
+            actual.append(value)
+
+        return actual
 
     #### Trait change handlers ################################################
 

@@ -33,13 +33,15 @@ jigna.Bridge.prototype.initialize = function(model_name, id) {
     );
 };
 
+// These 2 methods are the only ones that cross the JS-Python divide! /////////
+
 jigna.Bridge.prototype.get = function(request) {
-    var result = JSON.parse(this._bridge.get(JSON.stringify(request)));
-    if (result.exception !== null) {
-        throw result.exception;
+    var response = JSON.parse(this._bridge.get(JSON.stringify(request)));
+    if (response.exception !== null) {
+        throw response.value;
     }
 
-    return result;
+    return response;
 };
 
 jigna.Bridge.prototype.on_object_changed = function(event_json) {
@@ -59,7 +61,6 @@ jigna.Bridge.prototype.call_method = function(id, method_name, args) {
     var args = Array.prototype.slice.call(args);
     for (var index in args) {
         var value = args[index];
-
         if (value._id !== undefined) {
             args[index] = {'__id__' : value._id};
         }
@@ -250,12 +251,12 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._bridge);
     var info = this._bridge.get_instance_info(id);
 
-    var trait_names = info['trait_names']
+    var trait_names = info.trait_names;
     for (var index in trait_names) {
         this._add_trait_property(proxy, trait_names[index]);
     }
 
-    var method_names = info['method_names']
+    var method_names = info.method_names
     for (var index in method_names) {
         this._add_method(proxy, method_names[index]);
     }
