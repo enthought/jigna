@@ -136,12 +136,8 @@ class Bridge(HasTraits):
     def on_object_changed(self, type, value):
         """ Let the JS-side know that a trait has changed. """
 
-        js = Template("""
-            jigna.bridge.on_object_changed('{{type}}', {{value}});
-        """).render(
-            type   = type,
-            value  = repr(value)
-        )
+        event = dict(type=type, value=value)
+        js    = 'jigna.bridge.on_object_changed(%r);' % json.dumps(event)
 
         self._widget.execute_js(js)
 

@@ -42,8 +42,11 @@ jigna.Bridge.prototype.get = function(request) {
     return result;
 };
 
-jigna.Bridge.prototype.on_object_changed = function(type, value) {
-    this._create_proxy(type, value);
+jigna.Bridge.prototype.on_object_changed = function(event_json) {
+
+    var event = JSON.parse(event_json);
+
+    this._create_proxy(event.type, event.value);
 
     if (this.scope.$$phase === null){
         this.scope.$digest();
@@ -51,10 +54,13 @@ jigna.Bridge.prototype.on_object_changed = function(type, value) {
 };
 
 // Instances...
-jigna.Bridge.prototype.call_method = function(id, method_name) {
+jigna.Bridge.prototype.call_method = function(id, method_name, args) {
+
+    var actual = [id, method_name].concat(Array.prototype.slice.call(args));
+
     var request = {
         'method_name' : 'call_method',
-        'args'        : [id, method_name]
+        'args'        : actual
     };
 
     var response = this.get(request);
@@ -108,7 +114,7 @@ jigna.Bridge.prototype.get_list_info = function(id) {
 jigna.Bridge.prototype.get_list_item = function(id, index) {
     var request = {
         'method_name' : 'get_list_item',
-        'args'        : [id, index],
+        'args'        : [id, index]
     };
 
     var response = this.get(request);
@@ -119,7 +125,7 @@ jigna.Bridge.prototype.get_list_item = function(id, index) {
 jigna.Bridge.prototype.set_list_item = function(id, index, value){
     var request = {
         'method_name' : 'set_list_item',
-        'args'        : [id, index, value],
+        'args'        : [id, index, value]
     };
 
     this.get(request);
@@ -201,7 +207,7 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
 jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
     var method = function () {
         // In here, 'this' refers to the proxy!
-        return this._bridge.call_method(this._id, method_name);
+        return this._bridge.call_method(this._id, method_name, arguments);
     };
 
     proxy[method_name] = method;

@@ -11,7 +11,11 @@ class Person(HasTraits):
 
     def do_something(self):
         print 'do something!!!!!!!!'
-        
+
+    def upper(self, name):
+        self.name = name.upper()
+        print 'upper', self.name
+
 #### UI layer ####
 
 body_html = """
@@ -19,6 +23,7 @@ body_html = """
       Name: <input ng-model="model.name">
       Age: <input ng-model="model.age" type='number'>
       <button ng-click="model.do_something()">Do Something!</button>
+      <button ng-click="model.upper(model.name)">Upper</button>
     </div>
 """
 
