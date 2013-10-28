@@ -63,13 +63,15 @@ class Bridge(HasTraits):
     def _get_control(self):
         return self._widget.control
 
-    def call_method(self, id, method_name, *args, **kw):
-        """ Call a method on a registered object. """
+    def get(self, request):
+        """ Handle a request from the JS-side. """
 
+        request = json.loads(request)
         try:
-            obj    = self._id_to_object_map.get(id)
-            method = getattr(obj, method_name)
-            value  = method(*args, **kw)
+            method = getattr(self, request['method_name'])
+            args   = request.get('args', ())
+            kwargs = request.get('kwargs', {})
+            value  = method(*args, **kwargs)
 
             exception = None
             type, value = self._get_type_and_value(value)
@@ -79,7 +81,16 @@ class Bridge(HasTraits):
             type      = 'exception'
             value     = repr(sys.exc_value)
 
-        return dict(exception=exception, type=type, value=value)
+        response = dict(exception=exception, type=type, value=value)
+        return json.dumps(response)
+
+    def call_method(self, id, method_name, *args, **kwargs):
+        """ Call a method on a registered object. """
+
+        obj    = self._id_to_object_map.get(id)
+        method = getattr(obj, method_name)
+
+        return method(*args, **kwargs)
 
     def get_instance_info(self, id):
         """ Return a description of an instance. """
@@ -92,7 +103,7 @@ class Bridge(HasTraits):
             'method_names' : self._get_public_method_names(type(obj))
         }
 
-        return json.dumps(info)
+        return info
 
     def get_list_info(self, id):
         """ Returns a description of a list. """
@@ -104,36 +115,16 @@ class Bridge(HasTraits):
     def get_list_item(self, obj_id, index):
         """ Return the value of a list item. """
 
-        try:
-            obj   = self._id_to_object_map.get(obj_id)
-            value = obj[int(index)]
+        obj = self._id_to_object_map.get(obj_id)
 
-            exception = None
-            type, value = self._get_type_and_value(value)
-
-        except Exception, e:
-            exception = repr(sys.exc_type)
-            type      = 'exception'
-            value     = repr(sys.exc_value)
-
-        return dict(exception=exception, type=type, value=value)
+        return obj[int(index)]
 
     def get_trait(self, obj_id, trait_name):
         """ Return the value of a trait on an object. """
 
-        try:
-            obj   = self._id_to_object_map.get(obj_id)
-            value = getattr(obj, trait_name)
+        obj = self._id_to_object_map.get(obj_id)
 
-            exception = None
-            type, value = self._get_type_and_value(value)
-
-        except Exception, e:
-            exception = repr(sys.exc_type)
-            type      = 'exception'
-            value     = repr(sys.exc_value)
-
-        return json.dumps(dict(exception=exception, type=type, value=value))
+        return getattr(obj, trait_name)
 
     def load_html(self, html, base_url):
         """ Load the given HTML into the bridge. """
@@ -167,24 +158,17 @@ class Bridge(HasTraits):
     def set_list_item(self, id, index, value):
         """ Set an item in a list. """
 
-        obj   = self._id_to_object_map.get(id)
-        value = json.loads(value)
+        obj = self._id_to_object_map.get(id)
+        obj[index] = value
 
-        # fixme: index should be an int already!
-        obj[int(index)] = value
-
-        # fixme: return result? exceptions?
         return
 
     def set_trait(self, id, trait_name, value):
         """ Set a trait on an object. """
 
-        obj   = self._id_to_object_map.get(id)
-        value = json.loads(value)
-
+        obj  = self._id_to_object_map.get(id)
         setattr(obj, trait_name, value)
 
-        # fixme: return result? exceptions?
         return
 
     #### Private protocol #####################################################
@@ -209,15 +193,7 @@ class Bridge(HasTraits):
         }
 
         widget = HTMLWidget(
-            callbacks        = [
-                ('call_method',       self.call_method),
-                ('get_instance_info', self.get_instance_info),
-                ('get_trait',         self.get_trait),
-                ('set_trait',         self.set_trait),
-                ('get_list_info',     self.get_list_info),
-                ('get_list_item',     self.get_list_item),
-                ('set_list_item',     self.set_list_item),
-            ],
+            callbacks        = [('get', self.get)],
             python_namespace = 'python_bridge',
             hosts            = hosts,
             open_externally  = True,

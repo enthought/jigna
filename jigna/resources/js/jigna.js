@@ -33,6 +33,15 @@ jigna.Bridge.prototype.initialize = function(model_name, id) {
     );
 };
 
+jigna.Bridge.prototype.get = function(request) {
+    var result = JSON.parse(this._bridge.get(JSON.stringify(request)));
+    if (result.exception !== null) {
+        throw result.exception;
+    }
+
+    return result;
+};
+
 jigna.Bridge.prototype.on_object_changed = function(type, value) {
     this._create_proxy(type, value);
 
@@ -43,43 +52,77 @@ jigna.Bridge.prototype.on_object_changed = function(type, value) {
 
 // Instances...
 jigna.Bridge.prototype.call_method = function(id, method_name) {
-    return this._bridge.call_method(id, method_name);
+    var request = {
+        'method_name' : 'call_method',
+        'args'        : [id, method_name]
+    };
+
+    var response = this.get(request);
+
+    return response.value;
 };
 
 jigna.Bridge.prototype.get_instance_info = function(id) {
-    return JSON.parse(this._bridge.get_instance_info(id));
+    var request = {
+        'method_name' : 'get_instance_info',
+        'args'        : [id]
+    };
+
+    var response = this.get(request);
+
+    return response.value;
 };
 
 jigna.Bridge.prototype.get_trait = function(id, trait_name) {
-    var result = JSON.parse(this._bridge.get_trait(id, trait_name));
-    console.log(result);
-    if (result.exception !== null) {
-        throw result.exception;
-    }
+    var request = {
+        'method_name' : 'get_trait',
+        'args'        : [id, trait_name]
+    };
 
-    return this._get_proxy(result.type, result.value);
+    var response = this.get(request);
+
+    return this._get_proxy(response.type, response.value);
 };
 
-jigna.Bridge.prototype.set_trait = function(id, trait_name, value){
-    return this._bridge.set_trait(id, trait_name, JSON.stringify(value));
+jigna.Bridge.prototype.set_trait = function(id, trait_name, value) {
+    var request = {
+        'method_name' : 'set_trait',
+        'args'        : [id, trait_name, value]
+    };
+
+    this.get(request);
 };
 
 // Lists...
 jigna.Bridge.prototype.get_list_info = function(id) {
-    return this._bridge.get_list_info(id);
+    var request = {
+        'method_name' : 'get_list_info',
+        'args'        : [id]
+    };
+
+    var response = this.get(request);
+
+    return response.value;
 };
 
 jigna.Bridge.prototype.get_list_item = function(id, index) {
-    var result = this._bridge.get_list_item(id, index);
-    if (result.exception !== null) {
-        throw result.exception;
-    }
+    var request = {
+        'method_name' : 'get_list_item',
+        'args'        : [id, index],
+    };
 
-    return this._get_proxy(result.type, result.value);
+    var response = this.get(request);
+
+    return this._get_proxy(response.type, response.value);
 };
 
 jigna.Bridge.prototype.set_list_item = function(id, index, value){
-    return this._bridge.set_list_item(id, index, JSON.stringify(value));
+    var request = {
+        'method_name' : 'set_list_item',
+        'args'        : [id, index, value],
+    };
+
+    this.get(request);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
