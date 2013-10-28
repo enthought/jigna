@@ -12,18 +12,18 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-html = """
+body_html = """
     <div>
-        Name: <input ng-model="model.name">
-        Age: <input ng-model="model.age" type='number'>
-        <br/>
-        Friend name: <input ng-model="model.friend.name">
-        <br/>
-        Friend age: <input ng-model="model.friend.age" type='number'>
+      Name: <input ng-model="model.name">
+      Age: <input ng-model="model.age" type='number'>
+      <br/>
+      Friend name: <input ng-model="model.friend.name">
+      <br/>
+      Friend age: <input ng-model="model.friend.age" type='number'>
     </div>
 """
 
-person_view = JignaView(html=html)
+person_view = JignaView(body_html=body_html)
 
 #### Entry point ####
 
