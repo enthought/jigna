@@ -56,11 +56,18 @@ jigna.Bridge.prototype.on_object_changed = function(event_json) {
 // Instances...
 jigna.Bridge.prototype.call_method = function(id, method_name, args) {
 
-    var actual = [id, method_name].concat(Array.prototype.slice.call(args));
+    var args = Array.prototype.slice.call(args);
+    for (var index in args) {
+        var value = args[index];
+
+        if (value._id !== undefined) {
+            args[index] = {'__id__' : value._id};
+        }
+    };
 
     var request = {
         'method_name' : 'call_method',
-        'args'        : actual
+        'args'        : [id, method_name].concat(args)
     };
 
     var response = this.get(request);

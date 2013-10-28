@@ -16,6 +16,9 @@ class Person(HasTraits):
         self.name = name.upper()
         print 'upper', self.name
 
+    def pass_instance(self, obj):
+        print 'got obj', obj.name
+
 #### UI layer ####
 
 body_html = """
@@ -24,6 +27,7 @@ body_html = """
       Age: <input ng-model="model.age" type='number'>
       <button ng-click="model.do_something()">Do Something!</button>
       <button ng-click="model.upper(model.name)">Upper</button>
+      <button ng-click="model.pass_instance(model)">Pass Instance</button>
     </div>
 """
 

@@ -70,8 +70,15 @@ class Bridge(HasTraits):
         try:
             method = getattr(self, request['method_name'])
             args   = request.get('args', ())
-            kwargs = request.get('kwargs', {})
-            value  = method(*args, **kwargs)
+
+            actual = []
+            for arg in args:
+                if isinstance(arg, dict) and '__id__' in arg:
+                    arg = self._id_to_object_map[arg['__id__']]
+
+                actual.append(arg)
+
+            value  = method(*actual)
 
             exception = None
             type, value = self._get_type_and_value(value)
