@@ -1,11 +1,11 @@
 //
 // Enthought product code
-// 
+//
 // (C) Copyright 2013 Enthought, Inc., Austin, TX
 // All right reserved.
-// 
+//
 // This file is confidential and NOT open source.  Do not distribute.
-// 
+//
 
 var jigna = {};
 
@@ -42,12 +42,17 @@ jigna.Bridge.prototype.on_object_changed = function(type, value) {
 };
 
 // Instances...
+jigna.Bridge.prototype.call_method = function(id, method_name) {
+    return this._bridge.call_method(id, method_name);
+};
+
 jigna.Bridge.prototype.get_instance_info = function(id) {
-    return this._bridge.get_instance_info(id);
+    return JSON.parse(this._bridge.get_instance_info(id));
 };
 
 jigna.Bridge.prototype.get_trait = function(id, trait_name) {
-    var result = this._bridge.get_trait(id, trait_name);
+    var result = JSON.parse(this._bridge.get_trait(id, trait_name));
+    console.log(result);
     if (result.exception !== null) {
         throw result.exception;
     }
@@ -150,6 +155,15 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
     this._add_property(proxy, index, get, set);
 };
 
+jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
+    var method = function () {
+        // In here, 'this' refers to the proxy!
+        return this._bridge.call_method(this._id, method_name);
+    };
+
+    proxy[method_name] = method;
+};
+
 jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
     var descriptor = {
         get          : get,
@@ -178,9 +192,16 @@ jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._bridge);
-    var trait_names = this._bridge.get_instance_info(id);
+    var info = this._bridge.get_instance_info(id);
+
+    var trait_names = info['trait_names']
     for (var index in trait_names) {
         this._add_trait_property(proxy, trait_names[index]);
+    }
+
+    var method_names = info['method_names']
+    for (var index in method_names) {
+        this._add_method(proxy, method_names[index]);
     }
 
     return proxy;
@@ -218,8 +239,8 @@ jigna.Proxy = function(id, bridge) {
 
 $(document).ready(
     function() {
-	var scope = $(document.body).scope();
-	jigna.bridge = new jigna.Bridge(scope);
+        var scope = $(document.body).scope();
+        jigna.bridge = new jigna.Bridge(scope);
     }
 );
 

@@ -9,6 +9,7 @@
 
 
 # Standard library.
+import inspect
 import json
 import os
 import sys
@@ -40,7 +41,7 @@ DOCUMENT_HTML_TEMPLATE = """
           jigna.bridge.initialize('{{model_name}}', '{{id}}');
         });
       </script>
-    
+
 
       {{head_html}}
   </head>
@@ -62,13 +63,36 @@ class Bridge(HasTraits):
     def _get_control(self):
         return self._widget.control
 
+    def call_method(self, id, method_name, *args, **kw):
+        """ Call a method on a registered object. """
+
+        try:
+            obj    = self._id_to_object_map.get(id)
+            method = getattr(obj, method_name)
+            value  = method(*args, **kw)
+
+            exception = None
+            type, value = self._get_type_and_value(value)
+
+        except Exception, e:
+            exception = repr(sys.exc_type)
+            type      = 'exception'
+            value     = repr(sys.exc_value)
+
+        return dict(exception=exception, type=type, value=value)
+
     def get_instance_info(self, id):
         """ Return a description of an instance. """
 
         obj = self._id_to_object_map.get(id)
         self.register_object(obj)
 
-        return obj.editable_traits()
+        info = {
+            'trait_names'  : obj.editable_traits(),
+            'method_names' : self._get_public_method_names(type(obj))
+        }
+
+        return json.dumps(info)
 
     def get_list_info(self, id):
         """ Returns a description of a list. """
@@ -88,11 +112,11 @@ class Bridge(HasTraits):
             type, value = self._get_type_and_value(value)
 
         except Exception, e:
-            exception = repr(sys.exc_type),
-            type      = 'exception',
+            exception = repr(sys.exc_type)
+            type      = 'exception'
             value     = repr(sys.exc_value)
 
-        return dict(exception=None, type=type, value=value)
+        return dict(exception=exception, type=type, value=value)
 
     def get_trait(self, obj_id, trait_name):
         """ Return the value of a trait on an object. """
@@ -101,15 +125,15 @@ class Bridge(HasTraits):
             obj   = self._id_to_object_map.get(obj_id)
             value = getattr(obj, trait_name)
 
-            exception = None,
+            exception = None
             type, value = self._get_type_and_value(value)
 
         except Exception, e:
-            exception = repr(sys.exc_type),
-            type      = 'exception',
+            exception = repr(sys.exc_type)
+            type      = 'exception'
             value     = repr(sys.exc_value)
 
-        return dict(exception=None, type=type, value=value)
+        return json.dumps(dict(exception=exception, type=type, value=value))
 
     def load_html(self, html, base_url):
         """ Load the given HTML into the bridge. """
@@ -186,6 +210,7 @@ class Bridge(HasTraits):
 
         widget = HTMLWidget(
             callbacks        = [
+                ('call_method',       self.call_method),
                 ('get_instance_info', self.get_instance_info),
                 ('get_trait',         self.get_trait),
                 ('set_trait',         self.set_trait),
@@ -201,6 +226,26 @@ class Bridge(HasTraits):
         widget.create()
 
         return widget
+
+    def _get_public_method_names(self, cls):
+        """ Get the names of all public methods on a class.
+
+        Return a list of strings.
+
+        """
+
+        public_methods = []
+        for c in inspect.getmro(cls):
+            if c is HasTraits:
+                break
+
+            for name in c.__dict__:
+                if not name.startswith( '_' ):
+                    value = getattr(c, name)
+                    if inspect.ismethod(value):
+                        public_methods.append(name)
+
+        return public_methods
 
     def _get_type_and_value(self, value):
         """ Return a tuple of the form (type, value) for the value.
@@ -296,7 +341,7 @@ class JignaView(HasTraits):
             model_name = JignaView.MODEL_NAME,
             id         = id(model),
             body_html  = self.body_html,
-            head_html  = self.head_html 
+            head_html  = self.head_html
         )
 
         return html
