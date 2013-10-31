@@ -110,8 +110,14 @@ jigna.Broker.prototype.set_list_item = function(id, index, value){
 // Private protocol //////////////////////////////////////////////////////////
 
 jigna.Broker.prototype._create_proxy = function(type, obj) {
-    var proxy = this._proxy_factory.create_proxy(type, obj);
-    this._id_to_proxy_map[obj] = proxy;
+    var proxy;
+    if (type === 'primitive') {
+	proxy = obj;
+    }
+    else {
+	proxy = this._proxy_factory.create_proxy(type, obj);
+	this._id_to_proxy_map[obj] = proxy;
+    };
 
     return proxy;
 };
@@ -157,19 +163,14 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
 
     var proxy;
 
-    if (type === 'primitive') {
-        proxy = obj;
+    if (type === 'instance') {
+	proxy = this._create_instance_proxy(obj);
+    }
+    else if (type === 'list') {
+	proxy = this._create_list_proxy(obj);
     }
     else {
-        if (type === 'instance') {
-            proxy = this._create_instance_proxy(obj);
-        }
-        else if (type === 'list') {
-            proxy = this._create_list_proxy(obj);
-        }
-        else {
-            throw 'cannot create proxy for type: ' + type;
-        }
+	throw 'cannot create proxy for type: ' + type;
     }
 
     return proxy;

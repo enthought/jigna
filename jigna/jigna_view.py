@@ -95,7 +95,6 @@ class Bridge(HasTraits):
 
         return
 
-
     ###########################################################################
 
     def call_method(self, id, method_name, *args, **kwargs):
