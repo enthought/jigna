@@ -33,16 +33,16 @@ from jigna.core.wsgi import FileLoader
 DOCUMENT_HTML_TEMPLATE = """
 <html ng-app>
   <head>
-      <script type="text/javascript" src="{{jquery}}"></script>
-      <script type="text/javascript" src="{{angular}}"></script>
-      <script type="text/javascript" src="{{jigna}}"></script>
-      <script type="text/javascript">
-        $(document).ready(function(){
-          jigna.initialize('{{model_name}}', '{{id}}');
-        });
-      </script>
+    <script type="text/javascript" src="{{jquery}}"></script>
+    <script type="text/javascript" src="{{angular}}"></script>
+    <script type="text/javascript" src="{{jigna}}"></script>
+    <script type="text/javascript">
+      $(document).ready(function(){
+        jigna.initialize('{{model_name}}', '{{id}}');
+      });
+    </script>
 
-      {{head_html}}
+    {{head_html}}
 
   </head>
 
