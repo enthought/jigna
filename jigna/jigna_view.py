@@ -38,29 +38,6 @@ DOCUMENT_HTML_TEMPLATE = """
       <script type="text/javascript" src="{{jigna}}"></script>
       <script type="text/javascript">
         $(document).ready(function(){
-          jigna.broker = new jigna.Broker();
-          jigna.broker.initialize('{{model_name}}', '{{id}}');
-        });
-      </script>
-
-      {{head_html}}
-
-  </head>
-
-  <body>
-    {{body_html}}
-  </body>
-</html>
-"""
-
-DOCUMENT_HTML_TEMPLATE = """
-<html ng-app>
-  <head>
-      <script type="text/javascript" src="{{jquery}}"></script>
-      <script type="text/javascript" src="{{angular}}"></script>
-      <script type="text/javascript" src="{{jigna}}"></script>
-      <script type="text/javascript">
-        $(document).ready(function(){
           jigna.initialize('{{model_name}}', '{{id}}');
         });
       </script>
@@ -217,7 +194,7 @@ class Bridge(HasTraits):
 
         widget = HTMLWidget(
             callbacks        = [('get', self.get)],
-            python_namespace = 'python_bridge',
+            python_namespace = 'python',
             hosts            = hosts,
             open_externally  = True,
             debug            = True

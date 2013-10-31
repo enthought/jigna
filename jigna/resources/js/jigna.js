@@ -21,11 +21,11 @@ jigna.initialize = function(model_name, id) {
 
 jigna.Bridge = function() {
     // Private protocol
-    this._bridge = window['python_bridge'];
+    this._python = window['python'];
 };
 
 jigna.Bridge.prototype.get = function(request) {
-    var response = JSON.parse(this._bridge.get(JSON.stringify(request)));
+    var response = JSON.parse(this._python.get(JSON.stringify(request)));
     if (response.exception !== null) {
         throw response.value;
     }
@@ -69,7 +69,8 @@ jigna.Broker.prototype.on_object_changed = function(event_json) {
 
 // Instances...
 jigna.Broker.prototype.call_method = function(id, method_name, args) {
-
+    // fixme: Why is this method different to the others... Could we put
+    // this id wrangling in 'send_request'?
     var args = Array.prototype.slice.call(args);
     for (var index in args) {
         var value = args[index];
