@@ -7,33 +7,17 @@
 // This file is confidential and NOT open source.  Do not distribute.
 //
 
+// Namespace for all Jigna-related objects.
 var jigna = {};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Bridge
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Bridge = function(scope) {
-    // Bridge protocol.
-    this.scope = scope;
-
+jigna.Bridge = function() {
     // Private protocol
-    this._bridge          = window['python_bridge'];
-    this._id_to_proxy_map = {};
-    this._proxy_factory   = new jigna.ProxyFactory(this);
+    this._bridge = window['python_bridge'];
 };
-
-jigna.Bridge.prototype.initialize = function(model_name, id) {
-    // Get a proxy for the object identified by Id...
-    var proxy = this._create_proxy('instance', id);
-
-    // ... and expose it with the name 'model_name' to AngularJS.
-    this.scope.$apply(
-        function() {jigna.bridge.scope[model_name] = proxy;}
-    );
-};
-
-// These 2 methods are the only ones that cross the JS-Python divide! /////////
 
 jigna.Bridge.prototype.get = function(request) {
     var response = JSON.parse(this._bridge.get(JSON.stringify(request)));
@@ -44,19 +28,42 @@ jigna.Bridge.prototype.get = function(request) {
     return response;
 };
 
-jigna.Bridge.prototype.on_object_changed = function(event_json) {
+///////////////////////////////////////////////////////////////////////////////
+// Broker
+///////////////////////////////////////////////////////////////////////////////
+
+jigna.Broker = function() {
+    // Private protocol
+    this._bridge          = new jigna.Bridge();
+    this._id_to_proxy_map = {};
+    this._proxy_factory   = new jigna.ProxyFactory(this);
+    this._scope           = $(document.body).scope();
+};
+
+jigna.Broker.prototype.initialize = function(model_name, id) {
+    // Get a proxy for the object identified by Id...
+    var proxy = this._create_proxy('instance', id);
+
+    // ... and expose it with the name 'model_name' to AngularJS.
+    var scope = this._scope;
+    scope.$apply(function() {scope[model_name] = proxy;});
+};
+
+// fixme: This smells like part of bridge as it is called directly from
+// Python and has JSON-malarky in it!
+jigna.Broker.prototype.on_object_changed = function(event_json) {
 
     var event = JSON.parse(event_json);
 
     this._create_proxy(event.type, event.value);
 
-    if (this.scope.$$phase === null){
-        this.scope.$digest();
+    if (this._scope.$$phase === null){
+        this._scope.$digest();
     }
 };
 
 // Instances...
-jigna.Bridge.prototype.call_method = function(id, method_name, args) {
+jigna.Broker.prototype.call_method = function(id, method_name, args) {
 
     var args = Array.prototype.slice.call(args);
     for (var index in args) {
@@ -71,84 +78,46 @@ jigna.Bridge.prototype.call_method = function(id, method_name, args) {
         'args'        : [id, method_name].concat(args)
     };
 
-    var response = this.get(request);
-
-    return response.value;
-};
-
-jigna.Bridge.prototype.get_instance_info = function(id) {
-    var request = {
-        'method_name' : 'get_instance_info',
-        'args'        : [id]
-    };
-
-    var response = this.get(request);
-
-    return response.value;
-};
-
-jigna.Bridge.prototype.get_trait = function(id, trait_name) {
-    var request = {
-        'method_name' : 'get_trait',
-        'args'        : [id, trait_name]
-    };
-
-    var response = this.get(request);
+    var response = this._bridge.get(request);
 
     return this._get_proxy(response.type, response.value);
 };
 
-jigna.Bridge.prototype.set_trait = function(id, trait_name, value) {
-    var request = {
-        'method_name' : 'set_trait',
-        'args'        : [id, trait_name, value]
-    };
+jigna.Broker.prototype.get_instance_info = function(id) {
+    return this._send_request('get_instance_info', [id]);
+};
 
-    this.get(request);
+jigna.Broker.prototype.get_trait = function(id, trait_name) {
+    return this._send_request('get_trait', [id, trait_name]);
+};
+
+jigna.Broker.prototype.set_trait = function(id, trait_name, value) {
+    return this._send_request('set_trait', [id, trait_name, value]);
 };
 
 // Lists...
-jigna.Bridge.prototype.get_list_info = function(id) {
-    var request = {
-        'method_name' : 'get_list_info',
-        'args'        : [id]
-    };
-
-    var response = this.get(request);
-
-    return response.value;
+jigna.Broker.prototype.get_list_info = function(id) {
+    return this._send_request('get_list_info', [id]);
 };
 
-jigna.Bridge.prototype.get_list_item = function(id, index) {
-    var request = {
-        'method_name' : 'get_list_item',
-        'args'        : [id, index]
-    };
-
-    var response = this.get(request);
-
-    return this._get_proxy(response.type, response.value);
+jigna.Broker.prototype.get_list_item = function(id, index) {
+    return this._send_request('get_list_item', [id, index]);
 };
 
-jigna.Bridge.prototype.set_list_item = function(id, index, value){
-    var request = {
-        'method_name' : 'set_list_item',
-        'args'        : [id, index, value]
-    };
-
-    this.get(request);
+jigna.Broker.prototype.set_list_item = function(id, index, value){
+    return this._send_request('set_list_item', [id, index, value]);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
 
-jigna.Bridge.prototype._create_proxy = function(type, obj) {
+jigna.Broker.prototype._create_proxy = function(type, obj) {
     var proxy = this._proxy_factory.create_proxy(type, obj);
     this._id_to_proxy_map[obj] = proxy;
 
     return proxy;
 };
 
-jigna.Bridge.prototype._get_proxy = function(type, obj) {
+jigna.Broker.prototype._get_proxy = function(type, obj) {
     var proxy;
 
     if (type === 'primitive') {
@@ -164,13 +133,24 @@ jigna.Bridge.prototype._get_proxy = function(type, obj) {
     return proxy;
 };
 
+jigna.Broker.prototype._send_request = function(method_name, args) {
+    var request = {
+        'method_name' : method_name,
+        'args'        : args
+    };
+
+    var response = this._bridge.get(request);
+
+    return this._get_proxy(response.type, response.value);
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // ProxyFactory
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.ProxyFactory = function(bridge) {
+jigna.ProxyFactory = function(broker) {
     // Private protocol.
-    this._bridge = bridge;
+    this._broker = broker;
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
@@ -201,12 +181,12 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
 jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
     var get = function() {
         // In here, 'this' refers to the proxy!
-        return this._bridge.get_list_item(this._id, index);
+        return this._broker.get_list_item(this._id, index);
     };
 
     var set = function(value) {
         // In here, 'this' refers to the proxy!
-        this._bridge.set_list_item(this._id, index, value);
+        this._broker.set_list_item(this._id, index, value);
     };
 
     this._add_property(proxy, index, get, set);
@@ -215,7 +195,7 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
 jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
     var method = function () {
         // In here, 'this' refers to the proxy!
-        return this._bridge.call_method(this._id, method_name, arguments);
+        return this._broker.call_method(this._id, method_name, arguments);
     };
 
     proxy[method_name] = method;
@@ -236,27 +216,27 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
 jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
     var get = function() {
         // In here, 'this' refers to the proxy!
-        return this._bridge.get_trait(this._id, trait_name);
+        return this._broker.get_trait(this._id, trait_name);
     };
 
     var set = function(value) {
         // In here, 'this' refers to the proxy!
-        this._bridge.set_trait(this._id, trait_name, value);
+        this._broker.set_trait(this._id, trait_name, value);
     };
 
     this._add_property(proxy, trait_name, get, set);
 };
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
-    var proxy = new jigna.Proxy(id, this._bridge);
-    var info = this._bridge.get_instance_info(id);
+    var proxy = new jigna.Proxy(id, this._broker);
+    var info = this._broker.get_instance_info(id);
 
     var trait_names = info.trait_names;
     for (var index in trait_names) {
         this._add_trait_property(proxy, trait_names[index]);
     }
 
-    var method_names = info.method_names
+    var method_names = info.method_names;
     for (var index in method_names) {
         this._add_method(proxy, method_names[index]);
     }
@@ -265,8 +245,9 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 };
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
-    var proxy = new jigna.Proxy(id, this._bridge);
-    var list_length = this._bridge.get_list_info(id);
+    var proxy = new jigna.Proxy(id, this._broker);
+    var list_length = this._broker.get_list_info(id);
+
     for (var index=0; index < list_length; index++) {
         this._add_list_item_property(proxy, index);
     }
@@ -278,7 +259,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
 // Proxy
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Proxy = function(id, bridge) {
+jigna.Proxy = function(id, broker) {
     var descriptor = {
         configurable : true,
         enumerable   : false,
@@ -288,16 +269,15 @@ jigna.Proxy = function(id, bridge) {
     descriptor.value = id;
     Object.defineProperty(this, '_id', descriptor);
 
-    descriptor.value = bridge;
-    Object.defineProperty(this, '_bridge', descriptor);
+    descriptor.value = broker;
+    Object.defineProperty(this, '_broker', descriptor);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 
 $(document).ready(
     function() {
-        var scope = $(document.body).scope();
-        jigna.bridge = new jigna.Bridge(scope);
+        jigna.broker = new jigna.Broker();
     }
 );
 

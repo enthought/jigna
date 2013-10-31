@@ -38,7 +38,7 @@ DOCUMENT_HTML_TEMPLATE = """
       <script type="text/javascript" src="{{jigna}}"></script>
       <script type="text/javascript">
         $(document).ready(function(){
-          jigna.bridge.initialize('{{model_name}}', '{{id}}');
+          jigna.broker.initialize('{{model_name}}', '{{id}}');
         });
       </script>
 
@@ -89,7 +89,7 @@ class Bridge(HasTraits):
         """ Let the JS-side know that a trait has changed. """
 
         event = dict(type=type, value=value)
-        js    = 'jigna.bridge.on_object_changed(%r);' % json.dumps(event)
+        js    = 'jigna.broker.on_object_changed(%r);' % json.dumps(event)
 
         self._widget.execute_js(js)
 
