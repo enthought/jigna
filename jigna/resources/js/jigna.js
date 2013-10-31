@@ -10,6 +10,11 @@
 // Namespace for all Jigna-related objects.
 var jigna = {};
 
+jigna.initialize = function(model_name, id) {
+    jigna.broker = new jigna.Broker();
+    jigna.broker.initialize(model_name, id);
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Bridge
 ///////////////////////////////////////////////////////////////////////////////
@@ -73,14 +78,7 @@ jigna.Broker.prototype.call_method = function(id, method_name, args) {
         }
     };
 
-    var request = {
-        'method_name' : 'call_method',
-        'args'        : [id, method_name].concat(args)
-    };
-
-    var response = this._bridge.get(request);
-
-    return this._get_proxy(response.type, response.value);
+    return this._send_request('call_method', [id, method_name].concat(args));
 };
 
 jigna.Broker.prototype.get_instance_info = function(id) {
@@ -272,13 +270,5 @@ jigna.Proxy = function(id, broker) {
     descriptor.value = broker;
     Object.defineProperty(this, '_broker', descriptor);
 };
-
-///////////////////////////////////////////////////////////////////////////////
-
-$(document).ready(
-    function() {
-        jigna.broker = new jigna.Broker();
-    }
-);
 
 // EOF ////////////////////////////////////////////////////////////////////////
