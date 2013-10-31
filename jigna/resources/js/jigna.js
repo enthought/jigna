@@ -73,8 +73,8 @@ jigna.Broker.prototype.call_method = function(id, method_name, args) {
     var args = Array.prototype.slice.call(args);
     for (var index in args) {
         var value = args[index];
-        if (value._id !== undefined) {
-            args[index] = {'__id__' : value._id};
+        if (value.__id__ !== undefined) {
+            args[index] = {'__id__' : value.__id__};
         }
     };
 
@@ -179,12 +179,12 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
 jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
     var get = function() {
         // In here, 'this' refers to the proxy!
-        return this._broker.get_list_item(this._id, index);
+        return this.__broker__.get_list_item(this.__id__, index);
     };
 
     var set = function(value) {
         // In here, 'this' refers to the proxy!
-        this._broker.set_list_item(this._id, index, value);
+        this.__broker__.set_list_item(this.__id__, index, value);
     };
 
     this._add_property(proxy, index, get, set);
@@ -193,7 +193,7 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
 jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
     var method = function () {
         // In here, 'this' refers to the proxy!
-        return this._broker.call_method(this._id, method_name, arguments);
+        return this.__broker__.call_method(this.__id__, method_name, arguments);
     };
 
     proxy[method_name] = method;
@@ -214,12 +214,12 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
 jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
     var get = function() {
         // In here, 'this' refers to the proxy!
-        return this._broker.get_trait(this._id, trait_name);
+        return this.__broker__.get_trait(this.__id__, trait_name);
     };
 
     var set = function(value) {
         // In here, 'this' refers to the proxy!
-        this._broker.set_trait(this._id, trait_name, value);
+        this.__broker__.set_trait(this.__id__, trait_name, value);
     };
 
     this._add_property(proxy, trait_name, get, set);
@@ -265,10 +265,10 @@ jigna.Proxy = function(id, broker) {
     };
 
     descriptor.value = id;
-    Object.defineProperty(this, '_id', descriptor);
+    Object.defineProperty(this, '__id__', descriptor);
 
     descriptor.value = broker;
-    Object.defineProperty(this, '_broker', descriptor);
+    Object.defineProperty(this, '__broker__', descriptor);
 };
 
 // EOF ////////////////////////////////////////////////////////////////////////
