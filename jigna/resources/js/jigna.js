@@ -11,7 +11,8 @@
 var jigna = {};
 
 jigna.initialize = function(model_name, id) {
-    jigna.broker = new jigna.Broker();
+    jigna.bridge = new jigna.Bridge();
+    jigna.broker = new jigna.Broker(jigna.bridge);
     jigna.broker.initialize(model_name, id);
 };
 
@@ -31,6 +32,7 @@ jigna.Bridge.prototype.handle_request = function(jsonized_request) {
 
     request = JSON.parse(jsonized_request);
     try {
+	// fixme: Hidden circular ref to broker!
         method = jigna.broker[request.method_name];
         value  = method.apply(jigna.broker, request.args);
 
@@ -86,9 +88,9 @@ jigna.Bridge.prototype._get_type_and_value = function(value) {
 // Broker
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Broker = function() {
+jigna.Broker = function(bridge) {
     // Private protocol
-    this._bridge          = new jigna.Bridge();
+    this._bridge          = bridge;
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
     this._scope           = $(document.body).scope();

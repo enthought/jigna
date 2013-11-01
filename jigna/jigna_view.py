@@ -93,7 +93,7 @@ class Bridge(HasTraits):
 
         jsonized_request  = json.dumps(request)
         jsonized_response = self.widget.execute_js(
-            'jigna.broker._bridge.handle_request(%r);' % jsonized_request
+            'jigna.bridge.handle_request(%r);' % jsonized_request
         )
 
         response = json.loads(jsonized_response)
