@@ -26,20 +26,23 @@ jigna.Bridge = function() {
     this._python = window['python'];
 };
 
-jigna.Bridge.prototype.send_request = function(method_name, args) {
-    var request = {
-        'method_name' : method_name,
-        'args'        : args
-    };
+jigna.Bridge.prototype.send_request = function(request) {
+    var jsonized_request = JSON.stringify(request);
 
-    var response = JSON.parse(
-        this._python.handle_request(JSON.stringify(request))
-    );
+    var response = JSON.parse(this._python.handle_request(jsonized_request));
     if (response.exception !== null) {
         throw response.value;
     }
 
     return response;
+};
+
+jigna.Bridge.prototype.handle_request = function(jsonized_request) {
+    var request = JSON.parse(jsonized_request);
+
+    var method  = jigna.broker[request.method_name];
+
+    method.apply(jigna.broker, request.args);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -63,11 +66,7 @@ jigna.Broker.prototype.initialize = function(model_name, id) {
     scope.$apply(function() {scope[model_name] = proxy;});
 };
 
-// fixme: This smells like part of bridge as it is called directly from
-// Python and has JSON-malarky in it!
-jigna.Broker.prototype.on_object_changed = function(event_json) {
-
-    var event = JSON.parse(event_json);
+jigna.Broker.prototype.on_object_changed = function(event) {
 
     this._create_proxy(event.type, event.value);
 
@@ -121,11 +120,11 @@ jigna.Broker.prototype.set_list_item = function(id, index, value){
 jigna.Broker.prototype._create_proxy = function(type, obj) {
     var proxy;
     if (type === 'primitive') {
-	proxy = obj;
+        proxy = obj;
     }
     else {
-	proxy = this._proxy_factory.create_proxy(type, obj);
-	this._id_to_proxy_map[obj] = proxy;
+        proxy = this._proxy_factory.create_proxy(type, obj);
+        this._id_to_proxy_map[obj] = proxy;
     };
 
     return proxy;
@@ -148,7 +147,12 @@ jigna.Broker.prototype._get_proxy = function(type, obj) {
 };
 
 jigna.Broker.prototype._send_request = function(method_name, args) {
-    var response = this._bridge.send_request(method_name, args);
+    var request = {
+        'method_name' : method_name,
+        'args'        : args
+    };
+
+    var response = this._bridge.send_request(request);
 
     return this._get_proxy(response.type, response.value);
 };
@@ -168,13 +172,13 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
     var proxy;
 
     if (type === 'instance') {
-	proxy = this._create_instance_proxy(obj);
+        proxy = this._create_instance_proxy(obj);
     }
     else if (type === 'list') {
-	proxy = this._create_list_proxy(obj);
+        proxy = this._create_list_proxy(obj);
     }
     else {
-	throw 'cannot create proxy for type: ' + type;
+        throw 'cannot create proxy for type: ' + type;
     }
 
     return proxy;

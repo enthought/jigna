@@ -86,11 +86,12 @@ class Bridge(HasTraits):
         response = dict(exception=exception, type=type, value=value)
         return json.dumps(response)
 
-    def on_object_changed(self, type, value):
-        """ Let the JS-side know that a trait has changed. """
+    def send_request(self, request):
+        """ Send a request to the JS-side. """
 
-        event = dict(type=type, value=value)
-        js    = 'jigna.broker.on_object_changed(%r);' % json.dumps(event)
+        jsonized_request = json.dumps(request)
+
+        js = 'jigna.broker._bridge.handle_request(%r);' % jsonized_request
 
         self.widget.execute_js(js)
 
@@ -260,7 +261,14 @@ class Broker(HasTraits):
                 self._id_to_object_map[str(id(value))] = value
 
         type, value = self._get_type_and_value(value)
-        self.bridge.on_object_changed(type, value)
+
+
+
+        event = dict(type=type, value=value)
+
+        request = dict(method_name='on_object_changed', args=(event,))
+
+        self.bridge.send_request(request)
 
         return
 
