@@ -64,7 +64,7 @@ class Bridge(HasTraits):
 
     #### These 2 methods are the only ones that cross the JS-Python divide! ###
 
-    def get(self, request):
+    def handle_request(self, request):
         """ Handle a request from the JS-side. """
 
         request = json.loads(request)
@@ -328,7 +328,7 @@ class JignaView(HasTraits):
         }
 
         widget = HTMLWidget(
-            callbacks        = [('get', self._get)],
+            callbacks        = [('handle_request', self._handle_request)],
             python_namespace = 'python',
             hosts            = hosts,
             open_externally  = True,
@@ -338,10 +338,10 @@ class JignaView(HasTraits):
 
         return widget
 
-    def _get(self, request):
+    def _handle_request(self, request):
         """ Handle a request from a client. """
 
-        return self._broker.bridge.get(request)
+        return self._broker.bridge.handle_request(request)
 
     def _get_html(self, model):
         """ Get the HTML document for the given model. """

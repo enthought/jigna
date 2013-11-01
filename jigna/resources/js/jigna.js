@@ -26,8 +26,15 @@ jigna.Bridge = function() {
     this._python = window['python'];
 };
 
-jigna.Bridge.prototype.get = function(request) {
-    var response = JSON.parse(this._python.get(JSON.stringify(request)));
+jigna.Bridge.prototype.send_request = function(method_name, args) {
+    var request = {
+        'method_name' : method_name,
+        'args'        : args
+    };
+
+    var response = JSON.parse(
+        this._python.handle_request(JSON.stringify(request))
+    );
     if (response.exception !== null) {
         throw response.value;
     }
@@ -141,12 +148,7 @@ jigna.Broker.prototype._get_proxy = function(type, obj) {
 };
 
 jigna.Broker.prototype._send_request = function(method_name, args) {
-    var request = {
-        'method_name' : method_name,
-        'args'        : args
-    };
-
-    var response = this._bridge.get(request);
+    var response = this._bridge.send_request(method_name, args);
 
     return this._get_proxy(response.type, response.value);
 };
