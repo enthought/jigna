@@ -10,7 +10,6 @@
 // Namespace for all Jigna-related objects.
 var jigna = {};
 
-// fixme: factory function for jigna.Client?
 jigna.initialize = function(model_name, id) {
     jigna.broker = new jigna.Broker();
     jigna.broker.initialize(model_name, id);
@@ -20,39 +19,24 @@ jigna.initialize = function(model_name, id) {
 // Bridge
 ///////////////////////////////////////////////////////////////////////////////
 
-// fixme: jigna.Client
 jigna.Bridge = function() {
     // Private protocol
     this._python = window['python'];
 };
 
-jigna.Bridge.prototype.send_request = function(request) {
-    var jsonized_request = JSON.stringify(request);
-
-    var response = JSON.parse(this._python.handle_request(jsonized_request));
-    if (response.exception !== null) {
-        throw response.value;
-    }
-
-    return response;
-};
-
 jigna.Bridge.prototype.handle_request = function(jsonized_request) {
+    /* Handle a request from the Python-side. */
 
-    var exception;
-    var type;
-    var value;
+    var args, exception, method, type, request, response, result, value;
 
-    var request = JSON.parse(jsonized_request);
+    request = JSON.parse(jsonized_request);
     try {
-        var method  = jigna.broker[request.method_name];
-        var args    = request.args;
-
-        var result      = jigna.broker._get_type_and_value(
-            method.apply(jigna.broker, args)
-        );
+        method = jigna.broker[request.method_name];
+        args   = request.args;
+        value  = method.apply(jigna.broker, args);
 
         exception = null;
+        result    = this._get_type_and_value(value);
         type      = result.type;
         value     = result.value;
     }
@@ -62,13 +46,44 @@ jigna.Bridge.prototype.handle_request = function(jsonized_request) {
         value     = error.message;
     };
 
-    var response = {
+    response = {
         'exception' : exception,
         'type'      : type,
         'value'     : value
     };
 
     return JSON.stringify(response);
+};
+
+jigna.Bridge.prototype.send_request = function(request) {
+    /* Send a request to the Python-side. */
+
+    var jsonized_request  = JSON.stringify(request);
+    var jsonized_response = this._python.handle_request(jsonized_request);
+
+    var response = JSON.parse(jsonized_response);
+    if (response.exception !== null) {
+        throw response.value;
+    }
+
+    return response;
+};
+
+// Private protocol //////////////////////////////////////////////////////////
+
+jigna.Bridge.prototype._get_type_and_value = function(value) {
+
+    var type;
+
+    if (value !== null && value !== undefined && value.__id__ != undefined) {
+        type  = 'instance';
+        value = value.__id__;
+
+    } else {
+        type = 'primitive';
+    }
+
+    return {'type': type, 'value' : value}
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -99,8 +114,6 @@ jigna.Broker.prototype.on_object_changed = function(event) {
     if (this._scope.$$phase === null){
         this._scope.$digest();
     };
-
-    return null;
 };
 
 // Instances...
@@ -108,12 +121,6 @@ jigna.Broker.prototype.call_method = function(id, method_name, args) {
     // fixme: Why is this method different to the others... Could we put
     // this id wrangling in 'send_request'?
     var args = Array.prototype.slice.call(args);
-    for (var index in args) {
-        var value = args[index];
-        if (value.__id__ !== undefined) {
-            args[index] = {'__id__' : value.__id__};
-        }
-    };
 
     return this._send_request('call_method', [id, method_name].concat(args));
 };
@@ -174,25 +181,22 @@ jigna.Broker.prototype._get_proxy = function(type, obj) {
     return proxy;
 };
 
-jigna.Broker.prototype._get_type_and_value = function(value) {
+jigna.Broker.prototype._replace_proxies_with_their_ids = function(args) {
+    for (var index in args) {
+        var value = args[index];
+        if (value.__id__ !== undefined) {
+            args[index] = {'__id__' : value.__id__};
+        }
+    };
 
-    var type;
-
-    if (value !== null && value !== undefined && value.__id__ != undefined) {
-        type  = 'instance';
-        value = value.__id__;
-
-    } else {
-        type = 'primitive';
-    }
-
-    return {'type': type, 'value' : value}
+    // For convenience, as we modify the array in-place.
+    return args;
 };
 
 jigna.Broker.prototype._send_request = function(method_name, args) {
     var request = {
         'method_name' : method_name,
-        'args'        : args
+        'args'        : this._replace_proxies_with_their_ids(args)
     };
 
     var response = this._bridge.send_request(request);

@@ -53,6 +53,10 @@ DOCUMENT_HTML_TEMPLATE = """
 """
 
 
+class JSError(Exception):
+    """ Raised when an exception occurred on the JS-side. """
+
+
 class Bridge(HasTraits):
     """ Bridge between AngularJS and Python worlds. """
 
@@ -60,14 +64,14 @@ class Bridge(HasTraits):
 
     broker = Any
 
+    #### 'QtWebKitBridge' protocol ############################################
+
     widget = Any
 
-    #### These 2 methods are the only ones that cross the JS-Python divide! ###
-
-    def handle_request(self, request):
+    def handle_request(self, jsonized_request):
         """ Handle a request from the JS-side. """
 
-        request = json.loads(request)
+        request = json.loads(jsonized_request)
         try:
             method = getattr(self.broker, request['method_name'])
             args   = request.get('args', ())
@@ -89,13 +93,16 @@ class Bridge(HasTraits):
     def send_request(self, request):
         """ Send a request to the JS-side. """
 
-        jsonized_request = json.dumps(request)
+        jsonized_request  = json.dumps(request)
+        jsonized_response = self.widget.execute_js(
+            'jigna.broker._bridge.handle_request(%r);' % jsonized_request
+        )
 
-        js = 'jigna.broker._bridge.handle_request(%r);' % jsonized_request
+        response = json.loads(jsonized_response)
+        if response['exception'] is not None:
+            raise JSError(response['value'])
 
-        jsonized_response = self.widget.execute_js(js)
-
-        return json.loads(jsonized_response)
+        return response
 
 
 class Broker(HasTraits):
@@ -158,7 +165,7 @@ class Broker(HasTraits):
         return getattr(obj, trait_name)
 
     def register_object(self, obj):
-        """ Register the given object with the bridge. """
+        """ Register the given object with the broker. """
 
         self._id_to_object_map[str(id(obj))] = obj
         obj.on_trait_change(self._on_object_trait_changed)
@@ -226,7 +233,7 @@ class Broker(HasTraits):
             value_id = str(id(value))
             self._id_to_object_map[value_id] = value
 
-            type = 'list'
+            type  = 'list'
             value = value_id
 
         else:
@@ -261,8 +268,6 @@ class Broker(HasTraits):
                 self._id_to_object_map[str(id(value))] = value
 
         type, value = self._get_type_and_value(value)
-
-
 
         event = dict(type=type, value=value)
 
