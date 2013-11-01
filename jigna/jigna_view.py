@@ -133,6 +133,10 @@ class Broker(HasTraits):
     def get_instance_info(self, id):
         """ Return a description of an instance. """
 
+        # fixme: When we register an object, we add it to the id to
+        # object map, but it must already be here for this to succeed. It
+        # works because we sneakily update the id to object map in the
+        # 'Broker._get_type_and_value' method!
         obj = self._id_to_object_map.get(id)
         self.register_object(obj)
 
