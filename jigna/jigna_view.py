@@ -74,9 +74,7 @@ class Bridge(HasTraits):
         request = json.loads(jsonized_request)
         try:
             method = getattr(self.broker, request['method_name'])
-            args   = request.get('args', ())
-
-            value = method(*args)
+            value  = method(*request['args'])
 
             exception   = None
             # fixme: Calling private method!

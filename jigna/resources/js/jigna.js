@@ -32,8 +32,7 @@ jigna.Bridge.prototype.handle_request = function(jsonized_request) {
     request = JSON.parse(jsonized_request);
     try {
         method = jigna.broker[request.method_name];
-        args   = request.args;
-        value  = method.apply(jigna.broker, args);
+        value  = method.apply(jigna.broker, request.args);
 
         exception = null;
         result    = this._get_type_and_value(value);
@@ -46,22 +45,19 @@ jigna.Bridge.prototype.handle_request = function(jsonized_request) {
         value     = error.message;
     };
 
-    response = {
-        'exception' : exception,
-        'type'      : type,
-        'value'     : value
-    };
-
+    response = {'exception' : exception, 'type' : type, 'value' : value};
     return JSON.stringify(response);
 };
 
 jigna.Bridge.prototype.send_request = function(request) {
     /* Send a request to the Python-side. */
 
-    var jsonized_request  = JSON.stringify(request);
-    var jsonized_response = this._python.handle_request(jsonized_request);
+    var jsonized_request, jsonized_response, response;
 
-    var response = JSON.parse(jsonized_response);
+    jsonized_request  = JSON.stringify(request);
+    jsonized_response = this._python.handle_request(jsonized_request);
+
+    response = JSON.parse(jsonized_response);
     if (response.exception !== null) {
         throw response.value;
     }
