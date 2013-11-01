@@ -128,6 +128,11 @@ class Broker(HasTraits):
 
         return method(*args)
 
+    def execute_js(self, js):
+        """Execute the JS code and return the last expression evaluated.
+        """
+        return self._widget.execute_js(js)
+
     def get_instance_info(self, id):
         """ Return a description of an instance. """
 
