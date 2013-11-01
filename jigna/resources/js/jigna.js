@@ -118,10 +118,6 @@ jigna.Broker.prototype.on_object_changed = function(event) {
 
 // Instances...
 jigna.Broker.prototype.call_method = function(id, method_name, args) {
-    // fixme: Why is this method different to the others... Could we put
-    // this id wrangling in 'send_request'?
-    var args = Array.prototype.slice.call(args);
-
     return this._send_request('call_method', [id, method_name].concat(args));
 };
 
@@ -250,7 +246,11 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
 jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
     var method = function () {
         // In here, 'this' refers to the proxy!
-        return this.__broker__.call_method(this.__id__, method_name, arguments);
+	//
+	// In JS, 'arguments' is not a real array, so this converts it to one!
+	var args = Array.prototype.slice.call(arguments);
+
+        return this.__broker__.call_method(this.__id__, method_name, args);
     };
 
     proxy[method_name] = method;
