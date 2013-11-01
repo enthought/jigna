@@ -58,10 +58,9 @@ class Bridge(HasTraits):
 
     #### 'Bridge' protocol ####################################################
 
-    #: The underlying toolkit control that renders HTML.
-    control = Property(Any)
-    def _get_control(self):
-        return self._widget.control
+    broker = Any
+
+    widget = Any
 
     #### These 2 methods are the only ones that cross the JS-Python divide! ###
 
@@ -70,12 +69,14 @@ class Bridge(HasTraits):
 
         request = json.loads(request)
         try:
-            method = getattr(self, request['method_name'])
-            args   = self._resolve_object_ids(request.get('args', ()))
-            value  = method(*args)
+            method = getattr(self.broker, request['method_name'])
+            args   = request.get('args', ())
+
+            value = method(*args)
 
             exception   = None
-            type, value = self._get_type_and_value(value)
+            # fixme: Calling private method!
+            type, value = self.broker._get_type_and_value(value)
 
         except Exception, e:
             exception = repr(sys.exc_type)
@@ -91,19 +92,35 @@ class Bridge(HasTraits):
         event = dict(type=type, value=value)
         js    = 'jigna.broker.on_object_changed(%r);' % json.dumps(event)
 
-        self._widget.execute_js(js)
+        self.widget.execute_js(js)
 
         return
 
-    ###########################################################################
 
-    def call_method(self, id, method_name, *args, **kwargs):
+class Broker(HasTraits):
+    """ Broker that exposes Python objects to JS. """
+
+    #### 'Broker' protocol ####################################################
+
+    #: The bridge that provides the communication between Python and JS.
+    bridge = Instance(Bridge)
+    def _bridge_changed(self, trait_name, old, new):
+        if old is not None:
+            old.broker = None
+
+        if new is not None:
+            new.broker = self
+
+        return
+
+    def call_method(self, id, method_name, *args):
         """ Call a method on a registered object. """
 
         obj    = self._id_to_object_map.get(id)
         method = getattr(obj, method_name)
+        args   = self._resolve_object_ids(args)
 
-        return method(*args, **kwargs)
+        return method(*args)
 
     def get_instance_info(self, id):
         """ Return a description of an instance. """
@@ -139,13 +156,6 @@ class Bridge(HasTraits):
 
         return getattr(obj, trait_name)
 
-    def load_html(self, html, base_url):
-        """ Load the given HTML into the bridge. """
-
-        self._widget.load_html(html, base_url)
-
-        return
-
     def register_object(self, obj):
         """ Register the given object with the bridge. """
 
@@ -176,31 +186,6 @@ class Bridge(HasTraits):
     #:
     #: { str id : instance_or_list obj }
     _id_to_object_map = Dict
-
-    #: The toolkit-specific widget that renders the HTML.
-    _widget = Any
-    def __widget_default(self):
-        return self._create_widget()
-
-    def _create_widget(self):
-        """ Create the HTML widget that we use to render the view. """
-
-        hosts = {
-            'resources.jigna': FileLoader(
-                root = join(abspath(dirname(__file__)), 'resources')
-            )
-        }
-
-        widget = HTMLWidget(
-            callbacks        = [('get', self.get)],
-            python_namespace = 'python',
-            hosts            = hosts,
-            open_externally  = True,
-            debug            = True
-        )
-        widget.create()
-
-        return widget
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
@@ -275,7 +260,7 @@ class Bridge(HasTraits):
                 self._id_to_object_map[str(id(value))] = value
 
         type, value = self._get_type_and_value(value)
-        self.on_object_changed(type, value)
+        self.bridge.on_object_changed(type, value)
 
         return
 
@@ -283,54 +268,102 @@ class Bridge(HasTraits):
 class JignaView(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
 
-    MODEL_NAME = 'model'
-
     #### 'JignaView' protocol #################################################
 
-    #: The HTML for the *body* of the view's document.
-    body_html = Str
-
-    #: The HTML for the *head* of the view's document.
-    head_html = Str
-
-    #: The base url for all the resources.
+    #: The base url for all resources.
     base_url = Property(Str)
-    _base_url = Str
     def _get_base_url(self):
         return self._base_url
 
     def _set_base_url(self, url):
         self._base_url = join(os.getcwd(), url)
+        return
 
-    def __base_url_default(self):
-        return os.getcwd()
+    #: The HTML for the *body* of the view's document.
+    body_html = Str
+
+    #: The underlying toolkit control that renders HTML.
+    control = Property(Any)
+    def _get_control(self):
+        return self._widget.control
+
+    #: The HTML for the *head* of the view's document.
+    head_html = Str
 
     def show(self, model):
         """ Create and show a view of the given model. """
 
-        self._bridge = Bridge()
-        self._bridge.load_html(self._generate_html(model), self.base_url)
-        self._bridge.register_object(model)
-        self._bridge.control.show()
+        self._broker.register_object(model)
+        self._load_html(self._get_html(model), self.base_url)
+        self.control.show()
 
         return
 
     #### Private protocol #####################################################
 
-    def _generate_html(self, model):
-        """ Generate the HTML document with the given model. """
+    #: Shadow trait for the 'base_url'.
+    #:
+    #: fixme: not sure what this buys us?!?
+    _base_url = Str
+    def __base_url_default(self):
+        return os.getcwd()
+
+    #: The broker that manages the objects shared via the bridge.
+    _broker = Instance(Broker)
+    def __broker_default(self):
+        return Broker(bridge=Bridge(widget=self._widget))
+
+    #: The toolkit-specific widget that renders the HTML.
+    _widget = Any
+    def __widget_default(self):
+        return self._create_widget()
+
+    def _create_widget(self):
+        """ Create the HTML widget that we use to render the view. """
+
+        hosts = {
+            'resources.jigna': FileLoader(
+                root = join(abspath(dirname(__file__)), 'resources')
+            )
+        }
+
+        widget = HTMLWidget(
+            callbacks        = [('get', self._get)],
+            python_namespace = 'python',
+            hosts            = hosts,
+            open_externally  = True,
+            debug            = True
+        )
+        widget.create()
+
+        return widget
+
+    def _get(self, request):
+        """ Handle a request from a client. """
+
+        return self._broker.bridge.get(request)
+
+    def _get_html(self, model):
+        """ Get the HTML document for the given model. """
 
         template = Template(DOCUMENT_HTML_TEMPLATE)
         html     = template.render(
             jquery     = 'http://resources.jigna/js/jquery.min.js',
             angular    = 'http://resources.jigna/js/angular.min.js',
             jigna      = 'http://resources.jigna/js/jigna.js',
-            model_name = JignaView.MODEL_NAME,
+            model_name = 'model',
             id         = id(model),
             body_html  = self.body_html,
             head_html  = self.head_html
         )
 
         return html
+
+    def _load_html(self, html, base_url):
+        """ Load the given HTML into the widget. """
+
+        self._widget.load_html(html, base_url)
+
+        return
 
 #### EOF ######################################################################

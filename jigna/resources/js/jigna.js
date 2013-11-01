@@ -10,6 +10,7 @@
 // Namespace for all Jigna-related objects.
 var jigna = {};
 
+// fixme: factory function for jigna.Client?
 jigna.initialize = function(model_name, id) {
     jigna.broker = new jigna.Broker();
     jigna.broker.initialize(model_name, id);
@@ -19,6 +20,7 @@ jigna.initialize = function(model_name, id) {
 // Bridge
 ///////////////////////////////////////////////////////////////////////////////
 
+// fixme: jigna.Client
 jigna.Bridge = function() {
     // Private protocol
     this._python = window['python'];
