@@ -38,11 +38,37 @@ jigna.Bridge.prototype.send_request = function(request) {
 };
 
 jigna.Bridge.prototype.handle_request = function(jsonized_request) {
+
+    var exception;
+    var type;
+    var value;
+
     var request = JSON.parse(jsonized_request);
+    try {
+        var method  = jigna.broker[request.method_name];
+        var args    = request.args;
 
-    var method  = jigna.broker[request.method_name];
+        var result      = jigna.broker._get_type_and_value(
+            method.apply(jigna.broker, args)
+        );
 
-    method.apply(jigna.broker, request.args);
+        exception = null;
+        type      = result.type;
+        value     = result.value;
+    }
+    catch (error) {
+        exception = error.message;
+        type      = 'exception';
+        value     = error.message;
+    };
+
+    var response = {
+        'exception' : exception,
+        'type'      : type,
+        'value'     : value
+    };
+
+    return JSON.stringify(response);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -72,7 +98,9 @@ jigna.Broker.prototype.on_object_changed = function(event) {
 
     if (this._scope.$$phase === null){
         this._scope.$digest();
-    }
+    };
+
+    return null;
 };
 
 // Instances...
@@ -144,6 +172,21 @@ jigna.Broker.prototype._get_proxy = function(type, obj) {
     }
 
     return proxy;
+};
+
+jigna.Broker.prototype._get_type_and_value = function(value) {
+
+    var type;
+
+    if (value !== null && value !== undefined && value.__id__ != undefined) {
+        type  = 'instance';
+        value = value.__id__;
+
+    } else {
+        type = 'primitive';
+    }
+
+    return {'type': type, 'value' : value}
 };
 
 jigna.Broker.prototype._send_request = function(method_name, args) {

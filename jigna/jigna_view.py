@@ -93,9 +93,9 @@ class Bridge(HasTraits):
 
         js = 'jigna.broker._bridge.handle_request(%r);' % jsonized_request
 
-        self.widget.execute_js(js)
+        jsonized_response = self.widget.execute_js(js)
 
-        return
+        return json.loads(jsonized_response)
 
 
 class Broker(HasTraits):
