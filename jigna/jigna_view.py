@@ -68,6 +68,11 @@ class Bridge(HasTraits):
 
     widget = Any
 
+    def execute_js(self, js):
+        """Execute the JS code and return the last expression evaluated.
+        """
+        return self.widget.execute_js(js)
+
     def handle_request(self, jsonized_request):
         """ Handle a request from the JS-side. """
 
@@ -127,11 +132,6 @@ class Broker(HasTraits):
         args   = self._resolve_object_ids(args)
 
         return method(*args)
-
-    def execute_js(self, js):
-        """Execute the JS code and return the last expression evaluated.
-        """
-        return self._widget.execute_js(js)
 
     def get_instance_info(self, id):
         """ Return a description of an instance. """

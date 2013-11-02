@@ -61,7 +61,7 @@ class TestJignaQt(unittest.TestCase):
     def setUp(self):
         cls = self.__class__
         self.person_view = cls.person_view
-        self.bridge = self.person_view._bridge
+        self.bridge = self.person_view._broker.bridge
         self.fred = cls.fred
         self.fred.spouse = None
         self.fred.fruits = []
