@@ -151,6 +151,9 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.called_with, 10.0)
         self.execute_js("jigna.broker._scope.model.method([1, 2])")
         self.assertEqual(fred.called_with, [1,2])
+        self.execute_js("jigna.broker._scope.model.method("\
+                                "jigna.broker._scope.model.spouse)")
+        self.assertEqual(fred.called_with, wilma)
 
 if __name__ == "__main__":
     unittest.main()
