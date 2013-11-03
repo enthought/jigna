@@ -139,6 +139,13 @@ class Broker(HasTraits):
 
         return self._unmarshal(result)
 
+    def register_object(self, obj):
+        """ Register the given object with the broker. """
+
+        self._id_to_object_map[str(id(obj))] = obj
+
+        return
+
     #### Private protocol #####################################################
 
     def _marshal(self, value):
@@ -184,20 +191,6 @@ class Broker(HasTraits):
 
         return [self._unmarshal(value) for value in iter]
 
-
-
-
-
-
-    def register_object(self, obj):
-        """ Register the given object with the broker. """
-
-        self._id_to_object_map[str(id(obj))] = obj
-        obj.on_trait_change(self._on_object_trait_changed)
-
-        return
-
-
     ########################################################################
 
     def call_method(self, obj, method_name, *args):
@@ -210,12 +203,7 @@ class Broker(HasTraits):
     def get_instance_info(self, obj):
         """ Return a description of an instance. """
 
-        # fixme: When we register an object, we add it to the id to
-        # object map, but it must already be here for this to succeed. It
-        # works because we sneakily update the id to object map in the
-        # 'Broker._get_type_and_value' method!
-        #obj = self._id_to_object_map.get(id)
-        self.register_object(obj)
+        obj.on_trait_change(self._on_object_trait_changed)
 
         info = {
             'trait_names'  : obj.editable_traits(),
@@ -300,9 +288,7 @@ class Broker(HasTraits):
             args        = [result]
         )
 
-        print 'sending request', request
         self.bridge.send(request);
-
         #self.send_request('on_object_changed', [obj, trait_name, type, new])
 
         return

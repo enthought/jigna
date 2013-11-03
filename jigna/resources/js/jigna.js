@@ -87,7 +87,6 @@ jigna.Broker.prototype.handle_request = function(request) {
     /* Handle a request from the Python-side. */
 
     var args, exception, method, value;
-    console.log('handle_request', request);
     try {
         method    = this[request.method_name];
         // fixme: We need type in the event to know what kind of proxy to create
@@ -110,17 +109,15 @@ jigna.Broker.prototype.send_request = function(method_name, args) {
 
     var request, response;
 
-    request = {
-        'method_name' : method_name,
-        'args'        : this._marshal_all(args)
-    };
-
+    request  = {'method_name' : method_name, 'args' : this._marshal_all(args)};
     response = jigna.bridge.send(request);
+    result   = this._unmarshal(response.result);
+
     if (response.exception !== null) {
-        throw this._unmarshal(response.result);
+        throw result;
     }
 
-    return this._unmarshal(response.result);
+    return result;
 };
 
 // Private protocol //////////////////////////////////////////////////////////
