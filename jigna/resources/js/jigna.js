@@ -23,6 +23,15 @@ jigna.initialize = function(model_name, id) {
 jigna.Bridge = function() {
     // Private protocol
     this._python = window['python'];
+
+    if (this._python === undefined) {
+        this._jigna_websocket = new WebSocket(
+            "ws://" + window.location.host + "/_jigna_ws"
+        );
+        this._jigna_websocket.onmessage = function(evt) {
+            eval(evt.data);
+        };
+    }
 };
 
 jigna.Bridge.prototype.handle_request = function(jsonized_request) {
@@ -57,7 +66,20 @@ jigna.Bridge.prototype.send_request = function(request) {
     var jsonized_request, jsonized_response, response;
 
     jsonized_request  = JSON.stringify(request);
-    jsonized_response = this._python.handle_request(jsonized_request);
+    if (this._python != undefined) {
+        jsonized_response = this._python.handle_request(jsonized_request);
+    }
+    else {
+        var x = $.ajax(
+            {url:"/_jigna",
+             type:"GET",
+             data: {"data": jsonized_request},
+             success: function(result) {
+                 jsonized_response = result;
+             },
+             async:false}
+        );
+    }
 
     response = JSON.parse(jsonized_response);
     if (response.exception !== null) {
