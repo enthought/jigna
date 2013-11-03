@@ -59,30 +59,11 @@ jigna.Broker = function(model_name, id) {
     this._scope           = $(document.body).scope();
 
     // Add the model.
-    this.add_model(model_name, id);
-};
-
-jigna.Broker.prototype.add_model = function(model_name, id) {
-    var proxy, scope;
-
-    // Get a proxy for the object identified by Id...
-    proxy = this._create_proxy('instance', id);
-
-    // ... and expose it with the name 'model_name' to AngularJS.
-    scope = this._scope;
-    scope.$apply(function() {scope[model_name] = proxy;});
+    this._add_model(model_name, id);
 };
 
 // Not sure we need hanlde_request this side... since we only actually
 // take events and in WebSocket world that its one way (ie. no return value).
-jigna.Broker.prototype.on_object_changed = function(event) {
-    this._create_proxy(event.type, event.value);
-
-    if (this._scope.$$phase === null){
-        this._scope.$digest();
-    };
-};
-
 jigna.Broker.prototype.handle_request = function(request) {
     /* Handle a request from the Python-side. */
 
@@ -104,6 +85,14 @@ jigna.Broker.prototype.handle_request = function(request) {
     return response;
 };
 
+jigna.Broker.prototype.on_object_changed = function(event) {
+    this._create_proxy(event.type, event.value);
+
+    if (this._scope.$$phase === null){
+        this._scope.$digest();
+    };
+};
+
 jigna.Broker.prototype.send_request = function(method_name, args) {
     /* Send a request to the Python-side. */
 
@@ -121,6 +110,18 @@ jigna.Broker.prototype.send_request = function(method_name, args) {
 };
 
 // Private protocol //////////////////////////////////////////////////////////
+
+jigna.Broker.prototype._add_model = function(model_name, id) {
+    var proxy, scope;
+
+    // Get a proxy for the object identified by Id...
+    proxy = this._create_proxy('instance', id);
+
+    // ... and expose it with the name 'model_name' to AngularJS.
+    scope = this._scope;
+    scope.$apply(function() {scope[model_name] = proxy;});
+};
+
 
 jigna.Broker.prototype._create_proxy = function(type, obj) {
     var proxy;
