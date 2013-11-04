@@ -20,10 +20,10 @@ jigna.create_bridge = function() {
 
     // Are we using the intra-process Qt Bridge?
     if (window['python'] !== undefined) {
-	bridge = new jigna.QtBridge();
+        bridge = new jigna.QtBridge();
 
     } else {
-	bridge = new jigna.WebBridge();
+        bridge = new jigna.WebBridge();
     };
 
     return bridge;
@@ -67,24 +67,18 @@ jigna.QtBridge.prototype.synchronous = function(request) {
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.WebBridge = function() {
-    this._websocket = new WebSocket(
-        'ws://' + window.location.host + '/_jigna_ws'
-    );
-    this._websocket.onmessage = function(event) {this.recv(event.data);};
+    var url = 'ws://' + window.location.host + '/_jigna_ws';
+
+    this._web_socket = new WebSocket(url);
+    this._web_socket.onmessage = function(event) {this.on_event(event.data);};
 };
 
-// fixme: Duplication... create base Bridge object.
-jigna.WebBridge.prototype.recv = function(jsonized_request) {
-    /* Handle a request from the Python-side. */
+// fixme: Make the QtBridge quack like this!
+jigna.WebBridge.prototype.on_event = function(jsonized_event) {
+    /* Handle an event from the server-side. */
 
-    var jsonized_response, request, response;
-
-    request           = JSON.parse(jsonized_request);
-    response          = jigna.broker.handle_request(request)
-    jsonized_response = JSON.stringify(response);
-
-    // fixme: We don't reply to events!
-    return jsonized_response;
+    var event = JSON.parse(jsonized_event);
+    jigna.broker.handle_request(event)
 };
 
 jigna.WebBridge.prototype.synchronous = function(request) {
@@ -95,12 +89,12 @@ jigna.WebBridge.prototype.synchronous = function(request) {
     jsonized_request = JSON.stringify(request);
     $.ajax(
         {
-	    url     : '/_jigna',
-	    type    : 'GET',
-	    data    : {'data': jsonized_request},
-	    success : function(result) {jsonized_response = result;},
-	    async   : false
-	}
+            url     : '/_jigna',
+            type    : 'GET',
+            data    : {'data': jsonized_request},
+            success : function(result) {jsonized_response = result;},
+            async   : false
+        }
     );
     response = JSON.parse(jsonized_response);
 
@@ -121,15 +115,17 @@ jigna.Broker = function(model_name, id) {
     this._add_model(model_name, id);
 };
 
-// Not sure we need hanlde_request this side... since we only actually
-// take events and in WebSocket world that its one way (ie. no return value).
+// fixme: We don't need 'handle_request' this side! We only actually receive
+// events (ie. no return value).
 jigna.Broker.prototype.handle_request = function(request) {
     /* Handle a request from the Python-side. */
 
     var args, exception, method, value;
     try {
         method    = this[request.kind];
-        // fixme: We need type in the event to know what kind of proxy to create
+        // fixme: We need type in the event to know what kind of proxy to
+        // create so we don't unmarshal the args! Currently this is ok as
+        // we only pass primitive types back, but...?
         //args      = this._unmarshal_all(request.args);
         args      = request.args;
         value     = method.apply(this, args);
