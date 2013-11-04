@@ -90,6 +90,11 @@ class Bridge(HasTraits):
     #: The 'HTMLWidget' that contains the QtWebLit malarky.
     widget = Any
 
+    def execute_js(self, js):
+        """Execute the JS code and return the last expression evaluated.
+        """
+        return self.widget.execute_js(js)
+
 
 class Broker(HasTraits):
     """ Broker that exposes Python objects to JS. """
