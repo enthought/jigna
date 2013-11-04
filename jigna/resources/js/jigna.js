@@ -69,7 +69,7 @@ jigna.Broker.prototype.handle_request = function(request) {
 
     var args, exception, method, value;
     try {
-        method    = this[request.method_name];
+        method    = this[request.kind];
         // fixme: We need type in the event to know what kind of proxy to create
         //args      = this._unmarshal_all(request.args);
         args      = request.args;
@@ -93,12 +93,12 @@ jigna.Broker.prototype.on_object_changed = function(event) {
     };
 };
 
-jigna.Broker.prototype.send_request = function(method_name, args) {
+jigna.Broker.prototype.send_request = function(kind, args) {
     /* Send a request to the Python-side. */
 
     var request, response;
 
-    request  = {'method_name' : method_name, 'args' : this._marshal_all(args)};
+    request  = {'kind' : kind, 'args' : this._marshal_all(args)};
     response = jigna.bridge.send(request);
     result   = this._unmarshal(response.result);
 
@@ -237,11 +237,12 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
 
 jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
     var method = function () {
+        var args, result;
         // In here, 'this' refers to the proxy!
         //
         // In JS, 'arguments' is not a real array, so this converts it to one!
-        var args   = Array.prototype.slice.call(arguments);
-        var result = this.__broker__.send_request(
+        args   = Array.prototype.slice.call(arguments);
+        result = this.__broker__.send_request(
             'call_method', [this, method_name].concat(args)
         );
 
@@ -279,7 +280,7 @@ jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._broker);
-    var info = this._broker.send_request('get_instance_info', [proxy]);
+    var info  = this._broker.send_request('get_instance_info', [proxy]);
 
     var trait_names = info.trait_names;
     for (var index in trait_names) {
@@ -296,9 +297,9 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._broker);
-    var list_length = this._broker.send_request('get_list_info', [proxy]);
+    var info  = this._broker.send_request('get_list_info', [proxy]);
 
-    for (var index=0; index < list_length; index++) {
+    for (var index=0; index < info.length; index++) {
         this._add_list_item_property(proxy, index);
     }
 

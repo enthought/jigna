@@ -111,7 +111,7 @@ class Broker(HasTraits):
         """ Handle a request from the JS-side. """
 
         try:
-            method    = getattr(self, request['method_name'])
+            method    = getattr(self, request['kind'])
             args      = self._unmarshal_all(request['args'])
             result    = method(*args)
             exception = None
@@ -123,21 +123,17 @@ class Broker(HasTraits):
         response = dict(exception=exception, result=self._marshal(result))
         return response
 
-    def send_request(self, method_name, args):
+    def send_request(self, kind, args):
         """ Send a request to the JS-side. """
 
-        request = dict(
-            method_name = method_name,
-            args        = self._marshal_all(args)
-        )
-
+        request  = dict(kind=kind, args=self._marshal_all(args))
         response = self.bridge.send(request)
-        result   = response['result']
+        result   = self._unmarshal(response['result'])
 
         if response['exception'] is not None:
             raise JSError(result)
 
-        return self._unmarshal(result)
+        return result
 
     def register_object(self, obj):
         """ Register the given object with the broker. """
@@ -148,32 +144,33 @@ class Broker(HasTraits):
 
     #### Private protocol #####################################################
 
-    def _marshal(self, value):
+    def _marshal(self, obj):
         """ Marshal a value. """
 
-        if isinstance(value, HasTraits):
-            value_id = str(id(value))
-            self._id_to_object_map[value_id] = value
+        if isinstance(obj, HasTraits):
+            obj_id = str(id(obj))
+            self._id_to_object_map[obj_id] = obj
 
             type  = 'instance'
-            value = value_id
+            value = obj_id
 
-        elif isinstance(value, list):
-            value_id = str(id(value))
-            self._id_to_object_map[value_id] = value
+        elif isinstance(obj, list):
+            obj_id = str(id(obj))
+            self._id_to_object_map[obj_id] = obj
 
             type  = 'list'
-            value = value_id
+            value = obj_id
 
         else:
-            type = 'primitive'
+            type  = 'primitive'
+            value = obj
 
         return dict(type=type, value=value)
 
     def _marshal_all(self, iter):
         """ Marshal all of the values in an iterable. """
 
-        return [self._marshal(value) for value in iter]
+        return [self._marshal(obj) for obj in iter]
 
     def _unmarshal(self, obj):
         """ Unmarshal a value. """
@@ -189,7 +186,7 @@ class Broker(HasTraits):
     def _unmarshal_all(self, iter):
         """ Unmarshal all of the values in an iterable. """
 
-        return [self._unmarshal(value) for value in iter]
+        return [self._unmarshal(obj) for obj in iter]
 
     ########################################################################
 
@@ -205,17 +202,21 @@ class Broker(HasTraits):
 
         obj.on_trait_change(self._on_object_trait_changed)
 
-        info = {
-            'trait_names'  : obj.editable_traits(),
-            'method_names' : self._get_public_method_names(type(obj))
-        }
+        info = dict(
+            trait_names  = obj.editable_traits(),
+            method_names = self._get_public_method_names(type(obj))
+        )
 
         return info
 
     def get_list_info(self, obj):
         """ Returns a description of a list. """
 
-        return len(obj)
+        info = dict(
+            length = len(obj)
+        )
+
+        return info
 
     def get_list_item(self, obj, index):
         """ Return the value of a list item. """
@@ -281,15 +282,11 @@ class Broker(HasTraits):
             if isinstance(new, HasTraits) or isinstance(new, list):
                 self._id_to_object_map[str(id(new))] = new
 
-        result = self._marshal(new)
-
-        request = dict(
-            method_name = 'on_object_changed',
-            args        = [result]
-        )
-
-        self.bridge.send(request);
-        #self.send_request('on_object_changed', [obj, trait_name, type, new])
+        # fixme: This smells... marhsalling this gives is the type and value
+        # which is what we need on the JS side to determine what (if any) proxy
+        # we need to create.
+        event = self._marshal(new)
+        self.bridge.send(dict(kind='on_object_changed', args=[event]));
 
         return
 
