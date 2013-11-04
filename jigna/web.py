@@ -78,6 +78,9 @@ class JignaWebView(JignaView):
 
 ###############################################################################
 class MainHandler(RequestHandler):
+    def initialize(self, jigna_view):
+        self.jigna_view = jigna_view
+
     def get(self):
         print self.request.path
         path = self.request.path[1:]
@@ -90,6 +93,9 @@ class MainHandler(RequestHandler):
 
 ###############################################################################
 class GetFromBridge(RequestHandler):
+    def initialize(self, bridge):
+        self.bridge = bridge
+
     def get(self):
         print "Get from bridge"
         jsonized_request = self.get_argument("data")
@@ -99,6 +105,9 @@ class GetFromBridge(RequestHandler):
 
 ###############################################################################
 class JignaSocket(WebSocketHandler):
+    def initialize(self, bridge):
+        self.bridge = bridge
+
     def open(self):
         print "Opening jigna websocket"
         self.bridge.add_socket(self)
@@ -111,17 +120,6 @@ class JignaSocket(WebSocketHandler):
         print "Closing jigna websocket"
         self.bridge.remove_socket(self)
 
-
-def make_factory(klass, jigna_view, bridge):
-    """Create a factory function that sets up the handlers with the right
-    attributes -- it adds a `jigna_view` and `bridge` to the instance.
-    """
-    def _func(*args, **kw):
-        obj = klass(*args, **kw)
-        obj.jigna_view = jigna_view
-        obj.bridge = bridge
-        return obj
-    return _func
 
 
 ###############################################################################
@@ -144,9 +142,9 @@ def serve(jigna_view, port=8888, thread=False, address=''):
     "static_path": join(dirname(__file__), "resources")
     }
     application = Application([
-            (r"/_jigna_ws", make_factory(JignaSocket, jigna_view, bridge)),
-            (r"/_jigna", make_factory(GetFromBridge, jigna_view, bridge)),
-            (r".*", make_factory(MainHandler, jigna_view, bridge)),
+            (r"/_jigna_ws", JignaSocket, dict(bridge=bridge)),
+            (r"/_jigna", GetFromBridge, dict(bridge=bridge)),
+            (r".*", MainHandler, dict(jigna_view=jigna_view)),
         ], **settings)
 
     application.listen(port, address=address)
