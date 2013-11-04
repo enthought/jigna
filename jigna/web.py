@@ -17,9 +17,7 @@ class WebBridge(Bridge):
 
         jsonized_request  = json.dumps(request)
         for socket in self._active_sockets:
-            socket.write_message(
-                'jigna.bridge.recv(%r);' % jsonized_request
-            )
+            socket.write_message(jsonized_request)
 
     #### 'WebBridge' protocol #################################################
     _active_sockets = List
