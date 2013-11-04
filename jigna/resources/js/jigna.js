@@ -19,7 +19,7 @@ jigna.create_bridge = function() {
     var bridge;
 
     // Are we using the intra-process Qt Bridge?
-    if (window['python'] !== undefined) {
+    if (window['qt_bridge'] !== undefined) {
         bridge = new jigna.QtBridge();
 
     } else {
@@ -35,11 +35,11 @@ jigna.create_bridge = function() {
 
 jigna.QtBridge = function() {
     // Private protocol
-    this._python = window['python'];
+    this._qt_bridge = window['qt_bridge'];
 };
 
 jigna.QtBridge.prototype.recv = function(jsonized_request) {
-    /* Handle a request from the Python-side. */
+    /* Handle a request from the server-side. */
 
     var jsonized_response, request, response;
 
@@ -56,7 +56,7 @@ jigna.QtBridge.prototype.synchronous = function(request) {
     var jsonized_request, jsonized_response, response;
 
     jsonized_request = JSON.stringify(request);
-    jsonized_response = this._python.recv(jsonized_request);
+    jsonized_response = this._qt_bridge.recv(jsonized_request);
     response = JSON.parse(jsonized_response);
 
     return response;
@@ -119,7 +119,7 @@ jigna.Broker = function(model_name, id) {
 // fixme: We don't need 'handle_request' this side! We only actually receive
 // events (ie. no return value).
 jigna.Broker.prototype.handle_request = function(request) {
-    /* Handle a request from the Python-side. */
+    /* Handle a request from the server-side. */
 
     var args, exception, method, value;
     try {

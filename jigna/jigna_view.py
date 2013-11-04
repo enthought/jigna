@@ -355,7 +355,7 @@ class JignaView(HasTraits):
 
         widget = HTMLWidget(
             callbacks        = [('recv', self._recv)],
-            python_namespace = 'python',
+            python_namespace = 'qt_bridge',
             hosts            = hosts,
             open_externally  = True,
             debug            = True
