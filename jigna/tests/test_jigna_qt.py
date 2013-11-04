@@ -1,6 +1,7 @@
 from traits.api import HasTraits, Instance, Int, Str, List
 from jigna.api import JignaView
 from pyface.gui import GUI
+from pyface.qt import QtGui
 
 import unittest
 
@@ -51,6 +52,7 @@ body_html = """
 class TestJignaQt(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        app = QtGui.QApplication.instance() or QtGui.QApplication([])
         person_view = JignaView(body_html=body_html)
         fred = Person(name='Fred', age=42)
         person_view.show(model=fred)
@@ -70,7 +72,7 @@ class TestJignaQt(unittest.TestCase):
     def execute_js(self, js):
         js = 'jigna.broker._scope.' + js
         GUI.process_events()
-        result = self.bridge.execute_js(js)
+        result = self.bridge.widget.execute_js(js)
         GUI.process_events()
         return result
 
