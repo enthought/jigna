@@ -12,13 +12,13 @@ from jigna_view import (Bridge, Broker, DOCUMENT_HTML_TEMPLATE, JignaView)
 class WebBridge(Bridge):
 
     #### 'Bridge' protocol ####################################################
-    def send_request(self, request):
+    def send(self, request):
         """ Send a request to the JS-side. """
 
         jsonized_request  = json.dumps(request)
         for socket in self._active_sockets:
             socket.write_message(
-                'jigna.bridge.handle_request(%r);' % jsonized_request
+                'jigna.bridge.recv(%r);' % jsonized_request
             )
 
     #### 'WebBridge' protocol #################################################
@@ -99,7 +99,7 @@ class GetFromBridge(RequestHandler):
     def get(self):
         print "Get from bridge"
         jsonized_request = self.get_argument("data")
-        jsonized_response = self.bridge.handle_request(jsonized_request)
+        jsonized_response = self.bridge.recv(jsonized_request)
         self.write(jsonized_response)
 
 
