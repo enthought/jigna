@@ -70,15 +70,16 @@ jigna.WebBridge = function() {
     var url = 'ws://' + window.location.host + '/_jigna_ws';
 
     this._web_socket = new WebSocket(url);
-    this._web_socket.onmessage = function(event) {this.on_event(event.data);};
+
+    this._web_socket.onmessage = function(event) {
+        jigna.bridge.on_event(event.data);
+    };
 };
 
 // fixme: Make the QtBridge quack like this!
 jigna.WebBridge.prototype.on_event = function(jsonized_event) {
     /* Handle an event from the server-side. */
-
-    var event = JSON.parse(jsonized_event);
-    jigna.broker.handle_request(event)
+    jigna.broker.handle_request(JSON.parse(jsonized_event));
 };
 
 jigna.WebBridge.prototype.synchronous = function(request) {
