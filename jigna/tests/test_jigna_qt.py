@@ -68,12 +68,13 @@ class TestJignaQt(unittest.TestCase):
         self.fred.friends = []
 
     def execute_js(self, js):
+        js = 'jigna.broker._scope.' + js
         GUI.process_events()
         result = self.bridge.execute_js(js)
         GUI.process_events()
         return result
 
-    def assert_value_in_js(self, js, value):
+    def assertJSEqual(self, js, value):
         result = self.execute_js(js)
         if isinstance(value, (list, tuple)):
             msg = "Lengths different: expected %d, got %d" % \
@@ -91,68 +92,64 @@ class TestJignaQt(unittest.TestCase):
     def test_simple_primitive_traits(self):
         fred = self.fred
         fred.name = "Freddie"
-        self.assert_value_in_js("jigna.broker._scope.model.name", fred.name)
+        self.assertJSEqual("model.name", fred.name)
         fred.age = 43
-        self.assert_value_in_js("jigna.broker._scope.model.age", fred.age)
+        self.assertJSEqual("model.age", fred.age)
 
     def test_list_of_primitives(self):
-        self.assert_value_in_js("jigna.broker._scope.model.fruits", [])
+        self.assertJSEqual("model.fruits", [])
         fred = self.fred
         fred.fruits = ["banana", "mango"]
-        self.assert_value_in_js("jigna.broker._scope.model.fruits", fred.fruits)
+        self.assertJSEqual("model.fruits", fred.fruits)
 
         # Now set the value in the JS side.
-        self.execute_js("jigna.broker._scope.model.fruits[0] = 'peach'")
+        self.execute_js("model.fruits[0] = 'peach'")
         self.assertEqual(fred.fruits, ["peach", "mango"])
 
-        self.execute_js("jigna.broker._scope.model.fruits = ['apple']")
+        self.execute_js("model.fruits = ['apple']")
         self.assertEqual(fred.fruits, ["apple"])
 
     def test_instance_trait(self):
-        self.assert_value_in_js("jigna.broker._scope.model.spouse", '')
+        self.assertJSEqual("model.spouse", '')
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
-        self.assert_value_in_js("jigna.broker._scope.model.spouse.name", 'Wilma')
-        self.assert_value_in_js("jigna.broker._scope.model.spouse.age", 40)
+        self.assertJSEqual("model.spouse.name", 'Wilma')
+        self.assertJSEqual("model.spouse.age", 40)
 
         # Set in the JS side.
-        self.execute_js("jigna.broker._scope.model.spouse.name = 'Wilmaji'")
-        self.execute_js("jigna.broker._scope.model.spouse.age = 41")
+        self.execute_js("model.spouse.name = 'Wilmaji'")
+        self.execute_js("model.spouse.age = 41")
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
 
     def test_list_instance(self):
-        self.assert_value_in_js("jigna.broker._scope.model.friends", [])
+        self.assertJSEqual("model.friends", [])
         barney = Person(name="Barney", age=40)
         fred = self.fred
         fred.friends = [barney]
-        self.assert_value_in_js("jigna.broker._scope.model.friends[0].name",
-                                "Barney")
-        self.assert_value_in_js("jigna.broker._scope.model.friends[0].age", 40)
+        self.assertJSEqual("model.friends[0].name", "Barney")
+        self.assertJSEqual("model.friends[0].age", 40)
 
         dino = Person(name="Dino", age=10)
         fred.friends.append(dino)
-        self.assert_value_in_js("jigna.broker._scope.model.friends[1].name",
-                                "Dino")
-        self.assert_value_in_js("jigna.broker._scope.model.friends[1].age",
-                                10)
-        self.execute_js("jigna.broker._scope.model.friends[0].name = 'Barneyji'")
+        self.assertJSEqual("model.friends[1].name", "Dino")
+        self.assertJSEqual("model.friends[1].age", 10)
+        self.execute_js("model.friends[0].name = 'Barneyji'")
         self.assertEqual(barney.name, "Barneyji")
 
     def test_callable(self):
         fred = self.fred
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
-        self.execute_js("jigna.broker._scope.model.method('hello')")
+        self.execute_js("model.method('hello')")
         self.assertEqual(fred.called_with, "hello")
-        self.execute_js("jigna.broker._scope.model.method(1)")
+        self.execute_js("model.method(1)")
         self.assertEqual(fred.called_with, 1)
-        self.execute_js("jigna.broker._scope.model.method(10.0)")
+        self.execute_js("model.method(10.0)")
         self.assertEqual(fred.called_with, 10.0)
-        self.execute_js("jigna.broker._scope.model.method([1, 2])")
+        self.execute_js("model.method([1, 2])")
         self.assertEqual(fred.called_with, [1,2])
-        self.execute_js("jigna.broker._scope.model.method("\
-                                "jigna.broker._scope.model.spouse)")
+        self.execute_js("model.method(jigna.broker._scope.model.spouse)")
         self.assertEqual(fred.called_with, wilma)
 
 if __name__ == "__main__":
