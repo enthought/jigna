@@ -58,49 +58,37 @@ class JSError(Exception):
 
 
 class Bridge(HasTraits):
-    """ Bridge between AngularJS and Python worlds. """
+    """ Bridge between the JS and Python worlds. """
 
     #### 'Bridge' protocol ####################################################
 
+    #: The broker that we provide the bridge for.
     broker = Any
+
+    def recv(self, jsonized_request):
+        """ Handle a request from the JS-side. """
+
+        request           = json.loads(jsonized_request)
+        response          = self.broker.handle_request(request)
+        jsonized_response = json.dumps(response);
+
+        return jsonized_response
+
+    def send(self, request):
+        """ Send a request to the JS-side. """
+
+        jsonized_request  = json.dumps(request);
+        jsonized_response = self.widget.execute_js(
+            'jigna.bridge.recv(%r);' % jsonized_request
+        )
+        response          = json.loads(jsonized_response)
+
+        return response;
 
     #### 'QtWebKitBridge' protocol ############################################
 
+    #: The 'HTMLWidget' that contains the QtWebLit malarky.
     widget = Any
-
-    def handle_request(self, jsonized_request):
-        """ Handle a request from the JS-side. """
-
-        request = json.loads(jsonized_request)
-        try:
-            method = getattr(self.broker, request['method_name'])
-            value  = method(*request['args'])
-
-            exception   = None
-            # fixme: Calling private method!
-            type, value = self.broker._get_type_and_value(value)
-
-        except Exception, e:
-            exception = repr(sys.exc_type)
-            type      = 'exception'
-            value     = repr(sys.exc_value)
-
-        response = dict(exception=exception, type=type, value=value)
-        return json.dumps(response)
-
-    def send_request(self, request):
-        """ Send a request to the JS-side. """
-
-        jsonized_request  = json.dumps(request)
-        jsonized_response = self.widget.execute_js(
-            'jigna.bridge.handle_request(%r);' % jsonized_request
-        )
-
-        response = json.loads(jsonized_response)
-        if response['exception'] is not None:
-            raise JSError(response['value'])
-
-        return response
 
 
 class Broker(HasTraits):
@@ -119,73 +107,137 @@ class Broker(HasTraits):
 
         return
 
-    def call_method(self, id, method_name, *args):
-        """ Call a method on a registered object. """
+    def handle_request(self, request):
+        """ Handle a request from the JS-side. """
 
-        obj    = self._id_to_object_map.get(id)
-        method = getattr(obj, method_name)
-        args   = self._resolve_object_ids(args)
+        try:
+            method    = getattr(self, request['kind'])
+            args      = self._unmarshal_all(request['args'])
+            result    = method(*args)
+            exception = None
 
-        return method(*args)
+        except Exception, e:
+            exception = repr(sys.exc_type)
+            result    = repr(sys.exc_value)
 
-    def get_instance_info(self, id):
-        """ Return a description of an instance. """
+        response = dict(exception=exception, result=self._marshal(result))
+        return response
 
-        # fixme: When we register an object, we add it to the id to
-        # object map, but it must already be here for this to succeed. It
-        # works because we sneakily update the id to object map in the
-        # 'Broker._get_type_and_value' method!
-        obj = self._id_to_object_map.get(id)
-        self.register_object(obj)
+    def send_request(self, kind, args):
+        """ Send a request to the JS-side. """
 
-        info = {
-            'trait_names'  : obj.editable_traits(),
-            'method_names' : self._get_public_method_names(type(obj))
-        }
+        request  = dict(kind=kind, args=self._marshal_all(args))
+        response = self.bridge.send(request)
+        result   = self._unmarshal(response['result'])
 
-        return info
+        if response['exception'] is not None:
+            raise JSError(result)
 
-    def get_list_info(self, id):
-        """ Returns a description of a list. """
-
-        obj = self._id_to_object_map.get(id)
-
-        return len(obj)
-
-    def get_list_item(self, obj_id, index):
-        """ Return the value of a list item. """
-
-        obj = self._id_to_object_map.get(obj_id)
-
-        return obj[int(index)]
-
-    def get_trait(self, obj_id, trait_name):
-        """ Return the value of a trait on an object. """
-
-        obj = self._id_to_object_map.get(obj_id)
-
-        return getattr(obj, trait_name)
+        return result
 
     def register_object(self, obj):
         """ Register the given object with the broker. """
 
         self._id_to_object_map[str(id(obj))] = obj
-        obj.on_trait_change(self._on_object_trait_changed)
 
         return
 
-    def set_list_item(self, id, index, value):
+    #### Private protocol #####################################################
+
+    def _marshal(self, obj):
+        """ Marshal a value. """
+
+        if isinstance(obj, HasTraits):
+            obj_id = str(id(obj))
+            self._id_to_object_map[obj_id] = obj
+
+            type  = 'instance'
+            value = obj_id
+
+        elif isinstance(obj, list):
+            obj_id = str(id(obj))
+            self._id_to_object_map[obj_id] = obj
+
+            type  = 'list'
+            value = obj_id
+
+        else:
+            type  = 'primitive'
+            value = obj
+
+        return dict(type=type, value=value)
+
+    def _marshal_all(self, iter):
+        """ Marshal all of the values in an iterable. """
+
+        return [self._marshal(obj) for obj in iter]
+
+    def _unmarshal(self, obj):
+        """ Unmarshal a value. """
+
+        if obj['type'] == 'primitive':
+            value = obj['value']
+
+        else:
+            value = self._id_to_object_map[obj['value']]
+
+        return value
+
+    def _unmarshal_all(self, iter):
+        """ Unmarshal all of the values in an iterable. """
+
+        return [self._unmarshal(obj) for obj in iter]
+
+    ########################################################################
+
+    def call_method(self, obj, method_name, *args):
+        """ Call a method on a registered object. """
+
+        method = getattr(obj, method_name)
+
+        return method(*args)
+
+    def get_instance_info(self, obj):
+        """ Return a description of an instance. """
+
+        obj.on_trait_change(self._on_object_trait_changed)
+
+        info = dict(
+            trait_names  = obj.editable_traits(),
+            method_names = self._get_public_method_names(type(obj))
+        )
+
+        return info
+
+    def get_list_info(self, obj):
+        """ Returns a description of a list. """
+
+        info = dict(
+            length = len(obj)
+        )
+
+        return info
+
+    def get_list_item(self, obj, index):
+        """ Return the value of a list item. """
+
+        return obj[index]
+
+    def get_trait(self, obj, trait_name):
+        """ Return the value of a trait on an object. """
+
+        return getattr(obj, trait_name)
+
+    def set_list_item(self, obj, index, value):
         """ Set an item in a list. """
 
-        obj = self._id_to_object_map.get(id)
         obj[index] = value
 
         return
 
-    def set_trait(self, id, trait_name, value):
+    def set_trait(self, obj, trait_name, value):
         """ Set a trait on an object. """
 
-        obj  = self._id_to_object_map.get(id)
         setattr(obj, trait_name, value)
 
         return
@@ -217,44 +269,6 @@ class Broker(HasTraits):
 
         return public_methods
 
-    def _get_type_and_value(self, value):
-        """ Return a tuple of the form (type, value) for the value.
-
-        `type` is either "instance", "list" or "primitive".
-
-        """
-
-        if isinstance(value, HasTraits):
-            value_id = str(id(value))
-            self._id_to_object_map[value_id] = value
-
-            type  = 'instance'
-            value = value_id
-
-        elif isinstance(value, list):
-            value_id = str(id(value))
-            self._id_to_object_map[value_id] = value
-
-            type  = 'list'
-            value = value_id
-
-        else:
-            type = 'primitive'
-
-        return type, value
-
-    def _resolve_object_ids(self, values):
-        """ Resolve any object ids found in the given list of values. """
-
-        actual = []
-        for value in values:
-            if isinstance(value, dict) and '__id__' in value:
-                value = self._id_to_object_map[value['__id__']]
-
-            actual.append(value)
-
-        return actual
-
     #### Trait change handlers ################################################
 
     def _on_object_trait_changed(self, obj, trait_name, old, new):
@@ -262,20 +276,17 @@ class Broker(HasTraits):
 
         if isinstance(new, TraitListEvent):
             trait_name = trait_name[:-len('_items')]
-            value      = getattr(obj, trait_name)
+            new        = getattr(obj, trait_name)
 
         else:
-            value = new
-            if isinstance(value, HasTraits) or isinstance(value, list):
-                self._id_to_object_map[str(id(value))] = value
+            if isinstance(new, HasTraits) or isinstance(new, list):
+                self._id_to_object_map[str(id(new))] = new
 
-        type, value = self._get_type_and_value(value)
-
-        event = dict(type=type, value=value)
-
-        request = dict(method_name='on_object_changed', args=(event,))
-
-        self.bridge.send_request(request)
+        # fixme: This smells... marhsalling this gives is the type and value
+        # which is what we need on the JS side to determine what (if any) proxy
+        # we need to create.
+        event = self._marshal(new)
+        self.bridge.send(dict(kind='on_object_changed', args=[event]));
 
         return
 
@@ -343,7 +354,7 @@ class JignaView(HasTraits):
         }
 
         widget = HTMLWidget(
-            callbacks        = [('handle_request', self._handle_request)],
+            callbacks        = [('recv', self._recv)],
             python_namespace = 'python',
             hosts            = hosts,
             open_externally  = True,
@@ -353,10 +364,10 @@ class JignaView(HasTraits):
 
         return widget
 
-    def _handle_request(self, request):
+    def _recv(self, request):
         """ Handle a request from a client. """
 
-        return self._broker.bridge.handle_request(request)
+        return self._broker.bridge.recv(request)
 
     def _get_html(self, model):
         """ Get the HTML document for the given model. """

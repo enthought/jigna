@@ -12,8 +12,7 @@ var jigna = {};
 
 jigna.initialize = function(model_name, id) {
     jigna.bridge = new jigna.Bridge();
-    jigna.broker = new jigna.Broker(jigna.bridge);
-    jigna.broker.initialize(model_name, id);
+    jigna.broker = new jigna.Broker(model_name, id);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -34,40 +33,26 @@ jigna.Bridge = function() {
     }
 };
 
-jigna.Bridge.prototype.handle_request = function(jsonized_request) {
+jigna.Bridge.prototype.recv = function(jsonized_request) {
     /* Handle a request from the Python-side. */
 
-    var args, exception, method, type, request, response, result, value;
+    var jsonized_response, request, response;
 
-    request = JSON.parse(jsonized_request);
-    try {
-	// fixme: Hidden circular ref to broker!
-        method = jigna.broker[request.method_name];
-        value  = method.apply(jigna.broker, request.args);
+    request           = JSON.parse(jsonized_request);
+    response          = jigna.broker.handle_request(request)
+    jsonized_response = JSON.stringify(response);
 
-        exception = null;
-        result    = this._get_type_and_value(value);
-        type      = result.type;
-        value     = result.value;
-    }
-    catch (error) {
-        exception = error.message;
-        type      = 'exception';
-        value     = error.message;
-    };
-
-    response = {'exception' : exception, 'type' : type, 'value' : value};
-    return JSON.stringify(response);
+    return jsonized_response;
 };
 
-jigna.Bridge.prototype.send_request = function(request) {
+jigna.Bridge.prototype.send = function(request) {
     /* Send a request to the Python-side. */
 
     var jsonized_request, jsonized_response, response;
 
-    jsonized_request  = JSON.stringify(request);
+    jsonized_request = JSON.stringify(request);
     if (this._python != undefined) {
-        jsonized_response = this._python.handle_request(jsonized_request);
+        jsonized_response = this._python.recv(jsonized_request);
     }
     else {
         var x = $.ajax(
@@ -80,55 +65,49 @@ jigna.Bridge.prototype.send_request = function(request) {
              async:false}
         );
     }
-
     response = JSON.parse(jsonized_response);
-    if (response.exception !== null) {
-        throw response.value;
-    }
 
     return response;
-};
-
-// Private protocol //////////////////////////////////////////////////////////
-
-jigna.Bridge.prototype._get_type_and_value = function(value) {
-
-    var type;
-
-    if (value !== null && value !== undefined && value.__id__ != undefined) {
-        type  = 'instance';
-        value = value.__id__;
-
-    } else {
-        type = 'primitive';
-    }
-
-    return {'type': type, 'value' : value}
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // Broker
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Broker = function(bridge) {
+jigna.Broker = function(model_name, id) {
     // Private protocol
-    this._bridge          = bridge;
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
     this._scope           = $(document.body).scope();
+
+    // Add the model.
+    this._add_model(model_name, id);
 };
 
-jigna.Broker.prototype.initialize = function(model_name, id) {
-    // Get a proxy for the object identified by Id...
-    var proxy = this._create_proxy('instance', id);
+// Not sure we need hanlde_request this side... since we only actually
+// take events and in WebSocket world that its one way (ie. no return value).
+jigna.Broker.prototype.handle_request = function(request) {
+    /* Handle a request from the Python-side. */
 
-    // ... and expose it with the name 'model_name' to AngularJS.
-    var scope = this._scope;
-    scope.$apply(function() {scope[model_name] = proxy;});
+    var args, exception, method, value;
+    try {
+        method    = this[request.kind];
+        // fixme: We need type in the event to know what kind of proxy to create
+        //args      = this._unmarshal_all(request.args);
+        args      = request.args;
+        value     = method.apply(this, args);
+        exception = null;
+    }
+    catch (error) {
+        exception = error;
+        value     = error.message;
+    };
+
+    response = {'exception' : exception, 'result' : this._marshal(value)};
+    return response;
 };
 
 jigna.Broker.prototype.on_object_changed = function(event) {
-
     this._create_proxy(event.type, event.value);
 
     if (this._scope.$$phase === null){
@@ -136,37 +115,35 @@ jigna.Broker.prototype.on_object_changed = function(event) {
     };
 };
 
-// Instances...
-jigna.Broker.prototype.call_method = function(id, method_name, args) {
-    return this._send_request('call_method', [id, method_name].concat(args));
-};
+jigna.Broker.prototype.send_request = function(kind, args) {
+    /* Send a request to the Python-side. */
 
-jigna.Broker.prototype.get_instance_info = function(id) {
-    return this._send_request('get_instance_info', [id]);
-};
+    var request, response;
 
-jigna.Broker.prototype.get_trait = function(id, trait_name) {
-    return this._send_request('get_trait', [id, trait_name]);
-};
+    request  = {'kind' : kind, 'args' : this._marshal_all(args)};
+    response = jigna.bridge.send(request);
+    result   = this._unmarshal(response.result);
 
-jigna.Broker.prototype.set_trait = function(id, trait_name, value) {
-    return this._send_request('set_trait', [id, trait_name, value]);
-};
+    if (response.exception !== null) {
+        throw result;
+    }
 
-// Lists...
-jigna.Broker.prototype.get_list_info = function(id) {
-    return this._send_request('get_list_info', [id]);
-};
-
-jigna.Broker.prototype.get_list_item = function(id, index) {
-    return this._send_request('get_list_item', [id, index]);
-};
-
-jigna.Broker.prototype.set_list_item = function(id, index, value){
-    return this._send_request('set_list_item', [id, index, value]);
+    return result;
 };
 
 // Private protocol //////////////////////////////////////////////////////////
+
+jigna.Broker.prototype._add_model = function(model_name, id) {
+    var proxy, scope;
+
+    // Get a proxy for the object identified by Id...
+    proxy = this._create_proxy('instance', id);
+
+    // ... and expose it with the name 'model_name' to AngularJS.
+    scope = this._scope;
+    scope.$apply(function() {scope[model_name] = proxy;});
+};
+
 
 jigna.Broker.prototype._create_proxy = function(type, obj) {
     var proxy;
@@ -181,43 +158,58 @@ jigna.Broker.prototype._create_proxy = function(type, obj) {
     return proxy;
 };
 
-jigna.Broker.prototype._get_proxy = function(type, obj) {
-    var proxy;
+jigna.Broker.prototype._marshal = function(obj) {
+    var type, value;
 
-    if (type === 'primitive') {
-        proxy = obj;
-    }
-    else {
-        proxy = this._id_to_proxy_map[obj];
-        if (proxy === undefined) {
-            proxy = this._create_proxy(type, obj);
-        }
-    }
+    if (obj === null || obj === undefined || obj.__id__ === undefined) {
+        type  = 'primitive';
+        value = obj;
 
-    return proxy;
+    } else {
+        // fixme: Or list!
+        type  = 'instance';
+        value = obj.__id__;
+    };
+
+    return {'type' : type, 'value' : value};
 };
 
-jigna.Broker.prototype._replace_proxies_with_their_ids = function(args) {
-    for (var index in args) {
-        var value = args[index];
-        if (value.__id__ !== undefined) {
-            args[index] = {'__id__' : value.__id__};
-        }
+jigna.Broker.prototype._marshal_all = function(objs) {
+    var index;
+
+    for (index in objs) {
+        objs[index] = this._marshal(objs[index]);
     };
 
     // For convenience, as we modify the array in-place.
-    return args;
+    return objs;
 };
 
-jigna.Broker.prototype._send_request = function(method_name, args) {
-    var request = {
-        'method_name' : method_name,
-        'args'        : this._replace_proxies_with_their_ids(args)
+jigna.Broker.prototype._unmarshal = function(obj) {
+    var value;
+
+    if (obj.type === 'primitive') {
+        value = obj.value;
+
+    } else {
+        value = this._id_to_proxy_map[obj.value];
+        if (value === undefined) {
+            value = this._create_proxy(obj.type, obj.value);
+        }
+    }
+
+    return value;
+};
+
+jigna.Broker.prototype._unmarshal_all = function(objs) {
+    var index;
+
+    for (index in objs) {
+        objs[index] = this._unmarshal(objs[index]);
     };
 
-    var response = this._bridge.send_request(request);
-
-    return this._get_proxy(response.type, response.value);
+    // For convenience, as we modify the array in-place.
+    return objs;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -250,14 +242,16 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
 // Private protocol //////////////////////////////////////////////////////////
 
 jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
-    var get = function() {
+    var get, set;
+
+    get = function() {
         // In here, 'this' refers to the proxy!
-        return this.__broker__.get_list_item(this.__id__, index);
+        return this.__broker__.send_request('get_list_item', [this, index]);
     };
 
-    var set = function(value) {
+    set = function(value) {
         // In here, 'this' refers to the proxy!
-        this.__broker__.set_list_item(this.__id__, index, value);
+        this.__broker__.send_request('set_list_item', [this, index, value]);
     };
 
     this._add_property(proxy, index, get, set);
@@ -265,12 +259,16 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
 
 jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
     var method = function () {
+        var args, result;
         // In here, 'this' refers to the proxy!
-	//
-	// In JS, 'arguments' is not a real array, so this converts it to one!
-	var args = Array.prototype.slice.call(arguments);
+        //
+        // In JS, 'arguments' is not a real array, so this converts it to one!
+        args   = Array.prototype.slice.call(arguments);
+        result = this.__broker__.send_request(
+            'call_method', [this, method_name].concat(args)
+        );
 
-        return this.__broker__.call_method(this.__id__, method_name, args);
+        return result;
     };
 
     proxy[method_name] = method;
@@ -291,12 +289,12 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
 jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
     var get = function() {
         // In here, 'this' refers to the proxy!
-        return this.__broker__.get_trait(this.__id__, trait_name);
+        return this.__broker__.send_request('get_trait', [this, trait_name]);
     };
 
     var set = function(value) {
         // In here, 'this' refers to the proxy!
-        this.__broker__.set_trait(this.__id__, trait_name, value);
+        this.__broker__.send_request('set_trait', [this, trait_name, value]);
     };
 
     this._add_property(proxy, trait_name, get, set);
@@ -304,7 +302,7 @@ jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._broker);
-    var info = this._broker.get_instance_info(id);
+    var info  = this._broker.send_request('get_instance_info', [proxy]);
 
     var trait_names = info.trait_names;
     for (var index in trait_names) {
@@ -321,9 +319,9 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var proxy = new jigna.Proxy(id, this._broker);
-    var list_length = this._broker.get_list_info(id);
+    var info  = this._broker.send_request('get_list_info', [proxy]);
 
-    for (var index=0; index < list_length; index++) {
+    for (var index=0; index < info.length; index++) {
         this._add_list_item_property(proxy, index);
     }
 
@@ -335,11 +333,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.Proxy = function(id, broker) {
-    var descriptor = {
-        configurable : true,
-        enumerable   : false,
-        writeable    : true
-    };
+    var descriptor = {configurable:true, enumerable:false, writeable:true};
 
     descriptor.value = id;
     Object.defineProperty(this, '__id__', descriptor);
