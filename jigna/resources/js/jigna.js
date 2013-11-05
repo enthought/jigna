@@ -46,7 +46,6 @@ jigna.QtBridge.prototype.on_event = function(jsonized_event) {
     jigna.broker.on_object_changed(JSON.parse(jsonized_event));
 };
 
-
 jigna.QtBridge.prototype.send_synchronous = function(request) {
     /* Send a request to the server and wait for the reply. */
 
@@ -73,7 +72,7 @@ jigna.WebBridge = function() {
 
 // fixme: duplicated in Bridge!
 jigna.WebBridge.prototype.on_event = function(jsonized_event) {
-    /* Handle an event from the server-side. */
+    /* Handle an event from the server. */
     jigna.broker.on_object_changed(JSON.parse(jsonized_event));
 };
 
@@ -111,8 +110,7 @@ jigna.Broker = function(model_name, id) {
 };
 
 jigna.Broker.prototype.on_object_changed = function(event) {
-    console.log('on_object_changed', event.type, event.value);
-    this._create_proxy(event.type, event.value);
+    this._create_proxy(event.new.type, event.new.value);
 
     if (this._scope.$$phase === null){
         this._scope.$digest();
@@ -147,7 +145,6 @@ jigna.Broker.prototype._add_model = function(model_name, id) {
     scope = this._scope;
     scope.$apply(function() {scope[model_name] = proxy;});
 };
-
 
 jigna.Broker.prototype._create_proxy = function(type, obj) {
     var proxy;

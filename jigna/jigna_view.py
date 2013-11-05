@@ -262,13 +262,17 @@ class Broker(HasTraits):
 
         else:
             if isinstance(new, HasTraits) or isinstance(new, list):
-                self._id_to_object_map[str(id(new))] = new
+                self.register_object(new)
 
-        # fixme: This smells... marhsalling this gives is the type and value
-        # which is what we need on the JS side to determine what (if any) proxy
-        # we need to create.
-        event = self._marshal(new)
-        print 'emitting event', event
+        event = dict(
+            obj        = str(id(obj)),
+            trait_name = trait_name,
+            # fixme: This smells a bit, but marhsalling the new value gives us
+            # a type/value pair which we need on the client side to determine
+            # what (if any) proxy we need to create.
+            new        = self._marshal(new)
+        )
+
         self.bridge.emit(event)
 
         return
