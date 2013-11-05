@@ -54,29 +54,31 @@ DOCUMENT_HTML_TEMPLATE = """
 
 
 class Bridge(HasTraits):
-    """ Bridge between the JS and Python worlds. """
+    """ Bridge that handles the client-server communication. """
 
     #### 'Bridge' protocol ####################################################
 
     #: The broker that we provide the bridge for.
     broker = Any
 
-    def recv(self, jsonized_request):
-        """ Handle a request from the JS-side. """
-
-        request           = json.loads(jsonized_request)
-        response          = self.broker.handle_request(request)
-        jsonized_response = json.dumps(response);
-
-        return jsonized_response
-
     def emit(self, event):
-        """ Emit an event to the client. """
+        """ Emit an event. """
 
         jsonized_event = json.dumps(event)
+
+        # This looks weird but this is how we fake an event being 'received'
+        # on the client side when using the Qt bridge!
         self.widget.execute_js('jigna.bridge.on_event(%r);' % jsonized_event)
 
         return
+
+    def recv(self, jsonized_request):
+        """ Handle a request from the JS-side. """
+
+        request  = json.loads(jsonized_request)
+        response = self.broker.handle_request(request)
+
+        return json.dumps(response);
 
     #### 'QtWebKitBridge' protocol ############################################
 

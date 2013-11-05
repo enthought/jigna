@@ -1,35 +1,65 @@
+#
+# Enthought product code
+#
+# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# All right reserved.
+#
+# This file is confidential and NOT open source.  Do not distribute.
+#
+
+
+# Standard library.
 import json
-from jinja2 import Template
 from os.path import join, dirname
+
+# 3rd part library.
+from jinja2 import Template
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
+
+# Enthought library.
 from traits.api import List, Str
 
-from jigna_view import (Bridge, Broker, DOCUMENT_HTML_TEMPLATE, JignaView)
+# Jigna library.
+from jigna_view import Bridge, Broker, DOCUMENT_HTML_TEMPLATE, JignaView
 
 
-###############################################################################
 class WebBridge(Bridge):
+    """ Bridge that handles the client-server communication. """
 
     #### 'Bridge' protocol ####################################################
-    def send(self, request):
-        """ Send a request to the client-side. """
 
-        jsonized_request = json.dumps(request)
+    def emit(self, event):
+        """ Emit an event. """
+
+        jsonized_event = json.dumps(event)
         for socket in self._active_sockets:
-            socket.write_message(jsonized_request)
+            socket.write_message(jsonized_event)
+
+        return
 
     #### 'WebBridge' protocol #################################################
-    _active_sockets = List
 
     def add_socket(self, socket):
+        """ Add a client socket. """
+
         self._active_sockets.append(socket)
 
+        return
+
     def remove_socket(self, socket):
+        """ Remove a client socket. """
+
         self._active_sockets.remove(socket)
 
+        return
 
-###############################################################################
+    #### Private protocol #####################################################
+
+    #: All active client sockets.
+    _active_sockets = List
+
+
 class JignaWebView(JignaView):
     """ A factory for HTML/AngularJS based user interfaces on the web. """
 
@@ -72,7 +102,6 @@ class JignaWebView(JignaView):
 
     def __widget_default(self):
         return None
-
 
 ###############################################################################
 class MainHandler(RequestHandler):
@@ -118,36 +147,38 @@ class JignaSocket(WebSocketHandler):
         print "Closing jigna websocket"
         self.bridge.remove_socket(self)
 
-
-
 ###############################################################################
+
 def serve(jigna_view, port=8888, thread=False, address=''):
-    """Serve the given JignaWebView on a websocket.
+    """ Serve the given JignaWebView on a websocket.
 
     Parameters
     -----------
 
-    jigna_view: JignaWebView: The JignaView instance to serve.
-    port: int: Port to serve UI on.
-    thread: bool: If True, start the server on a separate thread.
-    address: str: Address where we listen.  Defaults to localhost.
+    JignaWebView jigna_view: The JignaView instance to serve.
+    int port: Port to serve UI on.
+    Bool thread: If True, start the server on a separate thread.
+    str address: Address where we listen.  Defaults to localhost.
+
     """
+
     from tornado.ioloop import IOLoop
     bridge = jigna_view._broker.bridge
 
     # Setup the application.
-    settings = {
-    "static_path": join(dirname(__file__), "resources")
-    }
-    application = Application([
+    settings = {'static_path': join(dirname(__file__), 'resources')}
+
+    application = Application(
+        [
             (r"/_jigna_ws", JignaSocket, dict(bridge=bridge)),
             (r"/_jigna", GetFromBridge, dict(bridge=bridge)),
             (r".*", MainHandler, dict(jigna_view=jigna_view)),
-        ], **settings)
-
+        ],
+        **settings
+    )
     application.listen(port, address=address)
-    ioloop = IOLoop.instance()
 
+    ioloop = IOLoop.instance()
     if thread:
         from threading import Thread
         t = Thread(target=ioloop.start)
@@ -155,3 +186,7 @@ def serve(jigna_view, port=8888, thread=False, address=''):
         t.start()
     else:
         ioloop.start()
+
+    return
+
+#### EOF ######################################################################

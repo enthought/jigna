@@ -40,18 +40,6 @@ jigna.QtBridge = function(qt_bridge) {
     this._qt_bridge = qt_bridge;
 };
 
-// jigna.QtBridge.prototype.recv = function(jsonized_request) {
-//     /* Handle a request from the server-side. */
-
-//     var jsonized_response, request, response;
-
-//     request           = JSON.parse(jsonized_request);
-//     response          = jigna.broker.handle_request(request);
-//     jsonized_response = JSON.stringify(response);
-
-//     return jsonized_response;
-// };
-
 // fixme: Make the QtBridge quack like this!
 jigna.QtBridge.prototype.on_event = function(jsonized_event) {
     /* Handle an event from the server-side. */
