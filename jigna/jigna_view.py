@@ -73,7 +73,7 @@ class Bridge(HasTraits):
         return
 
     def recv(self, jsonized_request):
-        """ Handle a request from the JS-side. """
+        """ Handle a request from the client. """
 
         request  = json.loads(jsonized_request)
         response = self.broker.handle_request(request)
@@ -102,8 +102,34 @@ class Broker(HasTraits):
 
         return
 
+    def emit_object_changed_event(self, obj, trait_name, old, new):
+        """ Emit an event to let clients know that an object has changed. """
+
+        print 'emit_object_changed_event', obj, trait_name, new
+
+        if isinstance(new, TraitListEvent):
+            trait_name = trait_name[:-len('_items')]
+            new        = getattr(obj, trait_name)
+
+        else:
+            if isinstance(new, HasTraits) or isinstance(new, list):
+                self.register_object(new)
+
+        event = dict(
+            obj        = str(id(obj)),
+            trait_name = trait_name,
+            # fixme: This smells a bit, but marhsalling the new value gives us
+            # a type/value pair which we need on the client side to determine
+            # what (if any) proxy we need to create.
+            new        = self._marshal(new)
+        )
+
+        self.bridge.emit(event)
+
+        return
+
     def handle_request(self, request):
-        """ Handle a request from the JS-side. """
+        """ Handle a request from the client. """
 
         try:
             method    = getattr(self, request['kind'])
@@ -124,52 +150,6 @@ class Broker(HasTraits):
 
         return
 
-    #### Private protocol #####################################################
-
-    def _marshal(self, obj):
-        """ Marshal a value. """
-
-        if isinstance(obj, HasTraits):
-            obj_id = str(id(obj))
-            self._id_to_object_map[obj_id] = obj
-
-            type  = 'instance'
-            value = obj_id
-
-        elif isinstance(obj, list):
-            obj_id = str(id(obj))
-            self._id_to_object_map[obj_id] = obj
-
-            type  = 'list'
-            value = obj_id
-
-        else:
-            type  = 'primitive'
-            value = obj
-
-        return dict(type=type, value=value)
-
-    def _marshal_all(self, iter):
-        """ Marshal all of the values in an iterable. """
-
-        return [self._marshal(obj) for obj in iter]
-
-    def _unmarshal(self, obj):
-        """ Unmarshal a value. """
-
-        if obj['type'] == 'primitive':
-            value = obj['value']
-
-        else:
-            value = self._id_to_object_map[obj['value']]
-
-        return value
-
-    def _unmarshal_all(self, iter):
-        """ Unmarshal all of the values in an iterable. """
-
-        return [self._unmarshal(obj) for obj in iter]
-
     #### Handlers for each kind of request ####################################
 
     def call_method(self, obj, method_name, *args):
@@ -182,7 +162,7 @@ class Broker(HasTraits):
     def get_instance_info(self, obj):
         """ Return a description of an instance. """
 
-        obj.on_trait_change(self._on_object_trait_changed)
+        obj.on_trait_change(self.emit_object_changed_event)
 
         info = dict(
             trait_names  = obj.editable_traits(),
@@ -251,31 +231,49 @@ class Broker(HasTraits):
 
         return public_methods
 
-    #### Trait change handlers ################################################
+    def _marshal(self, obj):
+        """ Marshal a value. """
 
-    def _on_object_trait_changed(self, obj, trait_name, old, new):
-        """ Called when any trait on a registered object has been changed. """
+        if isinstance(obj, HasTraits):
+            obj_id = str(id(obj))
+            self._id_to_object_map[obj_id] = obj
 
-        if isinstance(new, TraitListEvent):
-            trait_name = trait_name[:-len('_items')]
-            new        = getattr(obj, trait_name)
+            type  = 'instance'
+            value = obj_id
+
+        elif isinstance(obj, list):
+            obj_id = str(id(obj))
+            self._id_to_object_map[obj_id] = obj
+
+            type  = 'list'
+            value = obj_id
 
         else:
-            if isinstance(new, HasTraits) or isinstance(new, list):
-                self.register_object(new)
+            type  = 'primitive'
+            value = obj
 
-        event = dict(
-            obj        = str(id(obj)),
-            trait_name = trait_name,
-            # fixme: This smells a bit, but marhsalling the new value gives us
-            # a type/value pair which we need on the client side to determine
-            # what (if any) proxy we need to create.
-            new        = self._marshal(new)
-        )
+        return dict(type=type, value=value)
 
-        self.bridge.emit(event)
+    def _marshal_all(self, iter):
+        """ Marshal all of the values in an iterable. """
 
-        return
+        return [self._marshal(obj) for obj in iter]
+
+    def _unmarshal(self, obj):
+        """ Unmarshal a value. """
+
+        if obj['type'] == 'primitive':
+            value = obj['value']
+
+        else:
+            value = self._id_to_object_map[obj['value']]
+
+        return value
+
+    def _unmarshal_all(self, iter):
+        """ Unmarshal all of the values in an iterable. """
+
+        return [self._unmarshal(obj) for obj in iter]
 
 
 class JignaView(HasTraits):
