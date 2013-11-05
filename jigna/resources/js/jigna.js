@@ -16,12 +16,14 @@ jigna.initialize = function(model_name, id) {
 };
 
 jigna.create_bridge = function() {
-    var bridge;
+    var bridge, qt_bridge;
 
-    // Are we using the intra-process Qt Bridge?
-    if (window['qt_bridge'] !== undefined) {
-        bridge = new jigna.QtBridge();
+    // Are we using the intra-process Qt Bridge...
+    qt_bridge = window['qt_bridge'];
+    if (qt_bridge !== undefined) {
+        bridge = new jigna.QtBridge(qt_bridge);
 
+    // ... or the inter-process web bridge?
     } else {
         bridge = new jigna.WebBridge();
     };
@@ -33,9 +35,9 @@ jigna.create_bridge = function() {
 // QtBridge
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.QtBridge = function() {
+jigna.QtBridge = function(qt_bridge) {
     // Private protocol
-    this._qt_bridge = window['qt_bridge'];
+    this._qt_bridge = qt_bridge;
 };
 
 jigna.QtBridge.prototype.recv = function(jsonized_request) {
@@ -170,7 +172,7 @@ jigna.Broker.prototype.invoke_request = function(kind, args) {
 jigna.Broker.prototype._add_model = function(model_name, id) {
     var proxy, scope;
 
-    // Get a proxy for the object identified by Id...
+    // Create a proxy for the object identified by the Id...
     proxy = this._create_proxy('instance', id);
 
     // ... and expose it with the name 'model_name' to AngularJS.
@@ -321,12 +323,14 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
 };
 
 jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
-    var get = function() {
+    var get, set;
+
+    get = function() {
         // In here, 'this' refers to the proxy!
         return this.__broker__.invoke_request('get_trait', [this, trait_name]);
     };
 
-    var set = function(value) {
+    set = function(value) {
         // In here, 'this' refers to the proxy!
         this.__broker__.invoke_request('set_trait', [this, trait_name, value]);
     };
@@ -335,16 +339,18 @@ jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
-    var proxy = new jigna.Proxy(id, this._broker);
-    var info  = this._broker.invoke_request('get_instance_info', [proxy]);
+    var index, info, method_names, proxy, trait_names;
 
-    var trait_names = info.trait_names;
-    for (var index in trait_names) {
+    proxy = new jigna.Proxy(id, this._broker);
+    info  = this._broker.invoke_request('get_instance_info', [proxy]);
+
+    trait_names = info.trait_names;
+    for (index in trait_names) {
         this._add_trait_property(proxy, trait_names[index]);
     }
 
-    var method_names = info.method_names;
-    for (var index in method_names) {
+    method_names = info.method_names;
+    for (index in method_names) {
         this._add_method(proxy, method_names[index]);
     }
 
@@ -352,10 +358,12 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 };
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
-    var proxy = new jigna.Proxy(id, this._broker);
-    var info  = this._broker.invoke_request('get_list_info', [proxy]);
+    var index, info, proxy;
 
-    for (var index=0; index < info.length; index++) {
+    proxy = new jigna.Proxy(id, this._broker);
+    info  = this._broker.invoke_request('get_list_info', [proxy]);
+
+    for (index=0; index < info.length; index++) {
         this._add_list_item_property(proxy, index);
     }
 
