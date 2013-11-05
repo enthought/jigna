@@ -42,12 +42,12 @@ jigna.QtBridge = function(qt_bridge) {
 
 // fixme: duplicated in WebBridge!
 jigna.QtBridge.prototype.on_event = function(jsonized_event) {
-    /* Handle an event from the server-side. */
+    /* Handle an event from the server. */
     jigna.broker.on_object_changed(JSON.parse(jsonized_event));
 };
 
 
-jigna.QtBridge.prototype.synchronous = function(request) {
+jigna.QtBridge.prototype.send_synchronous = function(request) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_request, jsonized_response;
@@ -77,7 +77,7 @@ jigna.WebBridge.prototype.on_event = function(jsonized_event) {
     jigna.broker.on_object_changed(JSON.parse(jsonized_event));
 };
 
-jigna.WebBridge.prototype.synchronous = function(request) {
+jigna.WebBridge.prototype.send_synchronous = function(request) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_request, jsonized_response;
@@ -120,12 +120,12 @@ jigna.Broker.prototype.on_object_changed = function(event) {
 };
 
 jigna.Broker.prototype.invoke_request = function(kind, args) {
-    /* Send a request to the server-side and wait for the reply. */
+    /* Send a request to the server and wait for the reply. */
 
     var request, response, result;
 
     request  = {'kind' : kind, 'args' : this._marshal_all(args)};
-    response = jigna.bridge.synchronous(request);
+    response = jigna.bridge.send_synchronous(request);
     result   = this._unmarshal(response.result);
 
     if (response.exception !== null) {
