@@ -53,10 +53,6 @@ DOCUMENT_HTML_TEMPLATE = """
 """
 
 
-class JSError(Exception):
-    """ Raised when an exception occurred on the JS-side. """
-
-
 class Bridge(HasTraits):
     """ Bridge between the JS and Python worlds. """
 
@@ -74,16 +70,13 @@ class Bridge(HasTraits):
 
         return jsonized_response
 
-    def send(self, request):
-        """ Send a request to the JS-side. """
+    def emit(self, event):
+        """ Emit an event to the client. """
 
-        jsonized_request  = json.dumps(request);
-        jsonized_response = self.widget.execute_js(
-            'jigna.bridge.recv(%r);' % jsonized_request
-        )
-        response          = json.loads(jsonized_response)
+        jsonized_event = json.dumps(event)
+        self.widget.execute_js('jigna.bridge.on_event(%r);' % jsonized_event)
 
-        return response;
+        return
 
     #### 'QtWebKitBridge' protocol ############################################
 
@@ -120,20 +113,7 @@ class Broker(HasTraits):
             exception = repr(sys.exc_type)
             result    = repr(sys.exc_value)
 
-        response = dict(exception=exception, result=self._marshal(result))
-        return response
-
-    def send_request(self, kind, args):
-        """ Send a request to the JS-side. """
-
-        request  = dict(kind=kind, args=self._marshal_all(args))
-        response = self.bridge.send(request)
-        result   = self._unmarshal(response['result'])
-
-        if response['exception'] is not None:
-            raise JSError(result)
-
-        return result
+        return dict(exception=exception, result=self._marshal(result))
 
     def register_object(self, obj):
         """ Register the given object with the broker. """
@@ -188,7 +168,7 @@ class Broker(HasTraits):
 
         return [self._unmarshal(obj) for obj in iter]
 
-    ########################################################################
+    #### Handlers for each kind of request ####################################
 
     def call_method(self, obj, method_name, *args):
         """ Call a method on a registered object. """
@@ -286,7 +266,7 @@ class Broker(HasTraits):
         # which is what we need on the JS side to determine what (if any) proxy
         # we need to create.
         event = self._marshal(new)
-        self.bridge.send(dict(kind='on_object_changed', args=[event]));
+        self.bridge.emit(dict(kind='on_object_changed', args=[event]));
 
         return
 

@@ -13,9 +13,9 @@ class WebBridge(Bridge):
 
     #### 'Bridge' protocol ####################################################
     def send(self, request):
-        """ Send a request to the JS-side. """
+        """ Send a request to the client-side. """
 
-        jsonized_request  = json.dumps(request)
+        jsonized_request = json.dumps(request)
         for socket in self._active_sockets:
             socket.write_message(jsonized_request)
 
