@@ -41,18 +41,18 @@ jigna.QtBridge = function(qt_bridge) {
 };
 
 // fixme: duplicated in WebBridge!
-jigna.QtBridge.prototype.on_event = function(jsonized_event) {
+jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     jigna.broker.handle_event(JSON.parse(jsonized_event));
 };
 
-jigna.QtBridge.prototype.send_synchronous = function(request) {
+jigna.QtBridge.prototype.send_request = function(request) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_request, jsonized_response;
 
     jsonized_request = JSON.stringify(request);
-    jsonized_response = this._qt_bridge.recv(jsonized_request);
+    jsonized_response = this._qt_bridge.handle_request(jsonized_request);
 
     return JSON.parse(jsonized_response);
 };
@@ -66,17 +66,17 @@ jigna.WebBridge = function() {
 
     this._web_socket = new WebSocket(url);
     this._web_socket.onmessage = function(event) {
-        jigna.bridge.on_event(event.data);
+        jigna.bridge.handle_event(event.data);
     };
 };
 
 // fixme: duplicated in Bridge!
-jigna.WebBridge.prototype.on_event = function(jsonized_event) {
+jigna.WebBridge.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     jigna.broker.handle_event(JSON.parse(jsonized_event));
 };
 
-jigna.WebBridge.prototype.send_synchronous = function(request) {
+jigna.WebBridge.prototype.send_request = function(request) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_request, jsonized_response;
@@ -120,13 +120,13 @@ jigna.Broker.prototype.handle_event = function(event) {
     handler.apply(this, [event]);
 };
 
-jigna.Broker.prototype.invoke_request = function(kind, args) {
+jigna.Broker.prototype.send_request = function(kind, args) {
     /* Send a request to the server and wait for the reply. */
 
     var request, response, result;
 
     request  = {'kind' : kind, 'args' : this._marshal_all(args)};
-    response = jigna.bridge.send_synchronous(request);
+    response = jigna.bridge.send_request(request);
     result   = this._unmarshal(response.result);
 
     if (response.exception !== null) {
@@ -271,12 +271,12 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        return this.__broker__.invoke_request('get_list_item', [this, index]);
+        return this.__broker__.send_request('get_list_item', [this, index]);
     };
 
     set = function(value) {
         // In here, 'this' refers to the proxy!
-        this.__broker__.invoke_request('set_list_item', [this, index, value]);
+        this.__broker__.send_request('set_list_item', [this, index, value]);
     };
 
     this._add_property(proxy, index, get, set);
@@ -289,7 +289,7 @@ jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
         //
         // In JS, 'arguments' is not a real array, so this converts it to one!
         args   = Array.prototype.slice.call(arguments);
-        result = this.__broker__.invoke_request(
+        result = this.__broker__.send_request(
             'call_instance_method', [this, method_name].concat(args)
         );
 
@@ -325,7 +325,7 @@ jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute
             value = cached_value;
 
         } else {
-            value = this.__broker__.invoke_request(
+            value = this.__broker__.send_request(
                 'get_instance_attribute', [this, attribute_name]
             );
             this[cached_attribute_name] = value;
@@ -335,7 +335,7 @@ jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute
     };
 
     set = function(value) {
-        this.__broker__.invoke_request(
+        this.__broker__.send_request(
             'set_instance_attribute', [this, attribute_name, value]
         );
     };
@@ -347,7 +347,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var attribute_names,  index, info, method_names, proxy;
 
     proxy = new jigna.Proxy(id, this._broker);
-    info  = this._broker.invoke_request('get_instance_info', [proxy]);
+    info  = this._broker.send_request('get_instance_info', [proxy]);
 
     attribute_names = info.attribute_names;
     for (index in attribute_names) {
@@ -366,7 +366,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var index, info, proxy;
 
     proxy = new jigna.Proxy(id, this._broker);
-    info  = this._broker.invoke_request('get_list_info', [proxy]);
+    info  = this._broker.send_request('get_list_info', [proxy]);
 
     for (index=0; index < info.length; index++) {
         this._add_list_item_property(proxy, index);

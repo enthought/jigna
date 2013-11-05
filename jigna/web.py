@@ -29,8 +29,8 @@ class WebBridge(Bridge):
 
     #### 'Bridge' protocol ####################################################
 
-    def emit(self, event):
-        """ Emit an event. """
+    def send_event(self, event):
+        """ Send an event. """
 
         jsonized_event = json.dumps(event)
         for socket in self._active_sockets:
@@ -126,7 +126,7 @@ class GetFromBridge(RequestHandler):
     def get(self):
         print "Get from bridge"
         jsonized_request = self.get_argument("data")
-        jsonized_response = self.bridge.recv(jsonized_request)
+        jsonized_response = self.bridge.handle_request(jsonized_request)
         self.write(jsonized_response)
 
 

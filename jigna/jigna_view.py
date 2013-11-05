@@ -61,18 +61,20 @@ class Bridge(HasTraits):
     #: The broker that we provide the bridge for.
     broker = Any
 
-    def emit(self, event):
-        """ Emit an event. """
+    def send_event(self, event):
+        """ Send an event. """
 
         jsonized_event = json.dumps(event)
 
         # This looks weird but this is how we fake an event being 'received'
         # on the client side when using the Qt bridge!
-        self.widget.execute_js('jigna.bridge.on_event(%r);' % jsonized_event)
+        self.widget.execute_js(
+            'jigna.bridge.handle_event(%r);' % jsonized_event
+        )
 
         return
 
-    def recv(self, jsonized_request):
+    def handle_request(self, jsonized_request):
         """ Handle a request from the client. """
 
         request  = json.loads(jsonized_request)
@@ -102,37 +104,15 @@ class Broker(HasTraits):
 
         return
 
-    def emit_object_changed_event(self, obj, trait_name, old, new):
-        """ Emit an event to let clients know that an object has changed. """
+    def send_event(self, event):
+        """ Handle a request from the client. """
 
-        if isinstance(new, TraitListEvent):
-            trait_name = trait_name[:-len('_items')]
-            new        = getattr(obj, trait_name)
-
-        else:
-            if isinstance(new, HasTraits) or isinstance(new, list):
-                self.register_object(new)
-
-        event = dict(
-            kind           = 'object_changed',
-            obj            = str(id(obj)),
-            attribute_name = trait_name,
-            # fixme: This smells a bit, but marhsalling the new value gives us
-            # a type/value pair which we need on the client side to determine
-            # what (if any) proxy we need to create.
-            new            = self._marshal(new)
-        )
-
-        self.bridge.emit(event)
+        self.bridge.send_event(event)
 
         return
 
-    count = 0
     def handle_request(self, request):
         """ Handle a request from the client. """
-
-        self.count += 1
-        print '**** request: ', self.count, '**** :', request['kind']
 
         try:
             method    = getattr(self, request['kind'])
@@ -143,7 +123,6 @@ class Broker(HasTraits):
         except Exception, e:
             exception = repr(sys.exc_type)
             result    = repr(sys.exc_value)
-            raise e
 
         return dict(exception=exception, result=self._marshal(result))
 
@@ -173,7 +152,7 @@ class Broker(HasTraits):
     def get_instance_info(self, obj):
         """ Get a description of an instance. """
 
-        obj.on_trait_change(self.emit_object_changed_event)
+        obj.on_trait_change(self._send_object_changed_event)
 
         info = dict(
             attribute_names  = obj.editable_traits(),
@@ -283,6 +262,31 @@ class Broker(HasTraits):
 
         return [self._unmarshal(obj) for obj in iter]
 
+    def _send_object_changed_event(self, obj, trait_name, old, new):
+        """ Send an object changed event. """
+
+        if isinstance(new, TraitListEvent):
+            trait_name = trait_name[:-len('_items')]
+            new        = getattr(obj, trait_name)
+
+        else:
+            if isinstance(new, HasTraits) or isinstance(new, list):
+                self.register_object(new)
+
+        event = dict(
+            kind           = 'object_changed',
+            obj            = str(id(obj)),
+            attribute_name = trait_name,
+            # fixme: This smells a bit, but marhsalling the new value gives us
+            # a type/value pair which we need on the client side to determine
+            # what (if any) proxy we need to create.
+            new            = self._marshal(new)
+        )
+
+        self.send_event(event)
+
+        return
+
 
 class JignaView(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
@@ -347,7 +351,7 @@ class JignaView(HasTraits):
         }
 
         widget = HTMLWidget(
-            callbacks        = [('recv', self._recv)],
+            callbacks        = [('handle_request', self._handle_request)],
             python_namespace = 'qt_bridge',
             hosts            = hosts,
             open_externally  = True,
@@ -357,10 +361,10 @@ class JignaView(HasTraits):
 
         return widget
 
-    def _recv(self, request):
+    def _handle_request(self, request):
         """ Handle a request from a client. """
 
-        return self._broker.bridge.recv(request)
+        return self._broker.bridge.handle_request(request)
 
     def _get_html(self, model):
         """ Get the HTML document for the given model. """
