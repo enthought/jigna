@@ -40,23 +40,22 @@ jigna.QtBridge = function(qt_bridge) {
     this._qt_bridge = qt_bridge;
 };
 
-// fixme: Make the QtBridge quack like this!
+// fixme: duplicated in WebBridge!
 jigna.QtBridge.prototype.on_event = function(jsonized_event) {
     /* Handle an event from the server-side. */
-    jigna.broker.handle_request(JSON.parse(jsonized_event));
+    jigna.broker.on_object_changed(JSON.parse(jsonized_event));
 };
 
 
 jigna.QtBridge.prototype.synchronous = function(request) {
     /* Send a request to the server and wait for the reply. */
 
-    var jsonized_request, jsonized_response, response;
+    var jsonized_request, jsonized_response;
 
     jsonized_request = JSON.stringify(request);
     jsonized_response = this._qt_bridge.recv(jsonized_request);
-    response = JSON.parse(jsonized_response);
 
-    return response;
+    return JSON.parse(jsonized_response);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -67,22 +66,21 @@ jigna.WebBridge = function() {
     var url = 'ws://' + window.location.host + '/_jigna_ws';
 
     this._web_socket = new WebSocket(url);
-
     this._web_socket.onmessage = function(event) {
         jigna.bridge.on_event(event.data);
     };
 };
 
-// fixme: Make the QtBridge quack like this!
+// fixme: duplicated in Bridge!
 jigna.WebBridge.prototype.on_event = function(jsonized_event) {
     /* Handle an event from the server-side. */
-    jigna.broker.handle_request(JSON.parse(jsonized_event));
+    jigna.broker.on_object_changed(JSON.parse(jsonized_event));
 };
 
 jigna.WebBridge.prototype.synchronous = function(request) {
     /* Send a request to the server and wait for the reply. */
 
-    var jsonized_request, jsonized_response, response;
+    var jsonized_request, jsonized_response;
 
     jsonized_request = JSON.stringify(request);
     $.ajax(
@@ -94,9 +92,8 @@ jigna.WebBridge.prototype.synchronous = function(request) {
             async   : false
         }
     );
-    response = JSON.parse(jsonized_response);
 
-    return response;
+    return JSON.parse(jsonized_response);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -113,32 +110,8 @@ jigna.Broker = function(model_name, id) {
     this._add_model(model_name, id);
 };
 
-// fixme: We don't need 'handle_request' this side! We only actually receive
-// events (ie. no return value).
-jigna.Broker.prototype.handle_request = function(request) {
-    /* Handle a request from the server-side. */
-
-    var args, exception, method, response, value;
-    try {
-        method    = this[request.kind];
-        // fixme: We need type in the event to know what kind of proxy to
-        // create so we don't unmarshal the args! Currently this is ok as
-        // we only pass primitive types back, but...?
-        //args      = this._unmarshal_all(request.args);
-        args      = request.args;
-        value     = method.apply(this, args);
-        exception = null;
-    }
-    catch (error) {
-        exception = error;
-        value     = error.message;
-    }
-
-    response = {'exception' : exception, 'result' : this._marshal(value)};
-    return response;
-};
-
 jigna.Broker.prototype.on_object_changed = function(event) {
+    console.log('on_object_changed', event.type, event.value);
     this._create_proxy(event.type, event.value);
 
     if (this._scope.$$phase === null){

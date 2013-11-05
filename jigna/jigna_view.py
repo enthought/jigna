@@ -268,7 +268,8 @@ class Broker(HasTraits):
         # which is what we need on the JS side to determine what (if any) proxy
         # we need to create.
         event = self._marshal(new)
-        self.bridge.emit(dict(kind='on_object_changed', args=[event]));
+        print 'emitting event', event
+        self.bridge.emit(event)
 
         return
 
