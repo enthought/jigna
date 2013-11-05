@@ -105,8 +105,6 @@ class Broker(HasTraits):
     def emit_object_changed_event(self, obj, trait_name, old, new):
         """ Emit an event to let clients know that an object has changed. """
 
-        print 'emit_object_changed_event', obj, trait_name, new
-
         if isinstance(new, TraitListEvent):
             trait_name = trait_name[:-len('_items')]
             new        = getattr(obj, trait_name)
