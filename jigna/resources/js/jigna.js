@@ -26,7 +26,7 @@ jigna.create_bridge = function() {
     // ... or the inter-process web bridge?
     } else {
         bridge = new jigna.WebBridge();
-    };
+    }
 
     return bridge;
 };
@@ -46,7 +46,7 @@ jigna.QtBridge.prototype.recv = function(jsonized_request) {
     var jsonized_response, request, response;
 
     request           = JSON.parse(jsonized_request);
-    response          = jigna.broker.handle_request(request)
+    response          = jigna.broker.handle_request(request);
     jsonized_response = JSON.stringify(response);
 
     return jsonized_response;
@@ -123,7 +123,7 @@ jigna.Broker = function(model_name, id) {
 jigna.Broker.prototype.handle_request = function(request) {
     /* Handle a request from the server-side. */
 
-    var args, exception, method, value;
+    var args, exception, method, response, value;
     try {
         method    = this[request.kind];
         // fixme: We need type in the event to know what kind of proxy to
@@ -137,7 +137,7 @@ jigna.Broker.prototype.handle_request = function(request) {
     catch (error) {
         exception = error;
         value     = error.message;
-    };
+    }
 
     response = {'exception' : exception, 'result' : this._marshal(value)};
     return response;
@@ -148,13 +148,13 @@ jigna.Broker.prototype.on_object_changed = function(event) {
 
     if (this._scope.$$phase === null){
         this._scope.$digest();
-    };
+    }
 };
 
 jigna.Broker.prototype.invoke_request = function(kind, args) {
     /* Send a request to the server-side and wait for the reply. */
 
-    var request, response;
+    var request, response, result;
 
     request  = {'kind' : kind, 'args' : this._marshal_all(args)};
     response = jigna.bridge.synchronous(request);
@@ -189,7 +189,7 @@ jigna.Broker.prototype._create_proxy = function(type, obj) {
     else {
         proxy = this._proxy_factory.create_proxy(type, obj);
         this._id_to_proxy_map[obj] = proxy;
-    };
+    }
 
     return proxy;
 };
@@ -205,7 +205,7 @@ jigna.Broker.prototype._marshal = function(obj) {
         // fixme: Or list!
         type  = 'instance';
         value = obj.__id__;
-    };
+    }
 
     return {'type' : type, 'value' : value};
 };
@@ -215,7 +215,7 @@ jigna.Broker.prototype._marshal_all = function(objs) {
 
     for (index in objs) {
         objs[index] = this._marshal(objs[index]);
-    };
+    }
 
     // For convenience, as we modify the array in-place.
     return objs;
@@ -242,7 +242,7 @@ jigna.Broker.prototype._unmarshal_all = function(objs) {
 
     for (index in objs) {
         objs[index] = this._unmarshal(objs[index]);
-    };
+    }
 
     // For convenience, as we modify the array in-place.
     return objs;
