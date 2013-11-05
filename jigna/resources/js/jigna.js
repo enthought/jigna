@@ -43,7 +43,7 @@ jigna.QtBridge = function(qt_bridge) {
 // fixme: duplicated in WebBridge!
 jigna.QtBridge.prototype.on_event = function(jsonized_event) {
     /* Handle an event from the server. */
-    jigna.broker.on_object_changed(JSON.parse(jsonized_event));
+    jigna.broker.handle_event(JSON.parse(jsonized_event));
 };
 
 jigna.QtBridge.prototype.send_synchronous = function(request) {
@@ -73,7 +73,7 @@ jigna.WebBridge = function() {
 // fixme: duplicated in Bridge!
 jigna.WebBridge.prototype.on_event = function(jsonized_event) {
     /* Handle an event from the server. */
-    jigna.broker.on_object_changed(JSON.parse(jsonized_event));
+    jigna.broker.handle_event(JSON.parse(jsonized_event));
 };
 
 jigna.WebBridge.prototype.send_synchronous = function(request) {
@@ -109,20 +109,15 @@ jigna.Broker = function(model_name, id) {
     this._add_model(model_name, id);
 };
 
-jigna.Broker.prototype.on_object_changed = function(event) {
-    // Invalidate any cached value on the proxy.
-    this._invalidate_cached_value(event.obj, event.trait_name);
+jigna.Broker.prototype.handle_event = function(event) {
+    /* Handle an event from the server. */
 
-    // fixme: This smells... It is used to recreate a list proxy every time
-    // a list changes but that blows away caching advantages. Can we make it
-    // smarter by managing the details of a TraitListEvent?
-    if (event.new.type === 'list') {
-        this._create_proxy(event.new.type, event.new.value);
+    var handler = this['_on_' + event.kind];
+    if (handler === undefined) {
+        throw 'no handler for event: ' + event.kind
     }
 
-    if (this._scope.$$phase === null){
-        this._scope.$digest();
-    }
+    handler.apply(this, [event]);
 };
 
 jigna.Broker.prototype.invoke_request = function(kind, args) {
@@ -167,9 +162,9 @@ jigna.Broker.prototype._create_proxy = function(type, obj) {
     return proxy;
 };
 
-jigna.Broker.prototype._invalidate_cached_value = function(id, trait_name) {
+jigna.Broker.prototype._invalidate_cached_value = function(id, attribute_name) {
     var proxy = this._id_to_proxy_map[id];
-    proxy['_' + trait_name] = undefined;
+    proxy['_' + attribute_name] = undefined;
 };
 
 jigna.Broker.prototype._marshal = function(obj) {
@@ -226,6 +221,22 @@ jigna.Broker.prototype._unmarshal_all = function(objs) {
     return objs;
 };
 
+jigna.Broker.prototype._on_object_changed = function(event) {
+    // Invalidate any cached value on the proxy.
+    this._invalidate_cached_value(event.obj, event.attribute_name);
+
+    // fixme: This smells... It is used to recreate a list proxy every time
+    // a list changes but that blows away caching advantages. Can we make it
+    // smarter by managing the details of a TraitListEvent?
+    if (event.new.type === 'list') {
+        this._create_proxy(event.new.type, event.new.value);
+    }
+
+    if (this._scope.$$phase === null){
+        this._scope.$digest();
+    }
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // ProxyFactory
 ///////////////////////////////////////////////////////////////////////////////
@@ -279,7 +290,7 @@ jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
         // In JS, 'arguments' is not a real array, so this converts it to one!
         args   = Array.prototype.slice.call(arguments);
         result = this.__broker__.invoke_request(
-            'call_method', [this, method_name].concat(args)
+            'call_instance_method', [this, method_name].concat(args)
         );
 
         return result;
@@ -300,45 +311,47 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
     Object.defineProperty(proxy, name, descriptor);
 };
 
-jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
+jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute_name){
     var get, set;
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var cached_trait_name, cached_value, value;
+        var cached_attribute_name, cached_value, value;
 
-        cached_trait_name = '_' + trait_name;
+        cached_attribute_name = '_' + attribute_name;
 
-        cached_value = this[cached_trait_name];
+        cached_value = this[cached_attribute_name];
         if (cached_value !== undefined) {
             value = cached_value;
 
         } else {
             value = this.__broker__.invoke_request(
-                'get_trait', [this, trait_name]
+                'get_instance_attribute', [this, attribute_name]
             );
-            this[cached_trait_name] = value;
+            this[cached_attribute_name] = value;
         }
 
         return value;
     };
 
     set = function(value) {
-        this.__broker__.invoke_request('set_trait', [this, trait_name, value]);
+        this.__broker__.invoke_request(
+            'set_instance_attribute', [this, attribute_name, value]
+        );
     };
 
-    this._add_property(proxy, trait_name, get, set);
+    this._add_property(proxy, attribute_name, get, set);
 };
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
-    var index, info, method_names, proxy, trait_names;
+    var attribute_names,  index, info, method_names, proxy;
 
     proxy = new jigna.Proxy(id, this._broker);
     info  = this._broker.invoke_request('get_instance_info', [proxy]);
 
-    trait_names = info.trait_names;
-    for (index in trait_names) {
-        this._add_trait_property(proxy, trait_names[index]);
+    attribute_names = info.attribute_names;
+    for (index in attribute_names) {
+        this._add_attribute_property(proxy, attribute_names[index]);
     }
 
     method_names = info.method_names;

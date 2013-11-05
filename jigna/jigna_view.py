@@ -114,20 +114,25 @@ class Broker(HasTraits):
                 self.register_object(new)
 
         event = dict(
-            obj        = str(id(obj)),
-            trait_name = trait_name,
+            kind           = 'object_changed',
+            obj            = str(id(obj)),
+            attribute_name = trait_name,
             # fixme: This smells a bit, but marhsalling the new value gives us
             # a type/value pair which we need on the client side to determine
             # what (if any) proxy we need to create.
-            new        = self._marshal(new)
+            new            = self._marshal(new)
         )
 
         self.bridge.emit(event)
 
         return
 
+    count = 0
     def handle_request(self, request):
         """ Handle a request from the client. """
+
+        self.count += 1
+        print '**** request: ', self.count, '**** :', request['kind']
 
         try:
             method    = getattr(self, request['kind'])
@@ -138,6 +143,7 @@ class Broker(HasTraits):
         except Exception, e:
             exception = repr(sys.exc_type)
             result    = repr(sys.exc_value)
+            raise e
 
         return dict(exception=exception, result=self._marshal(result))
 
@@ -150,27 +156,43 @@ class Broker(HasTraits):
 
     #### Handlers for each kind of request ####################################
 
-    def call_method(self, obj, method_name, *args):
-        """ Call a method on a registered object. """
+    #### Instances ####
+
+    def call_instance_method(self, obj, method_name, *args):
+        """ Call a method on a instance. """
 
         method = getattr(obj, method_name)
 
         return method(*args)
 
+    def get_instance_attribute(self, obj, trait_name):
+        """ Get the value of an instance attribute. """
+
+        return getattr(obj, trait_name)
+
     def get_instance_info(self, obj):
-        """ Return a description of an instance. """
+        """ Get a description of an instance. """
 
         obj.on_trait_change(self.emit_object_changed_event)
 
         info = dict(
-            trait_names  = obj.editable_traits(),
-            method_names = self._get_public_method_names(type(obj))
+            attribute_names  = obj.editable_traits(),
+            method_names     = self._get_public_method_names(type(obj))
         )
 
         return info
 
+    def set_instance_attribute(self, obj, trait_name, value):
+        """ Set an attribute on an instance. """
+
+        setattr(obj, trait_name, value)
+
+        return
+
+    #### Lists ####
+
     def get_list_info(self, obj):
-        """ Returns a description of a list. """
+        """ Get a description of a list. """
 
         info = dict(
             length = len(obj)
@@ -179,26 +201,14 @@ class Broker(HasTraits):
         return info
 
     def get_list_item(self, obj, index):
-        """ Return the value of a list item. """
+        """ Get the value of an item in a list. """
 
         return obj[index]
 
-    def get_trait(self, obj, trait_name):
-        """ Return the value of a trait on an object. """
-
-        return getattr(obj, trait_name)
-
     def set_list_item(self, obj, index, value):
-        """ Set an item in a list. """
+        """ Set the value of a an item in a list. """
 
         obj[index] = value
-
-        return
-
-    def set_trait(self, obj, trait_name, value):
-        """ Set a trait on an object. """
-
-        setattr(obj, trait_name, value)
 
         return
 
