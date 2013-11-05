@@ -111,15 +111,14 @@ jigna.Broker = function(model_name, id) {
 
 jigna.Broker.prototype.on_object_changed = function(event) {
     // Invalidate any cached value on the proxy.
-    //
-    // fixme: intent!
-    var proxy = this._id_to_proxy_map[event.obj];
-    proxy['_' + event.trait_name] = undefined;
+    this._invalidate_cached_value(event.obj, event.trait_name);
 
     // fixme: This smells... It is used to recreate a list proxy every time
     // a list changes but that blows away caching advantages. Can we make it
     // smarter by managing the details of a TraitListEvent?
-    this._create_proxy(event.new.type, event.new.value);
+    if (event.new.type === 'list') {
+        this._create_proxy(event.new.type, event.new.value);
+    }
 
     if (this._scope.$$phase === null){
         this._scope.$digest();
@@ -166,6 +165,11 @@ jigna.Broker.prototype._create_proxy = function(type, obj) {
     }
 
     return proxy;
+};
+
+jigna.Broker.prototype._invalidate_cached_value = function(id, trait_name) {
+    var proxy = this._id_to_proxy_map[id];
+    proxy['_' + trait_name] = undefined;
 };
 
 jigna.Broker.prototype._marshal = function(obj) {
@@ -320,10 +324,6 @@ jigna.ProxyFactory.prototype._add_trait_property = function(proxy, trait_name){
     };
 
     set = function(value) {
-        // In here, 'this' refers to the proxy!
-        var cached_trait_name = '_' + trait_name;
-
-        this[cached_trait_name] = value;
         this.__broker__.invoke_request('set_trait', [this, trait_name, value]);
     };
 
