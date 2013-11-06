@@ -165,7 +165,9 @@ jigna.Broker.prototype._create_proxy = function(type, obj) {
 
 jigna.Broker.prototype._invalidate_cached_value = function(id, attribute_name) {
     var proxy = this._id_to_proxy_map[id];
-    proxy.__cache__[attribute_name] = undefined;
+    proxy['_' + attribute_name] = undefined;
+    //XXX
+    //proxy.__cache__[attribute_name] = undefined;
 };
 
 jigna.Broker.prototype._marshal = function(obj) {
@@ -313,7 +315,7 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
 jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute_name){
     var get, set;
 
-    get = function() {
+    getXXX = function() {
         // In here, 'this' refers to the proxy!
         var cached_value, value;
 
@@ -326,6 +328,26 @@ jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute
                 'get_instance_attribute', [this, attribute_name]
             );
             this.__cache__[attribute_name] = value;
+        }
+
+        return value;
+    };
+
+    get = function() {
+        // In here, 'this' refers to the proxy!
+        var cached_attribute_name, cached_value, value;
+
+        cached_attribute_name = '_' + attribute_name;
+
+        cached_value = this[cached_attribute_name];
+        if (cached_value !== undefined) {
+            value = cached_value;
+
+        } else {
+            value = this.__broker__.send_request(
+                'get_instance_attribute', [this, attribute_name]
+            );
+            this[cached_attribute_name] = value;
         }
 
         return value;
@@ -385,8 +407,10 @@ jigna.Proxy = function(id, broker) {
     descriptor.value = broker;
     Object.defineProperty(this, '__broker__', descriptor);
 
-    descriptor.value = {};
-    Object.defineProperty(this, '__cache__', descriptor);
+    //descriptor.value = {};
+    //Object.defineProperty(this, '__cache__', descriptor);
+
+    //Object.defineProperty(this, '__cache__', descriptor);
 };
 
 // EOF ////////////////////////////////////////////////////////////////////////
