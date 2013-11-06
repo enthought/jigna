@@ -317,7 +317,17 @@ class JignaView(HasTraits):
         """ Create and show a view of the given model. """
 
         self._broker.register_object(model)
+
+        self._document_ready = False
+        def loaded():
+            self._document_ready = True
+        self.control.loadFinished.connect(loaded)
+
         self._load_html(self._get_html(model), self.base_url)
+
+        while not self._document_ready:
+            from pyface.api import GUI; GUI.process_events()
+
         self.control.show()
 
         return

@@ -56,9 +56,6 @@ class TestJignaQt(unittest.TestCase):
         person_view = JignaView(body_html=body_html)
         fred = Person(name='Fred', age=42)
         person_view.show(model=fred)
-
-        # fixme: Wait for document to be ready!!!
-        import time; time.sleep(2)
         GUI.process_events()
         cls.person_view = person_view
         cls.fred = fred
