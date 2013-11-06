@@ -112,6 +112,7 @@ jigna.Broker = function(model_name, id) {
 jigna.Broker.prototype.handle_event = function(event) {
     /* Handle an event from the server. */
 
+    // Currently, the only event we handle is 'on_object_changed'!
     var handler = this['_on_' + event.kind];
     if (handler === undefined) {
         throw 'no handler for event: ' + event.kind
