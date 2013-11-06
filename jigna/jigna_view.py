@@ -19,6 +19,7 @@ from os.path import abspath, dirname, join
 from jinja2 import Template
 
 # Enthought library.
+from pyface.api import GUI
 from traits.api import (
     Any, Dict, HasTraits, Instance, Property, Str, TraitInstance, TraitListEvent
 )
@@ -105,16 +106,17 @@ class Broker(HasTraits):
         return
 
     def send_event(self, event):
-        """ Handle a request from the client. """
+        """ Send an event to the client(s). """
 
         self.bridge.send_event(event)
 
         return
 
     def handle_request(self, request):
-        """ Handle a request from the client. """
+        """ Handle a request from a client. """
 
         try:
+            # To dispatch the request we have a method named after each one!
             method    = getattr(self, request['kind'])
             args      = self._unmarshal_all(request['args'])
             result    = method(*args)
@@ -317,17 +319,8 @@ class JignaView(HasTraits):
         """ Create and show a view of the given model. """
 
         self._broker.register_object(model)
-
-        self._document_ready = False
-        def loaded():
-            self._document_ready = True
-        self.control.loadFinished.connect(loaded)
-
+        self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self._get_html(model), self.base_url)
-
-        while not self._document_ready:
-            from pyface.api import GUI; GUI.process_events()
-
         self.control.show()
 
         return
@@ -393,9 +386,25 @@ class JignaView(HasTraits):
         return html
 
     def _load_html(self, html, base_url):
-        """ Load the given HTML into the widget. """
+        """ Load the given HTML into the widget.
+
+        This call blocks until the document had loaded.
+
+        """
+
+        self._load_finished = False
 
         self._widget.load_html(html, base_url)
+
+        while not self._load_finished:
+            GUI.process_events()
+
+        return
+
+    def _on_load_finished(self):
+        """ Called when the HTML document has finished loading. """
+
+        self._load_finished = True
 
         return
 
