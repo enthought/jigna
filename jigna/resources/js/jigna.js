@@ -229,9 +229,7 @@ jigna.Broker.prototype._on_object_changed = function(event) {
     // fixme: This smells... It is used to recreate a list proxy every time
     // a list changes but that blows away caching advantages. Can we make it
     // smarter by managing the details of a TraitListEvent?
-    if (event.new_obj.type === 'list') {
-        this._create_proxy(event.new_obj.type, event.new_obj.value);
-    }
+    this._create_proxy(event.new_obj.type, event.new_obj.value);
 
     if (this._scope.$$phase === null){
         this._scope.$digest();
