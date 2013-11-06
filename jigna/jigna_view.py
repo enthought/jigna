@@ -157,7 +157,7 @@ class Broker(HasTraits):
         obj.on_trait_change(self._send_object_changed_event)
 
         info = dict(
-            attribute_names  = obj.editable_traits(),
+            attribute_names  = self._get_public_attribute_names(obj),
             method_names     = self._get_public_method_names(type(obj))
         )
 
@@ -199,6 +199,21 @@ class Broker(HasTraits):
     #:
     #: { str id : instance_or_list obj }
     _id_to_object_map = Dict
+
+    def _get_public_attribute_names(self, obj):
+        """ Get the names of all public attributes on an object.
+
+        Return a list of strings.
+
+        """
+
+        public_attributes = [
+            attribute_name for attribute_name in obj.editable_traits()
+
+            if not attribute_name.startswith( '_' )
+        ]
+
+        return public_attributes
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
