@@ -161,6 +161,7 @@ class Broker(HasTraits):
             obj.on_trait_change(self._send_object_changed_event)
 
         info = dict(
+            type_name        = type(obj).__module__ + '.' + type(obj).__name__,
             attribute_names  = self._get_public_attribute_names(obj),
             method_names     = self._get_public_method_names(type(obj))
         )
@@ -212,19 +213,19 @@ class Broker(HasTraits):
         """
 
         if isinstance(obj, HasTraits):
-            public_attributes = [
-                attribute_name for attribute_name in obj.editable_traits()
+            public_attribute_names = [
+                name for name in obj.editable_traits()
 
-                if not attribute_name.startswith( '_' )
+                if not name.startswith( '_' )
             ]
         else:
-            public_attributes = [
+            public_attribute_names = [
                 name for name, value in inspect.getmembers(obj)
 
                 if not name.startswith('_') and not inspect.ismethod(value)
             ]
 
-        return public_attributes
+        return public_attribute_names
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
@@ -233,7 +234,7 @@ class Broker(HasTraits):
 
         """
 
-        public_methods = []
+        public_method_names = []
         for c in inspect.getmro(cls):
             if c is HasTraits:
                 break
@@ -242,9 +243,9 @@ class Broker(HasTraits):
                 if not name.startswith( '_' ):
                     value = getattr(c, name)
                     if inspect.ismethod(value):
-                        public_methods.append(name)
+                        public_method_names.append(name)
 
-        return public_methods
+        return public_method_names
 
     def _marshal(self, obj):
         """ Marshal a value. """
@@ -256,6 +257,7 @@ class Broker(HasTraits):
             type  = 'list'
             value = obj_id
 
+        # fixme: Not quite right as this will be True for classes too ;^)
         elif hasattr(obj, '__dict__'):
             obj_id = str(id(obj))
             self._id_to_object_map[obj_id] = obj

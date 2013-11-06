@@ -358,6 +358,17 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
         this._add_method(proxy, method_names[index]);
     }
 
+    // The type name is not used by jigna - it is only there to make it easy to
+    // see what the type of the server-side object is when debugging the JS
+    // code.
+    var descriptor = {
+        configurable : true,
+        enumerable   : false,
+        writeable    : true,
+        value        : info.type_name
+    };
+    Object.defineProperty(proxy, '__type_name__', descriptor);
+
     return proxy;
 };
 
