@@ -81,7 +81,10 @@ class Bridge(HasTraits):
         request  = json.loads(jsonized_request)
         response = self.broker.handle_request(request)
 
-        return json.dumps(response);
+        def default(obj):
+            return repr(type(obj))
+
+        return json.dumps(response, default=default);
 
     #### 'QtWebKitBridge' protocol ############################################
 
@@ -154,7 +157,8 @@ class Broker(HasTraits):
     def get_instance_info(self, obj):
         """ Get a description of an instance. """
 
-        obj.on_trait_change(self._send_object_changed_event)
+        if isinstance(obj, HasTraits):
+            obj.on_trait_change(self._send_object_changed_event)
 
         info = dict(
             attribute_names  = self._get_public_attribute_names(obj),
@@ -207,11 +211,18 @@ class Broker(HasTraits):
 
         """
 
-        public_attributes = [
-            attribute_name for attribute_name in obj.editable_traits()
+        if isinstance(obj, HasTraits):
+            public_attributes = [
+                attribute_name for attribute_name in obj.editable_traits()
 
-            if not attribute_name.startswith( '_' )
-        ]
+                if not attribute_name.startswith( '_' )
+            ]
+        else:
+            public_attributes = [
+                name for name, value in inspect.getmembers(obj)
+
+                if not name.startswith('_') and not inspect.ismethod(value)
+            ]
 
         return public_attributes
 
@@ -238,18 +249,18 @@ class Broker(HasTraits):
     def _marshal(self, obj):
         """ Marshal a value. """
 
-        if isinstance(obj, HasTraits):
-            obj_id = str(id(obj))
-            self._id_to_object_map[obj_id] = obj
-
-            type  = 'instance'
-            value = obj_id
-
-        elif isinstance(obj, list):
+        if isinstance(obj, list):
             obj_id = str(id(obj))
             self._id_to_object_map[obj_id] = obj
 
             type  = 'list'
+            value = obj_id
+
+        elif hasattr(obj, '__dict__'):
+            obj_id = str(id(obj))
+            self._id_to_object_map[obj_id] = obj
+
+            type  = 'instance'
             value = obj_id
 
         else:
@@ -287,7 +298,7 @@ class Broker(HasTraits):
             new        = getattr(obj, trait_name)
 
         else:
-            if isinstance(new, HasTraits) or isinstance(new, list):
+            if hasattr(new, '__dict__') or isinstance(new, list):
                 self.register_object(new)
 
         event = dict(

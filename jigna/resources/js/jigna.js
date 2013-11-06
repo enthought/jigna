@@ -11,8 +11,10 @@
 var jigna = {};
 
 jigna.initialize = function(model_name, id) {
+    jigna.scope  = $(document.body).scope();
+
     jigna.bridge = this.create_bridge();
-    jigna.broker = new jigna.Broker(model_name, id);
+    jigna.broker = new jigna.Broker(jigna.scope, model_name, id);
 };
 
 jigna.create_bridge = function() {
@@ -99,11 +101,11 @@ jigna.WebBridge.prototype.send_request = function(request) {
 // Broker
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Broker = function(model_name, id) {
+jigna.Broker = function(scope, model_name, id) {
     // Private protocol
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
-    this._scope           = $(document.body).scope();
+    this._scope           = scope;
 
     // Add the model.
     this._add_model(model_name, id);
