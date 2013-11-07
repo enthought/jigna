@@ -349,13 +349,29 @@ class JignaView(HasTraits):
     #: The HTML for the *head* of the view's document.
     head_html = Str
 
+    #: The HTML for the entire document.
+    html = Str
+    def _html_default(self):
+        """ Get the default HTML document for the given model. """
+
+        template = Template(DOCUMENT_HTML_TEMPLATE)
+        html     = template.render(
+            jquery     = 'http://resources.jigna/js/jquery.min.js',
+            angular    = 'http://resources.jigna/js/angular.min.js',
+            jigna      = 'http://resources.jigna/js/jigna.js',
+            body_html  = self.body_html,
+            head_html  = self.head_html
+        )
+
+        return html
+
     def show(self, model):
         """ Create and show a view of the given model. """
 
         self.context = {'model': str(id(model))}
         self._broker.register_object(model)
         self.control.loadFinished.connect(self._on_load_finished)
-        self._load_html(self._get_html(model), self.base_url)
+        self._load_html(self.html, self.base_url)
         self.control.show()
 
         return
@@ -403,20 +419,6 @@ class JignaView(HasTraits):
         """ Handle a request from a client. """
 
         return self._broker.bridge.handle_request(request)
-
-    def _get_html(self, model):
-        """ Get the HTML document for the given model. """
-
-        template = Template(DOCUMENT_HTML_TEMPLATE)
-        html     = template.render(
-            jquery     = 'http://resources.jigna/js/jquery.min.js',
-            angular    = 'http://resources.jigna/js/angular.min.js',
-            jigna      = 'http://resources.jigna/js/jigna.js',
-            body_html  = self.body_html,
-            head_html  = self.head_html
-        )
-
-        return html
 
     def _load_html(self, html, base_url):
         """ Load the given HTML into the widget.
