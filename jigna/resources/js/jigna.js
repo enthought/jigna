@@ -11,10 +11,9 @@
 var jigna = {};
 
 jigna.initialize = function(model_name, id) {
-    jigna.scope  = $(document.body).scope();
-
-    jigna.bridge = this.create_bridge();
-    jigna.broker = new jigna.Broker(jigna.scope, model_name, id);
+    this.scope  = $(document.body).scope();
+    this.bridge = this.create_bridge();
+    this.broker = new jigna.Broker(this.scope, model_name, id);
 };
 
 jigna.create_bridge = function() {
