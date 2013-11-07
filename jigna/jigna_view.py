@@ -37,11 +37,6 @@ DOCUMENT_HTML_TEMPLATE = """
     <script type="text/javascript" src="{{jquery}}"></script>
     <script type="text/javascript" src="{{angular}}"></script>
     <script type="text/javascript" src="{{jigna}}"></script>
-    <script type="text/javascript">
-      $(document).ready(function(){
-        jigna.initialize();
-      });
-    </script>
 
     {{head_html}}
 
