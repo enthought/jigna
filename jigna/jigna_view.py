@@ -133,6 +133,14 @@ class Broker(HasTraits):
 
         return
 
+    def register_objects(self, objs):
+        """ Register more than one objects """
+
+        for obj in objs:
+            self.register_object(obj)
+
+        return
+
     #### Handlers for each kind of request ####################################
 
     def get_context(self):
@@ -333,9 +341,6 @@ class JignaView(HasTraits):
     #: The HTML for the *body* of the view's document.
     body_html = Str
 
-    #: Context mapping
-    context = Dict
-
     #: The underlying toolkit control that renders HTML.
     control = Property(Any)
     def _get_control(self):
@@ -357,11 +362,11 @@ class JignaView(HasTraits):
 
         return html
 
-    def show(self, model):
-        """ Create and show a view of the given model. """
+    def show(self, **context):
+        """ Create and show a view of the given context. """
 
-        self.context = {'model': str(id(model))}
-        self._broker.register_object(model)
+        self._resolve_context_ids(context)
+        self._broker.register_objects(context.values())
         self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self.html, self.base_url)
         self.control.show()
@@ -380,7 +385,11 @@ class JignaView(HasTraits):
     #: The broker that manages the objects shared via the bridge.
     _broker = Instance(Broker)
     def __broker_default(self):
-        return Broker(bridge=Bridge(widget=self._widget), context=self.context)
+        return Broker(bridge=Bridge(widget=self._widget), context=self._context)
+
+    #: Context mapping:
+    #: {str model_name: str model_id}
+    _context = Dict
 
     #: The toolkit-specific widget that renders the HTML.
     _widget = Any
@@ -434,5 +443,11 @@ class JignaView(HasTraits):
         self._load_finished = True
 
         return
+
+    def _resolve_context_ids(self, context):
+        """ Return the context mapping with respect to ids """
+        self._context = {}
+        for name, obj in context.iteritems():
+            self._context[name] = str(id(obj))
 
 #### EOF ######################################################################
