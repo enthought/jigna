@@ -34,9 +34,9 @@ from jigna.core.wsgi import FileLoader
 DOCUMENT_HTML_TEMPLATE = """
 <html ng-app>
   <head>
-    <script type="text/javascript" src="{{jquery}}"></script>
-    <script type="text/javascript" src="{{angular}}"></script>
-    <script type="text/javascript" src="{{jigna}}"></script>
+    <script type="text/javascript" src="http://resources.jigna/js/jquery.min.js"></script>
+    <script type="text/javascript" src="http://resources.jigna/js/angular.min.js"></script>
+    <script type="text/javascript" src="http://resources.jigna/js/jigna.js"></script>
 
     {{head_html}}
 
@@ -351,9 +351,6 @@ class JignaView(HasTraits):
 
         template = Template(DOCUMENT_HTML_TEMPLATE)
         html     = template.render(
-            jquery     = 'http://resources.jigna/js/jquery.min.js',
-            angular    = 'http://resources.jigna/js/angular.min.js',
-            jigna      = 'http://resources.jigna/js/jigna.js',
             body_html  = self.body_html,
             head_html  = self.head_html
         )
