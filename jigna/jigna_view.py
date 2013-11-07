@@ -39,7 +39,7 @@ DOCUMENT_HTML_TEMPLATE = """
     <script type="text/javascript" src="{{jigna}}"></script>
     <script type="text/javascript">
       $(document).ready(function(){
-        jigna.initialize('{{model_name}}', '{{id}}');
+        jigna.initialize();
       });
     </script>
 
@@ -139,6 +139,9 @@ class Broker(HasTraits):
         return
 
     #### Handlers for each kind of request ####################################
+
+    def get_context(self):
+        return self.context.copy()
 
     #### Instances ####
 
@@ -335,6 +338,9 @@ class JignaView(HasTraits):
     #: The HTML for the *body* of the view's document.
     body_html = Str
 
+    #: Context mapping
+    context = Dict
+
     #: The underlying toolkit control that renders HTML.
     control = Property(Any)
     def _get_control(self):
@@ -346,6 +352,7 @@ class JignaView(HasTraits):
     def show(self, model):
         """ Create and show a view of the given model. """
 
+        self.context = {'model': str(id(model))}
         self._broker.register_object(model)
         self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self._get_html(model), self.base_url)
@@ -365,7 +372,7 @@ class JignaView(HasTraits):
     #: The broker that manages the objects shared via the bridge.
     _broker = Instance(Broker)
     def __broker_default(self):
-        return Broker(bridge=Bridge(widget=self._widget))
+        return Broker(bridge=Bridge(widget=self._widget), context=self.context)
 
     #: The toolkit-specific widget that renders the HTML.
     _widget = Any
@@ -405,8 +412,6 @@ class JignaView(HasTraits):
             jquery     = 'http://resources.jigna/js/jquery.min.js',
             angular    = 'http://resources.jigna/js/angular.min.js',
             jigna      = 'http://resources.jigna/js/jigna.js',
-            model_name = 'model',
-            id         = id(model),
             body_html  = self.body_html,
             head_html  = self.head_html
         )

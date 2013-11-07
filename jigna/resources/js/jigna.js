@@ -10,10 +10,10 @@
 // Namespace for all Jigna-related objects.
 var jigna = {};
 
-jigna.initialize = function(model_name, id) {
+jigna.initialize = function() {
     this.scope  = $(document.body).scope();
     this.bridge = this.create_bridge();
-    this.broker = new jigna.Broker(this.scope, model_name, id);
+    this.broker = new jigna.Broker(this.scope);
 };
 
 jigna.create_bridge = function() {
@@ -100,14 +100,17 @@ jigna.WebBridge.prototype.send_request = function(request) {
 // Broker
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Broker = function(scope, model_name, id) {
+jigna.Broker = function(scope) {
     // Private protocol
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
     this._scope           = scope;
 
-    // Add the model.
-    this._add_model(model_name, id);
+    this.context          = this.send_request('get_context', []);
+    
+    for (var model_name in this.context) {
+        this._add_model(model_name, this.context[model_name]);
+    }
 };
 
 jigna.Broker.prototype.handle_event = function(event) {
