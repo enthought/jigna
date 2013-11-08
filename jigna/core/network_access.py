@@ -26,20 +26,14 @@ class ProxyAccessManager(QNetworkAccessManager):
     """ A QNetworkAccessManager subclass which proxies requests for a set of
     hosts and schemes.
     """
-    def __init__(self, access_manager=None, hosts={}):
+    def __init__(self, hosts={}):
         super(ProxyAccessManager, self).__init__()
-        self.access_manager = access_manager
         self.hosts = hosts
 
     def get_url_handler(self, url):
         """ Returns the WSGI callable to be used for specified url. 
         """
         str_url = url.toString()
-
-        if self.access_manager is not None:
-            access_handler = self.access_manager.get_access_handler(str_url)
-            if access_handler is not None:
-                return access_handler.app
 
         return self.hosts.get(url.host())
 
@@ -60,7 +54,7 @@ class ProxyAccessManager(QNetworkAccessManager):
 
     def createRequest(self, operation, request, data):
         """ Create a ProxyReply request if url handler is provided by
-        `access_manager`, else defer to the original QNetworkAccessManager
+        `hosts`, else defer to the original QNetworkAccessManager
         `createRequest` method.
         """
         url = request.url()

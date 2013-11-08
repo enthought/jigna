@@ -88,14 +88,8 @@ class HTMLWidget(Widget):
     # A list of hosts and wsgi apps to handle them.
     hosts = Dict(Str, Callable)
 
-    #### Advanced Python-Javascript interoperation ############################
-
-    # Provides advanced Python-Javascript interoperation.
-    access_manager = Any
-
     #### Private interface ####################################################
 
-    _access_handler = Property(depends_on='access_manager, url')
     _network_access = Any
 
     # The exposed `PythonContainer` qobjects exposed to javascript in the
@@ -135,8 +129,7 @@ class HTMLWidget(Widget):
             control.pageAction(action).setVisible(False)
 
         # Install the access manager.
-        self._network_access = ProxyAccessManager(self.access_manager,
-                                                  self.hosts)
+        self._network_access = ProxyAccessManager(hosts=self.hosts)
         self._network_access.inject(control)
 
         if hasattr(self, '_zoom'):
@@ -261,18 +254,12 @@ class HTMLWidget(Widget):
             page.settings().setAttribute(
                 QtWebKit.QWebSettings.DeveloperExtrasEnabled, self.debug)
 
-    @on_trait_change('access_manager, hosts')
+    @on_trait_change('hosts')
     def _update_network_access(self):
         if self._network_access:
-            self._network_access.access_manager = self.access_manager
             self._network_access.hosts = self.hosts
 
     #### Trait property getters/setters #######################################
-
-    def _get__access_handler(self):
-        if self.access_manager and self.url:
-            return self.access_manager.get_access_handler(self.url)
-        return None
 
     def _get_zoom(self):
         if self.control is not None:
@@ -317,18 +304,11 @@ class HTMLWidget(Widget):
                     self.python_namespace, exposed_containers[-1],
                     )
 
-            if self._access_handler is not None:
-                for name, obj in self._access_handler.expose_objects.items():
-                    expose = create_js_object_wrapper(obj, parent=frame)
-                    exposed_containers.append(expose)
-                    frame.addToJavaScriptWindowObject(name, expose)
-
     def _navigation_request_signal(self, nav_req):
         if self.url == '':
             # If no url has been loaded yet, let the url load.
             return
 
-        access_manager = self.access_manager
         qurl = nav_req.request.url()
         str_url = qurl.toString()
 
@@ -338,15 +318,6 @@ class HTMLWidget(Widget):
             # open externally until TODO is completed.
             webbrowser.open_new(str_url)
             nav_req.reject()
-
-        # Access manager gets first shot.
-        if access_manager and access_manager.can_handle(str_url):
-            handler = access_manager.get_access_handler(str_url)
-            if handler is not None:
-                if handler.pre_load(str_url):
-                    # Do not load if pre_load() returns True
-                    nav_req.reject()
-                return
 
         # Now fall back to other handling methods.
         scheme = str(qurl.scheme())
@@ -364,55 +335,12 @@ class HTMLWidget(Widget):
         # Make sure that the widget has not been destroyed during loading.
         if self.control is not None:
             if ok:
-                # Process access manager extensions.
-                self._load_finished_extensions()
-
                 # Evaluate post-load JS.
                 for script in self.post_load_js:
                     self.execute_js(script)
-                if self._access_handler is not None:
-                    for script in self._access_handler.post_load_js:
-                        self.execute_js(script)
 
             self.loading = False
             self.loaded = ok
-
-    def _load_finished_extensions(self):
-        access_manager = self.access_manager
-        if access_manager is not None:
-            # Determine which extensions to load.
-            extensions = set()
-
-            if self._access_handler is not None:
-                extensions.update(self._access_handler.extensions)
-
-            for ext in self.access_manager.extensions:
-                if ext.url_pattern and not ext._url_regex.match(self.url):
-                    continue
-
-                eval_js = []
-                if ext.js_object_name:
-                    eval_js.append(ext.js_object_name + '!==undefined')
-                if ext.html_selector:
-                    eval_js.append('document.querySelector("' + 
-                                   ext.html_selector + '")!==null')
-                eval_js = ' && '.join(eval_js)
-
-                if not eval_js or self.execute_js(eval_js):
-                    extensions.add(ext.extension)
-
-            # Load all the extensions.
-            for ext in extensions:
-                if ext.post_load_js:
-                    self.execute_js(ext.post_load_js)
-                if ext.expose_object_name:
-                    frame = self.control.page().mainFrame()
-                    self._exposed_containers.append(create_js_object_wrapper(
-                                                        ext.expose_object,
-                                                        parent=frame))
-                    frame.addToJavaScriptWindowObject(
-                        ext.expose_object_name,
-                        self._exposed_containers[-1])
 
     def _title_signal(self, title):
         self.title = title
