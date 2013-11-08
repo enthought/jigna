@@ -4,7 +4,6 @@ import mimetypes
 import sys
 import logging
 from os.path import dirname, exists, join, sep
-from jinja2 import Environment, FileSystemLoader, PackageLoader
 
 # Enthought library imports
 from traits.api import HasTraits, Str, Dict, Directory, on_trait_change

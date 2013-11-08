@@ -1,4 +1,2 @@
 traits
 pyface
-Mako
-jinja2

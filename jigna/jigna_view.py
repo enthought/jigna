@@ -15,9 +15,6 @@ import os
 import sys
 from os.path import abspath, dirname, join
 
-# 3rd party library.
-from jinja2 import Template
-
 # Enthought library.
 from pyface.api import GUI
 from traits.api import (
@@ -38,12 +35,12 @@ DOCUMENT_HTML_TEMPLATE = """
     <script type="text/javascript" src="http://resources.jigna/js/angular.min.js"></script>
     <script type="text/javascript" src="http://resources.jigna/js/jigna.js"></script>
 
-    {{head_html}}
+    {head_html}
 
   </head>
 
   <body>
-    {{body_html}}
+    {body_html}
   </body>
 </html>
 """
@@ -354,8 +351,7 @@ class JignaView(HasTraits):
     def _html_default(self):
         """ Get the default HTML document for the given model. """
 
-        template = Template(DOCUMENT_HTML_TEMPLATE)
-        html     = template.render(
+        html     = DOCUMENT_HTML_TEMPLATE.format(
             body_html  = self.body_html,
             head_html  = self.head_html
         )

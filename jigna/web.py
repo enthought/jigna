@@ -13,7 +13,6 @@ import json
 from os.path import join, dirname
 
 # 3rd part library.
-from jinja2 import Template
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
 
@@ -87,8 +86,7 @@ class JignaWebView(JignaView):
     def _get_html(self, model):
         """ Get the HTML document for the given model. """
 
-        template = Template(DOCUMENT_HTML_TEMPLATE)
-        html     = template.render(
+        html     = DOCUMENT_HTML_TEMPLATE.format(
             jquery     = '/static/js/jquery.min.js',
             angular    = '/static/js/angular.min.js',
             jigna      = '/static/js/jigna.js',
