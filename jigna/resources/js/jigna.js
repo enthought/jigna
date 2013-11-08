@@ -106,11 +106,8 @@ jigna.Broker = function(scope) {
     this._proxy_factory   = new jigna.ProxyFactory(this);
     this._scope           = scope;
 
-    this.context          = this.send_request('get_context', []);
-    
-    for (var model_name in this.context) {
-        this._add_model(model_name, this.context[model_name]);
-    }
+    // Add the models in the view's context.
+    this._add_models(this.send_request('get_context', []));
 };
 
 jigna.Broker.prototype.handle_event = function(event) {
@@ -153,6 +150,14 @@ jigna.Broker.prototype._add_model = function(model_name, id) {
     scope = this._scope;
     scope.$apply(function() {scope[model_name] = proxy;});
 };
+
+jigna.Broker.prototype._add_models = function(context) {
+    var model_name;
+
+    for (model_name in context) {
+        this._add_model(model_name, context[model_name]);
+    }
+}
 
 jigna.Broker.prototype._create_proxy = function(type, obj) {
     var proxy;
