@@ -67,31 +67,23 @@ class JignaWebView(JignaView):
     def _get_control(self):
         return None
 
-    #: The HTML to display.
-    html = Str
 
-    def show(self, model):
-        """ Create and show a view of the given model. """
+    def show(self, **context):
+        """ Create and show a view of the given context. """
 
-        self._broker.register_object(model)
-        self.html = self._get_html(model)
+        self._resolve_context_ids(context)
+        self._broker.register_objects(context.values())
 
-        return
 
     #### Private protocol #####################################################
 
     def __broker_default(self):
-        return Broker(bridge=WebBridge())
+        return Broker(bridge=WebBridge(), context=self._context)
 
-    def _get_html(self, model):
-        """ Get the HTML document for the given model. """
+    def _html_default(self):
+        """ Get the default HTML document for the given model. """
 
         html     = DOCUMENT_HTML_TEMPLATE.format(
-            jquery     = '/static/js/jquery.min.js',
-            angular    = '/static/js/angular.min.js',
-            jigna      = '/static/js/jigna.js',
-            model_name = 'model',
-            id         = id(model),
             body_html  = self.body_html,
             head_html  = self.head_html
         )
@@ -164,7 +156,8 @@ def serve(jigna_view, port=8888, thread=False, address=''):
     bridge = jigna_view._broker.bridge
 
     # Setup the application.
-    settings = {'static_path': join(dirname(__file__), 'resources')}
+    settings = {'static_path': join(dirname(__file__), 'resources'),
+                'static_url_prefix': '/jigna/'}
 
     application = Application(
         [
