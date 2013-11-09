@@ -14,9 +14,9 @@ class Person(HasTraits):
 html = """
     <html ng-app>
         <head>
-            <script src='http://resources.jigna/js/jquery.min.js'></script>
-            <script src='http://resources.jigna/js/angular.min.js'></script>
-            <script src='http://resources.jigna/js/jigna.js'></script>
+            <script src='/jigna/js/jquery.min.js'></script>
+            <script src='/jigna/js/angular.min.js'></script>
+            <script src='/jigna/js/jigna.js'></script>
         </head>
 
         <body>

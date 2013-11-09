@@ -88,6 +88,9 @@ class HTMLWidget(Widget):
     # A list of hosts and wsgi apps to handle them.
     hosts = Dict(Str, Callable)
 
+    # A list of url root paths and wsgi apps to handle them.
+    root_paths = Dict(Str, Callable)
+
     #### Private interface ####################################################
 
     _network_access = Any
@@ -129,7 +132,8 @@ class HTMLWidget(Widget):
             control.pageAction(action).setVisible(False)
 
         # Install the access manager.
-        self._network_access = ProxyAccessManager(hosts=self.hosts)
+        self._network_access = ProxyAccessManager(root_paths=self.root_paths, 
+                                                  hosts=self.hosts)
         self._network_access.inject(control)
 
         if hasattr(self, '_zoom'):

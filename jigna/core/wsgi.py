@@ -2,6 +2,7 @@
 import threading
 import mimetypes
 import sys
+import os
 import logging
 from os.path import dirname, exists, join, sep
 
@@ -37,9 +38,10 @@ class FileLoader(HasTraits):
     def __call__(self, env, start_response):
 
         path = env['PATH_INFO'].strip('/')
-        print "loading from FileLoader", path
-        path = path.replace('/', sep)
+        path = '/'.join(path.split('/')[1:]) # remove the top-level path as that's url pattern
+        path = path.replace('/', sep)        # handle Windows paths
         path = join(self.root, path)
+        print "loading from FileLoader", path, exists(path)
 
         if not exists(path):
             start_response('404 File not found', [])

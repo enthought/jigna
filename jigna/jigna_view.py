@@ -31,9 +31,9 @@ from jigna.core.wsgi import FileLoader
 DOCUMENT_HTML_TEMPLATE = """
 <html ng-app>
   <head>
-    <script type="text/javascript" src="http://resources.jigna/js/jquery.min.js"></script>
-    <script type="text/javascript" src="http://resources.jigna/js/angular.min.js"></script>
-    <script type="text/javascript" src="http://resources.jigna/js/jigna.js"></script>
+    <script type="text/javascript" src="/jigna/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/jigna/js/angular.min.js"></script>
+    <script type="text/javascript" src="/jigna/js/jigna.js"></script>
 
     {head_html}
 
@@ -395,8 +395,8 @@ class JignaView(HasTraits):
     def _create_widget(self):
         """ Create the HTML widget that we use to render the view. """
 
-        hosts = {
-            'resources.jigna': FileLoader(
+        root_paths = {
+            'jigna': FileLoader(
                 root = join(abspath(dirname(__file__)), 'resources')
             )
         }
@@ -404,7 +404,7 @@ class JignaView(HasTraits):
         widget = HTMLWidget(
             callbacks        = [('handle_request', self._handle_request)],
             python_namespace = 'qt_bridge',
-            hosts            = hosts,
+            root_paths       = root_paths,
             open_externally  = True,
             debug            = True
         )
