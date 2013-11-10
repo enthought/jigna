@@ -73,7 +73,7 @@ class JignaWebView(JignaView):
 
         self._resolve_context_ids(context)
         self._broker.register_objects(context.values())
-
+        self._serve(thread=True)
 
     #### Private protocol #####################################################
 
@@ -89,6 +89,46 @@ class JignaWebView(JignaView):
         )
 
         return html
+
+    def _serve(self, port=8888, thread=False, address=''):
+        """ Serve the given JignaWebView on a websocket.
+
+        Parameters
+        -----------
+
+        int port: Port to serve UI on.
+        Bool thread: If True, start the server on a separate thread.
+        str address: Address where we listen.  Defaults to localhost.
+
+        """
+
+        from tornado.ioloop import IOLoop
+        bridge = self._broker.bridge
+
+        # Setup the application.
+        settings = {'static_path': join(dirname(__file__), 'resources'),
+                    'static_url_prefix': '/jigna/'}
+
+        application = Application(
+            [
+                (r"/_jigna_ws", JignaSocket, dict(bridge=bridge)),
+                (r"/_jigna", GetFromBridge, dict(bridge=bridge)),
+                (r".*", MainHandler, dict(jigna_view=self)),
+            ],
+            **settings
+        )
+        application.listen(port, address=address)
+
+        ioloop = IOLoop.instance()
+        if thread:
+            from threading import Thread
+            t = Thread(target=ioloop.start)
+            t.daemon = True
+            t.start()
+        else:
+            ioloop.start()
+
+        return
 
     def __widget_default(self):
         return None
@@ -136,48 +176,5 @@ class JignaSocket(WebSocketHandler):
     def on_close(self):
         print "Closing jigna websocket"
         self.bridge.remove_socket(self)
-
-###############################################################################
-
-def serve(jigna_view, port=8888, thread=False, address=''):
-    """ Serve the given JignaWebView on a websocket.
-
-    Parameters
-    -----------
-
-    JignaWebView jigna_view: The JignaView instance to serve.
-    int port: Port to serve UI on.
-    Bool thread: If True, start the server on a separate thread.
-    str address: Address where we listen.  Defaults to localhost.
-
-    """
-
-    from tornado.ioloop import IOLoop
-    bridge = jigna_view._broker.bridge
-
-    # Setup the application.
-    settings = {'static_path': join(dirname(__file__), 'resources'),
-                'static_url_prefix': '/jigna/'}
-
-    application = Application(
-        [
-            (r"/_jigna_ws", JignaSocket, dict(bridge=bridge)),
-            (r"/_jigna", GetFromBridge, dict(bridge=bridge)),
-            (r".*", MainHandler, dict(jigna_view=jigna_view)),
-        ],
-        **settings
-    )
-    application.listen(port, address=address)
-
-    ioloop = IOLoop.instance()
-    if thread:
-        from threading import Thread
-        t = Thread(target=ioloop.start)
-        t.daemon = True
-        t.start()
-    else:
-        ioloop.start()
-
-    return
 
 #### EOF ######################################################################
