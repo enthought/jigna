@@ -13,7 +13,7 @@ var jigna = {};
 jigna.initialize = function() {
     this.scope  = $(document.body).scope();
     this.bridge = this.create_bridge();
-    this.client = new jigna.Client(this.scope);
+    this.client = new jigna.Client(this.bridge, this.scope);
 };
 
 jigna.create_bridge = function() {
@@ -93,8 +93,9 @@ jigna.WebBridge.prototype.send_request = function(request) {
 // Client
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Client = function(scope) {
+jigna.Client = function(bridge, scope) {
     // Private protocol
+    this._bridge          = bridge;
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
     this._scope           = scope;
@@ -121,7 +122,7 @@ jigna.Client.prototype.send_request = function(kind, args) {
     var request, response, result;
 
     request  = {'kind' : kind, 'args' : this._marshal_all(args)};
-    response = jigna.bridge.send_request(request);
+    response = this._bridge.send_request(request);
     result   = this._unmarshal(response.result);
 
     if (response.exception !== null) {
@@ -368,9 +369,9 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
         this._add_method(proxy, method_names[index]);
     }
 
-    // The type name is not used by jigna - it is only there to make it easy to
-    // see what the type of the server-side object is when debugging the JS
-    // code.
+    // This property is not actually used by jigna at all! It is only there to
+    // make it easy to see what the type of the server-side object is when
+    // debugging the JS code.
     descriptor.value = info.type_name;
     Object.defineProperty(proxy, '__type_name__', descriptor);
 
@@ -381,9 +382,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var index, info, proxy;
 
     proxy = new jigna.Proxy(id, this._client);
-    // The type name is not used by jigna - it is only there to make it easy to
-    // see what the type of the server-side object is when debugging the JS
-    // code.
+
     var descriptor = {
         configurable : true,
         enumerable   : false,
