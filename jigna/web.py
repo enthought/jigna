@@ -17,7 +17,7 @@ from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
 
 # Enthought library.
-from traits.api import List, Str
+from traits.api import List, Str, Int, Bool
 
 # Jigna library.
 from jigna_view import Bridge, Broker, DOCUMENT_HTML_TEMPLATE, JignaView
@@ -62,6 +62,14 @@ class WebBridge(Bridge):
 class JignaWebView(JignaView):
     """ A factory for HTML/AngularJS based user interfaces on the web. """
 
+    ### 'JignaWebView' protocol ###############################################
+
+    #: Port to serve UI on.
+    port = Int(8888)
+
+    #: Address where we listen.  Defaults to localhost.
+    address = Str
+
     #### 'JignaView' protocol #################################################
 
     def _get_control(self):
@@ -80,26 +88,8 @@ class JignaWebView(JignaView):
     def __broker_default(self):
         return Broker(bridge=WebBridge(), context=self._context)
 
-    def _html_default(self):
-        """ Get the default HTML document for the given model. """
-
-        html     = DOCUMENT_HTML_TEMPLATE.format(
-            body_html  = self.body_html,
-            head_html  = self.head_html
-        )
-
-        return html
-
-    def _serve(self, port=8888, thread=False, address=''):
+    def _serve(self, thread):
         """ Serve the given JignaWebView on a websocket.
-
-        Parameters
-        -----------
-
-        int port: Port to serve UI on.
-        Bool thread: If True, start the server on a separate thread.
-        str address: Address where we listen.  Defaults to localhost.
-
         """
 
         from tornado.ioloop import IOLoop
@@ -117,7 +107,7 @@ class JignaWebView(JignaView):
             ],
             **settings
         )
-        application.listen(port, address=address)
+        application.listen(self.port, address=self.address)
 
         ioloop = IOLoop.instance()
         if thread:
@@ -133,7 +123,8 @@ class JignaWebView(JignaView):
     def __widget_default(self):
         return None
 
-###############################################################################
+##### Request handlers ########################################################
+
 class MainHandler(RequestHandler):
     def initialize(self, jigna_view):
         self.jigna_view = jigna_view
