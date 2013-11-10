@@ -70,7 +70,7 @@ class TestJignaQt(unittest.TestCase):
         self.fred.friends = []
 
     def execute_js(self, js):
-        js = 'jigna.broker._scope.' + js
+        js = 'jigna.client._scope.' + js
         GUI.process_events()
         result = self.bridge.widget.execute_js(js)
         GUI.process_events()
@@ -151,7 +151,7 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.called_with, 10.0)
         self.execute_js("model.method([1, 2])")
         self.assertEqual(fred.called_with, [1,2])
-        self.execute_js("model.method(jigna.broker._scope.model.spouse)")
+        self.execute_js("model.method(jigna.client._scope.model.spouse)")
         self.assertEqual(fred.called_with, wilma)
 
 if __name__ == "__main__":

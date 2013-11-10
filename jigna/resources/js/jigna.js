@@ -13,7 +13,7 @@ var jigna = {};
 jigna.initialize = function() {
     this.scope  = $(document.body).scope();
     this.bridge = this.create_bridge();
-    this.broker = new jigna.Broker(this.scope);
+    this.client = new jigna.Client(this.scope);
 };
 
 jigna.create_bridge = function() {
@@ -33,7 +33,7 @@ jigna.create_bridge = function() {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// QtBridge
+// QtBridge (intra-process)
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.QtBridge = function(qt_bridge) {
@@ -41,10 +41,9 @@ jigna.QtBridge = function(qt_bridge) {
     this._qt_bridge = qt_bridge;
 };
 
-// fixme: duplicated in WebBridge!
 jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
-    jigna.broker.handle_event(JSON.parse(jsonized_event));
+    jigna.client.handle_event(JSON.parse(jsonized_event));
 };
 
 jigna.QtBridge.prototype.send_request = function(request) {
@@ -67,14 +66,8 @@ jigna.WebBridge = function() {
 
     this._web_socket = new WebSocket(url);
     this._web_socket.onmessage = function(event) {
-        jigna.bridge.handle_event(event.data);
+        jigna.client.handle_event(JSON.parse(event.data));
     };
-};
-
-// fixme: duplicated in Bridge!
-jigna.WebBridge.prototype.handle_event = function(jsonized_event) {
-    /* Handle an event from the server. */
-    jigna.broker.handle_event(JSON.parse(jsonized_event));
 };
 
 jigna.WebBridge.prototype.send_request = function(request) {
@@ -97,10 +90,10 @@ jigna.WebBridge.prototype.send_request = function(request) {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Broker
+// Client
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Broker = function(scope) {
+jigna.Client = function(scope) {
     // Private protocol
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
@@ -110,7 +103,7 @@ jigna.Broker = function(scope) {
     this._add_models(this.send_request('get_context', []));
 };
 
-jigna.Broker.prototype.handle_event = function(event) {
+jigna.Client.prototype.handle_event = function(event) {
     /* Handle an event from the server. */
 
     // Currently, the only event we handle is 'on_object_changed'!
@@ -122,7 +115,7 @@ jigna.Broker.prototype.handle_event = function(event) {
     handler.apply(this, [event]);
 };
 
-jigna.Broker.prototype.send_request = function(kind, args) {
+jigna.Client.prototype.send_request = function(kind, args) {
     /* Send a request to the server and wait for the reply. */
 
     var request, response, result;
@@ -140,7 +133,7 @@ jigna.Broker.prototype.send_request = function(kind, args) {
 
 // Private protocol //////////////////////////////////////////////////////////
 
-jigna.Broker.prototype._add_model = function(model_name, id) {
+jigna.Client.prototype._add_model = function(model_name, id) {
     var proxy, scope;
 
     // Create a proxy for the object identified by the Id...
@@ -151,7 +144,7 @@ jigna.Broker.prototype._add_model = function(model_name, id) {
     scope.$apply(function() {scope[model_name] = proxy;});
 };
 
-jigna.Broker.prototype._add_models = function(context) {
+jigna.Client.prototype._add_models = function(context) {
     var model_name;
 
     for (model_name in context) {
@@ -159,7 +152,7 @@ jigna.Broker.prototype._add_models = function(context) {
     }
 }
 
-jigna.Broker.prototype._create_proxy = function(type, obj) {
+jigna.Client.prototype._create_proxy = function(type, obj) {
     var proxy;
     if (type === 'primitive') {
         proxy = obj;
@@ -172,28 +165,29 @@ jigna.Broker.prototype._create_proxy = function(type, obj) {
     return proxy;
 };
 
-jigna.Broker.prototype._invalidate_cached_value = function(id, attribute_name) {
+jigna.Client.prototype._invalidate_cached_value = function(id, attribute_name) {
     var proxy = this._id_to_proxy_map[id];
     proxy.__cache__[attribute_name] = undefined;
 };
 
-jigna.Broker.prototype._marshal = function(obj) {
+jigna.Client.prototype._marshal = function(obj) {
     var type, value;
 
+    // If the object is null, undefined or anything *other* than a proxy!
     if (obj === null || obj === undefined || obj.__id__ === undefined) {
         type  = 'primitive';
         value = obj;
 
+    // Otherwise, the object is a proxy!
     } else {
-        // fixme: Or list!
-        type  = 'instance';
+        type  = obj.__type__;
         value = obj.__id__;
     }
 
     return {'type' : type, 'value' : value};
 };
 
-jigna.Broker.prototype._marshal_all = function(objs) {
+jigna.Client.prototype._marshal_all = function(objs) {
     var index;
 
     for (index in objs) {
@@ -204,7 +198,7 @@ jigna.Broker.prototype._marshal_all = function(objs) {
     return objs;
 };
 
-jigna.Broker.prototype._unmarshal = function(obj) {
+jigna.Client.prototype._unmarshal = function(obj) {
     var value;
 
     if (obj.type === 'primitive') {
@@ -220,7 +214,7 @@ jigna.Broker.prototype._unmarshal = function(obj) {
     return value;
 };
 
-jigna.Broker.prototype._unmarshal_all = function(objs) {
+jigna.Client.prototype._unmarshal_all = function(objs) {
     var index;
 
     for (index in objs) {
@@ -231,7 +225,7 @@ jigna.Broker.prototype._unmarshal_all = function(objs) {
     return objs;
 };
 
-jigna.Broker.prototype._on_object_changed = function(event) {
+jigna.Client.prototype._on_object_changed = function(event) {
     // Invalidate any cached value on the proxy.
     this._invalidate_cached_value(event.obj, event.attribute_name);
 
@@ -249,9 +243,9 @@ jigna.Broker.prototype._on_object_changed = function(event) {
 // ProxyFactory
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.ProxyFactory = function(broker) {
+jigna.ProxyFactory = function(client) {
     // Private protocol.
-    this._broker = broker;
+    this._client = client;
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
@@ -279,12 +273,12 @@ jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        return this.__broker__.send_request('get_list_item', [this, index]);
+        return this.__client__.send_request('get_list_item', [this, index]);
     };
 
     set = function(value) {
         // In here, 'this' refers to the proxy!
-        this.__broker__.send_request('set_list_item', [this, index, value]);
+        this.__client__.send_request('set_list_item', [this, index, value]);
     };
 
     this._add_property(proxy, index, get, set);
@@ -297,7 +291,7 @@ jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
         //
         // In JS, 'arguments' is not a real array, so this converts it to one!
         args   = Array.prototype.slice.call(arguments);
-        result = this.__broker__.send_request(
+        result = this.__client__.send_request(
             'call_instance_method', [this, method_name].concat(args)
         );
 
@@ -331,7 +325,7 @@ jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute
             value = cached_value;
 
         } else {
-            value = this.__broker__.send_request(
+            value = this.__client__.send_request(
                 'get_instance_attribute', [this, attribute_name]
             );
             this.__cache__[attribute_name] = value;
@@ -341,7 +335,7 @@ jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute
     };
 
     set = function(value) {
-        this.__broker__.send_request(
+        this.__client__.send_request(
             'set_instance_attribute', [this, attribute_name, value]
         );
     };
@@ -350,10 +344,19 @@ jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute
 };
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
-    var attribute_names,  index, info, method_names, proxy;
+    var attribute_names, index, info, method_names, proxy;
 
-    proxy = new jigna.Proxy(id, this._broker);
-    info  = this._broker.send_request('get_instance_info', [proxy]);
+    proxy = new jigna.Proxy(id, this._client);
+
+    var descriptor = {
+        configurable : true,
+        enumerable   : false,
+        writeable    : false,
+        value        : 'instance'
+    };
+    Object.defineProperty(proxy, '__type__', descriptor);
+
+    info = this._client.send_request('get_instance_info', [proxy]);
 
     attribute_names = info.attribute_names;
     for (index in attribute_names) {
@@ -368,12 +371,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     // The type name is not used by jigna - it is only there to make it easy to
     // see what the type of the server-side object is when debugging the JS
     // code.
-    var descriptor = {
-        configurable : true,
-        enumerable   : false,
-        writeable    : true,
-        value        : info.type_name
-    };
+    descriptor.value = info.type_name;
     Object.defineProperty(proxy, '__type_name__', descriptor);
 
     return proxy;
@@ -382,8 +380,19 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var index, info, proxy;
 
-    proxy = new jigna.Proxy(id, this._broker);
-    info  = this._broker.send_request('get_list_info', [proxy]);
+    proxy = new jigna.Proxy(id, this._client);
+    // The type name is not used by jigna - it is only there to make it easy to
+    // see what the type of the server-side object is when debugging the JS
+    // code.
+    var descriptor = {
+        configurable : true,
+        enumerable   : false,
+        writeable    : false,
+        value        : 'list'
+    };
+    Object.defineProperty(proxy, '__type__', descriptor);
+
+    info  = this._client.send_request('get_list_info', [proxy]);
 
     for (index=0; index < info.length; index++) {
         this._add_list_item_property(proxy, index);
@@ -396,25 +405,25 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
 // Proxy
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Proxy = function(id, broker) {
+jigna.Proxy = function(id, client) {
     var descriptor = {configurable:true, enumerable:false, writeable:true};
 
     descriptor.value = id;
     Object.defineProperty(this, '__id__', descriptor);
 
-    descriptor.value = broker;
-    Object.defineProperty(this, '__broker__', descriptor);
+    descriptor.value = client;
+    Object.defineProperty(this, '__client__', descriptor);
 
     descriptor.value = {};
     Object.defineProperty(this, '__cache__', descriptor);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Initialization step for jigna
+// Auto-initialization!
 ///////////////////////////////////////////////////////////////////////////////
 
 $(document).ready(function(){
-    jigna.initialize();    
+    jigna.initialize();
 });
 
 // EOF ////////////////////////////////////////////////////////////////////////
