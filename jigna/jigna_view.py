@@ -62,7 +62,7 @@ class Bridge(HasTraits):
         # This looks weird but this is how we fake an event being 'received'
         # on the client side when using the Qt bridge!
         self.widget.execute_js(
-            'jigna.bridge.handle_event(%r);' % jsonized_event
+            'jigna.client.bridge.handle_event(%r);' % jsonized_event
         )
 
         return

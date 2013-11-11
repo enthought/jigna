@@ -11,71 +11,48 @@
 var jigna = {};
 
 jigna.initialize = function() {
-    this.scope  = $(document.body).scope();
-    this.bridge = this.create_bridge();
-    this.client = new jigna.Client(this.bridge, this.scope);
-};
-
-jigna.create_bridge = function() {
-    var bridge, qt_bridge;
-
-    // Are we using the intra-process Qt Bridge...
-    qt_bridge = window['qt_bridge'];
-    if (qt_bridge !== undefined) {
-        bridge = new jigna.QtBridge(qt_bridge);
-
-    // ... or the inter-process web bridge?
-    } else {
-        bridge = new jigna.WebBridge();
-    }
-
-    return bridge;
+    this.client = new jigna.Client();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // QtBridge (intra-process)
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.QtBridge = function(qt_bridge) {
+jigna.QtBridge = function(client, qt_bridge) {
     // Private protocol
+    this._client    = client;
     this._qt_bridge = qt_bridge;
 };
 
 jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
-    jigna.client.handle_event(JSON.parse(jsonized_event));
+    this._client.handle_event(jsonized_event);
 };
 
-jigna.QtBridge.prototype.send_request = function(request) {
+jigna.QtBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
-    var jsonized_request, jsonized_response;
-
-    jsonized_request = JSON.stringify(request);
-    jsonized_response = this._qt_bridge.handle_request(jsonized_request);
-
-    return JSON.parse(jsonized_response);
+    return this._qt_bridge.handle_request(jsonized_request);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // WebBridge
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.WebBridge = function() {
+jigna.WebBridge = function(client) {
     var url = 'ws://' + window.location.host + '/_jigna_ws';
 
     this._web_socket = new WebSocket(url);
     this._web_socket.onmessage = function(event) {
-        jigna.client.handle_event(JSON.parse(event.data));
+        client.handle_event(event.data);
     };
 };
 
-jigna.WebBridge.prototype.send_request = function(request) {
+jigna.WebBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
-    var jsonized_request, jsonized_response;
+    var jsonized_response;
 
-    jsonized_request = JSON.stringify(request);
     $.ajax(
         {
             url     : '/_jigna',
@@ -86,26 +63,29 @@ jigna.WebBridge.prototype.send_request = function(request) {
         }
     );
 
-    return JSON.parse(jsonized_response);
+    return jsonized_response;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // Client
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Client = function(bridge, scope) {
+jigna.Client = function() {
+    // Client protocol.
+    this.bridge = this._create_bridge();
+    this.scope  = $(document.body).scope();
+
     // Private protocol
-    this._bridge          = bridge;
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
-    this._scope           = scope;
 
     // Add the models in the view's context.
     this._add_models(this.send_request('get_context', []));
 };
 
-jigna.Client.prototype.handle_event = function(event) {
+jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
+    var event = JSON.parse(jsonized_event);
 
     // Currently, the only event we handle is 'on_object_changed'!
     var handler = this['_on_' + event.kind];
@@ -119,11 +99,13 @@ jigna.Client.prototype.handle_event = function(event) {
 jigna.Client.prototype.send_request = function(kind, args) {
     /* Send a request to the server and wait for the reply. */
 
-    var request, response, result;
+    var jsonized_request, jsonized_response, request, response, result;
 
-    request  = {'kind' : kind, 'args' : this._marshal_all(args)};
-    response = this._bridge.send_request(request);
-    result   = this._unmarshal(response.result);
+    request           = {'kind' : kind, 'args' : this._marshal_all(args)};
+    jsonized_request  = JSON.stringify(request);
+    jsonized_response = this.bridge.send_request(jsonized_request);
+    response          = JSON.parse(jsonized_response);
+    result            = this._unmarshal(response.result);
 
     if (response.exception !== null) {
         throw result;
@@ -141,7 +123,7 @@ jigna.Client.prototype._add_model = function(model_name, id) {
     proxy = this._create_proxy('instance', id);
 
     // ... and expose it with the name 'model_name' to AngularJS.
-    scope = this._scope;
+    scope = this.scope;
     scope.$apply(function() {scope[model_name] = proxy;});
 };
 
@@ -152,6 +134,22 @@ jigna.Client.prototype._add_models = function(context) {
         this._add_model(model_name, context[model_name]);
     }
 }
+
+jigna.Client.prototype._create_bridge = function() {
+    var bridge, qt_bridge;
+
+    // Are we using the intra-process Qt Bridge...
+    qt_bridge = window['qt_bridge'];
+    if (qt_bridge !== undefined) {
+        bridge = new jigna.QtBridge(this, qt_bridge);
+
+    // ... or the inter-process web bridge?
+    } else {
+        bridge = new jigna.WebBridge(this);
+    }
+
+    return bridge;
+};
 
 jigna.Client.prototype._create_proxy = function(type, obj) {
     var proxy;
@@ -235,8 +233,8 @@ jigna.Client.prototype._on_object_changed = function(event) {
     // smarter by managing the details of a TraitListEvent?
     this._create_proxy(event.new_obj.type, event.new_obj.value);
 
-    if (this._scope.$$phase === null){
-        this._scope.$digest();
+    if (this.scope.$$phase === null){
+        this.scope.$digest();
     }
 };
 
@@ -269,7 +267,7 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
 
 // Private protocol //////////////////////////////////////////////////////////
 
-jigna.ProxyFactory.prototype._add_list_item_property = function(proxy, index){
+jigna.ProxyFactory.prototype._add_list_item_attribute = function(proxy, index){
     var get, set;
 
     get = function() {
@@ -314,7 +312,7 @@ jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
     Object.defineProperty(proxy, name, descriptor);
 };
 
-jigna.ProxyFactory.prototype._add_attribute_property = function(proxy, attribute_name){
+jigna.ProxyFactory.prototype._add_attribute = function(proxy, attribute_name){
     var get, set;
 
     get = function() {
@@ -361,7 +359,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 
     attribute_names = info.attribute_names;
     for (index in attribute_names) {
-        this._add_attribute_property(proxy, attribute_names[index]);
+        this._add_attribute(proxy, attribute_names[index]);
     }
 
     method_names = info.method_names;
@@ -394,7 +392,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     info  = this._client.send_request('get_list_info', [proxy]);
 
     for (index=0; index < info.length; index++) {
-        this._add_list_item_property(proxy, index);
+        this._add_list_item_attribute(proxy, index);
     }
 
     return proxy;
