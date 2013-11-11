@@ -79,7 +79,7 @@ jigna.Client = function() {
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
-    // Add the models in the view's context.
+    // Add the models in the server's context.
     this._add_models(this.send_request('get_context', []));
 };
 
