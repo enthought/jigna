@@ -164,7 +164,7 @@ jigna.Client.prototype._create_proxy = function(type, obj) {
     return proxy;
 };
 
-jigna.Client.prototype._invalidate_cached_value = function(id, attribute_name) {
+jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
     var proxy = this._id_to_proxy_map[id];
     proxy.__cache__[attribute_name] = undefined;
 };
@@ -225,8 +225,7 @@ jigna.Client.prototype._unmarshal_all = function(objs) {
 };
 
 jigna.Client.prototype._on_object_changed = function(event) {
-    // Invalidate any cached value on the proxy.
-    this._invalidate_cached_value(event.obj, event.attribute_name);
+    this._invalidate_cached_attribute(event.obj, event.attribute_name);
 
     // fixme: This smells... It is used to recreate a list proxy every time
     // a list changes but that blows away caching advantages. Can we make it
