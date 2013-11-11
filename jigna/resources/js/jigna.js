@@ -268,7 +268,7 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
 // Private protocol //////////////////////////////////////////////////////////
 
 jigna.ProxyFactory.prototype._add_list_item_attribute = function(proxy, index){
-    var get, set;
+    var descriptor, get, set;
 
     get = function() {
         // In here, 'this' refers to the proxy!
@@ -280,10 +280,11 @@ jigna.ProxyFactory.prototype._add_list_item_attribute = function(proxy, index){
         this.__client__.send_request('set_list_item', [this, index, value]);
     };
 
-    this._add_property(proxy, index, get, set);
+    descriptor = {enumerable:true, get:get, set:set};
+    Object.defineProperty(proxy, index, descriptor);
 };
 
-jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
+jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
     var method = function () {
         var args, result;
         // In here, 'this' refers to the proxy!
@@ -300,20 +301,8 @@ jigna.ProxyFactory.prototype._add_method = function(proxy, method_name){
     proxy[method_name] = method;
 };
 
-jigna.ProxyFactory.prototype._add_property = function(proxy, name, get, set){
-    var descriptor = {
-        get          : get,
-        set          : set,
-        configurable : true,
-        enumerable   : true,
-        writeable    : true
-    };
-
-    Object.defineProperty(proxy, name, descriptor);
-};
-
-jigna.ProxyFactory.prototype._add_attribute = function(proxy, attribute_name){
-    var get, set;
+jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute_name){
+    var descriptor, get, set;
 
     get = function() {
         // In here, 'this' refers to the proxy!
@@ -339,39 +328,32 @@ jigna.ProxyFactory.prototype._add_attribute = function(proxy, attribute_name){
         );
     };
 
-    this._add_property(proxy, attribute_name, get, set);
+    descriptor = {enumerable:true, get:get, set:set};
+    Object.defineProperty(proxy, attribute_name, descriptor);
 };
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var attribute_names, index, info, method_names, proxy;
 
     proxy = new jigna.Proxy(id, this._client);
-
-    var descriptor = {
-        configurable : true,
-        enumerable   : false,
-        writeable    : false,
-        value        : 'instance'
-    };
-    Object.defineProperty(proxy, '__type__', descriptor);
+    Object.defineProperty(proxy, '__type__', {value:'instance'});
 
     info = this._client.send_request('get_instance_info', [proxy]);
 
     attribute_names = info.attribute_names;
     for (index in attribute_names) {
-        this._add_attribute(proxy, attribute_names[index]);
+        this._add_instance_attribute(proxy, attribute_names[index]);
     }
 
     method_names = info.method_names;
     for (index in method_names) {
-        this._add_method(proxy, method_names[index]);
+        this._add_instance_method(proxy, method_names[index]);
     }
 
     // This property is not actually used by jigna at all! It is only there to
     // make it easy to see what the type of the server-side object is when
     // debugging the JS code.
-    descriptor.value = info.type_name;
-    Object.defineProperty(proxy, '__type_name__', descriptor);
+    Object.defineProperty(proxy, '__type_name__', {value:info.type_name});
 
     return proxy;
 };
@@ -380,14 +362,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var index, info, proxy;
 
     proxy = new jigna.Proxy(id, this._client);
-
-    var descriptor = {
-        configurable : true,
-        enumerable   : false,
-        writeable    : false,
-        value        : 'list'
-    };
-    Object.defineProperty(proxy, '__type__', descriptor);
+    Object.defineProperty(proxy, '__type__', {value:'list'});
 
     info  = this._client.send_request('get_list_info', [proxy]);
 
@@ -403,16 +378,9 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.Proxy = function(id, client) {
-    var descriptor = {configurable:true, enumerable:false, writeable:true};
-
-    descriptor.value = id;
-    Object.defineProperty(this, '__id__', descriptor);
-
-    descriptor.value = client;
-    Object.defineProperty(this, '__client__', descriptor);
-
-    descriptor.value = {};
-    Object.defineProperty(this, '__cache__', descriptor);
+    Object.defineProperty(this, '__id__', {value:id});
+    Object.defineProperty(this, '__client__', {value:client});
+    Object.defineProperty(this, '__cache__', {value:{}});
 };
 
 ///////////////////////////////////////////////////////////////////////////////
