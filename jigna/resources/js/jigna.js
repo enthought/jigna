@@ -126,7 +126,7 @@ jigna.Client.prototype.send_request = function(kind, args) {
         args = [];
     }
 
-    request           = {'kind' : kind, 'args' : this._marshal_all(args)};
+    request           = {kind:kind, args:this._marshal_all(args)};
     jsonized_request  = JSON.stringify(request);
     jsonized_response = this.bridge.send_request(jsonized_request);
     response          = JSON.parse(jsonized_response);
@@ -275,19 +275,14 @@ jigna.ProxyFactory = function(client) {
 jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
     /* Make a proxy for the given value (typed by type!). */
 
-    var proxy;
+    var factory_methods;
 
-    if (type === 'instance') {
-        proxy = this._create_instance_proxy(obj);
-    }
-    else if (type === 'list') {
-        proxy = this._create_list_proxy(obj);
-    }
-    else {
-        throw 'cannot create proxy for type: ' + type;
-    }
+    factory_methods = {
+        instance : this._create_instance_proxy,
+	list     : this._create_list_proxy
+    };
 
-    return proxy;
+    return factory_methods[type].apply(this, [obj]);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
