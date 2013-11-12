@@ -193,6 +193,19 @@ jigna.Client.prototype._create_proxy = function(type, obj) {
     return proxy;
 };
 
+jigna.Client.prototype._is_a_proxy = function(obj) {
+    var is_a_proxy;
+
+    if (obj === null || obj === undefined) {
+        is_a_proxy = false;
+
+    } else {
+        is_a_proxy = (obj.constructor === jigna.Proxy);
+    }
+
+    return is_a_proxy;
+};
+
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
     var proxy = this._id_to_proxy_map[id];
     proxy.__cache__[attribute_name] = undefined;
@@ -201,15 +214,13 @@ jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_nam
 jigna.Client.prototype._marshal = function(obj) {
     var type, value;
 
-    // If the object is anything *other* than a proxy!
-    if (obj === null || obj === undefined || obj.__id__ === undefined) {
-        type  = 'primitive';
-        value = obj;
-
-    // Otherwise, the object is a proxy!
-    } else {
+    if (this._is_a_proxy(obj)) {
         type  = obj.__type__;
         value = obj.__id__;
+
+    } else {
+        type  = 'primitive';
+        value = obj;
     }
 
     return {'type' : type, 'value' : value};
@@ -350,12 +361,12 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
     };
 
     set = function(value) {
-	// If the proxy is for a 'HasTraits' instance then we don't need
-	// to set the cached value here as the value will get updated when
-	// we get the corresponsing trait event. However, setting the value
-	// here means that we can create jigna UIs for non-traits objects - it
-	// just means we won't react to external changes to the model(s).
-	this.__cache__[attribute_name] = value;
+        // If the proxy is for a 'HasTraits' instance then we don't need
+        // to set the cached value here as the value will get updated when
+        // we get the corresponsing trait event. However, setting the value
+        // here means that we can create jigna UIs for non-traits objects - it
+        // just means we won't react to external changes to the model(s).
+        this.__cache__[attribute_name] = value;
 
         this.__client__.send_request(
             'set_instance_attribute', [this, attribute_name, value]
