@@ -193,19 +193,6 @@ jigna.Client.prototype._create_proxy = function(type, obj) {
     return proxy;
 };
 
-jigna.Client.prototype._is_a_proxy = function(obj) {
-    var is_a_proxy;
-
-    if (obj === null || obj === undefined) {
-        is_a_proxy = false;
-
-    } else {
-        is_a_proxy = (obj.constructor === jigna.Proxy);
-    }
-
-    return is_a_proxy;
-};
-
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
     var proxy = this._id_to_proxy_map[id];
     proxy.__cache__[attribute_name] = undefined;
@@ -214,7 +201,7 @@ jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_nam
 jigna.Client.prototype._marshal = function(obj) {
     var type, value;
 
-    if (this._is_a_proxy(obj)) {
+    if (obj instanceof jigna.Proxy) {
         type  = obj.__type__;
         value = obj.__id__;
 
