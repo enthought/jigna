@@ -94,16 +94,14 @@ jigna.AngularJS.prototype.on_object_changed = function(event) {
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.Client = function() {
-    // Client protocol.
-    this.bridge       = this._create_bridge();
-    this.js_framework = new jigna.AngularJS();
-
     // Private protocol
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
-    // Add the models in the server's context.
-    this._add_models(this.send_request('get_context', []));
+    // Client protocol.
+    this.bridge       = this._create_bridge();
+    this.js_framework = new jigna.AngularJS();
+    this.models       = this._add_models(this.send_request('get_context'));
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -123,6 +121,10 @@ jigna.Client.prototype.send_request = function(kind, args) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_request, jsonized_response, request, response, result;
+
+    if (args === undefined) {
+        args = [];
+    }
 
     request           = {'kind' : kind, 'args' : this._marshal_all(args)};
     jsonized_request  = JSON.stringify(request);
@@ -147,14 +149,19 @@ jigna.Client.prototype._add_model = function(model_name, id) {
 
     // ... and expose it with the name 'model_name' to the JS framework.
     this.js_framework.add_model(model_name, proxy);
+
+    return proxy;
 };
 
 jigna.Client.prototype._add_models = function(context) {
-    var model_name;
+    var models, model_name;
 
+    models = {};
     for (model_name in context) {
-        this._add_model(model_name, context[model_name]);
+        models[model_name] = this._add_model(model_name, context[model_name]);
     }
+
+    return models;
 }
 
 jigna.Client.prototype._create_bridge = function() {
@@ -194,7 +201,7 @@ jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_nam
 jigna.Client.prototype._marshal = function(obj) {
     var type, value;
 
-    // If the object is null, undefined or anything *other* than a proxy!
+    // If the object is anything *other* than a proxy!
     if (obj === null || obj === undefined || obj.__id__ === undefined) {
         type  = 'primitive';
         value = obj;
@@ -343,6 +350,13 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
     };
 
     set = function(value) {
+	// If the proxy is for a 'HasTraits' instance then we don't need
+	// to set the cached value here as the value will get updated when
+	// we get the corresponsing trait event. However, setting the value
+	// here means that we can create jigna UIs for non-traits objects - it
+	// just means we won't react to external changes to the model(s).
+	this.__cache__[attribute_name] = value;
+
         this.__client__.send_request(
             'set_instance_attribute', [this, attribute_name, value]
         );
