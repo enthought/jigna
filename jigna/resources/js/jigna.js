@@ -67,13 +67,36 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+// AngularJS
+///////////////////////////////////////////////////////////////////////////////
+
+// Put everything specific to AngularJS in here.
+jigna.AngularJS = function() {
+    // AngularJS protocol.
+    this.scope  = $(document.body).scope();
+};
+
+jigna.AngularJS.prototype.add_model = function(model_name, model) {
+    var scope;
+
+    scope = this.scope;
+    scope.$apply(function() {scope[model_name] = model;});
+};
+
+jigna.AngularJS.prototype.on_object_changed = function(event) {
+    if (this.scope.$$phase === null){
+        this.scope.$digest();
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // Client
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.Client = function() {
     // Client protocol.
-    this.bridge = this._create_bridge();
-    this.scope  = $(document.body).scope();
+    this.bridge       = this._create_bridge();
+    this.js_framework = new jigna.AngularJS();
 
     // Private protocol
     this._id_to_proxy_map = {};
@@ -117,14 +140,13 @@ jigna.Client.prototype.send_request = function(kind, args) {
 // Private protocol //////////////////////////////////////////////////////////
 
 jigna.Client.prototype._add_model = function(model_name, id) {
-    var proxy, scope;
+    var proxy;
 
     // Create a proxy for the object identified by the Id...
     proxy = this._create_proxy('instance', id);
 
-    // ... and expose it with the name 'model_name' to AngularJS.
-    scope = this.scope;
-    scope.$apply(function() {scope[model_name] = proxy;});
+    // ... and expose it with the name 'model_name' to the JS framework.
+    this.js_framework.add_model(model_name, proxy);
 };
 
 jigna.Client.prototype._add_models = function(context) {
@@ -227,14 +249,13 @@ jigna.Client.prototype._unmarshal_all = function(objs) {
 jigna.Client.prototype._on_object_changed = function(event) {
     this._invalidate_cached_attribute(event.obj, event.attribute_name);
 
-    // fixme: This smells... It is used to recreate a list proxy every time
-    // a list changes but that blows away caching advantages. Can we make it
-    // smarter by managing the details of a TraitListEvent?
+    // fixme: This smells... It is used when we have a list of instances but it
+    // blows away caching advantages. Can we make it smarter by managing the
+    // details of a TraitListEvent?
     this._create_proxy(event.new_obj.type, event.new_obj.value);
 
-    if (this.scope.$$phase === null){
-        this.scope.$digest();
-    }
+    // Let the JS-framework know about the change.
+    this.js_framework.on_object_changed(event);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
