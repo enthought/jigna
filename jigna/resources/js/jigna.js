@@ -278,8 +278,9 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
     var factory_methods;
 
     factory_methods = {
+        dict     : this._create_dict_proxy,
         instance : this._create_instance_proxy,
-	list     : this._create_list_proxy
+        list     : this._create_list_proxy
     };
 
     return factory_methods[type].apply(this, [obj]);
@@ -359,6 +360,21 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
     Object.defineProperty(proxy, attribute_name, descriptor);
 };
 
+jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
+    var index, info, proxy;
+
+    proxy = new jigna.Proxy(id, this._client);
+    Object.defineProperty(proxy, '__type__', {value:'dict'});
+
+    info = this._client.send_request('get_dict_info', [proxy]);
+
+    for (index in info.keys) {
+        this._add_list_item_attribute(proxy, info.keys[index]);
+    }
+
+    return proxy;
+};
+
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var attribute_names, index, info, method_names, proxy;
 
@@ -391,7 +407,7 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     proxy = new jigna.Proxy(id, this._client);
     Object.defineProperty(proxy, '__type__', {value:'list'});
 
-    info  = this._client.send_request('get_list_info', [proxy]);
+    info = this._client.send_request('get_list_info', [proxy]);
 
     for (index=0; index < info.length; index++) {
         this._add_list_item_attribute(proxy, index);

@@ -18,7 +18,8 @@ from os.path import abspath, dirname, join
 # Enthought library.
 from pyface.api import GUI
 from traits.api import (
-    Any, Dict, HasTraits, Instance, Property, Str, TraitInstance, TraitListEvent
+    Any, Dict, HasTraits, Instance, Property, Str,
+    TraitDictEvent, TraitDictObject, TraitInstance, TraitListEvent
 )
 
 # Jigna libary.
@@ -141,7 +142,7 @@ class Broker(HasTraits):
     #### Handlers for each kind of request ####################################
 
     def get_context(self):
-        return self.context.copy()
+        return self.context#.copy()
 
     #### Instances ####
 
@@ -200,6 +201,17 @@ class Broker(HasTraits):
         obj[index] = value
 
         return
+
+    #### Dicts ####
+
+    def get_dict_info(self, obj):
+        """ Get a description of a dict. """
+
+        info = dict(
+            keys = obj.keys()
+        )
+
+        return info
 
     #### Private protocol #####################################################
 
@@ -260,6 +272,13 @@ class Broker(HasTraits):
             type  = 'list'
             value = obj_id
 
+        elif isinstance(obj, TraitDictObject):
+            obj_id = str(id(obj))
+            self._id_to_object_map[obj_id] = obj
+
+            type  = 'dict'
+            value = obj_id
+
         # fixme: Not quite right as this will be True for classes too ;^)
         elif hasattr(obj, '__dict__'):
             obj_id = str(id(obj))
@@ -298,7 +317,7 @@ class Broker(HasTraits):
     def _send_object_changed_event(self, obj, trait_name, old, new):
         """ Send an object changed event. """
 
-        if isinstance(new, TraitListEvent):
+        if isinstance(new, (TraitListEvent, TraitDictEvent)):
             trait_name = trait_name[:-len('_items')]
             new        = getattr(obj, trait_name)
 

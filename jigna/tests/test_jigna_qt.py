@@ -1,4 +1,4 @@
-from traits.api import HasTraits, Instance, Int, Str, List
+from traits.api import Dict, HasTraits, Instance, Int, Str, List
 from jigna.api import JignaView
 from pyface.gui import GUI
 from pyface.qt import QtGui
@@ -13,6 +13,7 @@ class Person(HasTraits):
     spouse = Instance('Person')
     fruits = List(Str)
     friends = List(Instance('Person'))
+    phonebook = Dict(Str, Int)
 
     def method(self, value):
         self.called_with = value
@@ -110,6 +111,19 @@ class TestJignaQt(unittest.TestCase):
 
         self.execute_js("model.fruits = ['apple']")
         self.assertEqual(fred.fruits, ["apple"])
+
+    def test_dict_of_primitives(self):
+        self.assertJSEqual("model.phonebook", {})
+        fred = self.fred
+        fred.phonebook = {'joe' : 123, 'joan' : 345}
+        self.assertJSEqual("model.phonebook", fred.phonebook)
+
+        # Now set the value in the JS side.
+        self.execute_js("model.phonebook['joe'] = 567")
+        self.assertEqual(567, fred.phonebook['joe'])
+
+        self.execute_js("model.phonebook = {'alan' : 987}")
+        self.assertEqual(fred.phonebook, {'alan' : 987})
 
     def test_instance_trait(self):
         self.assertJSEqual("model.spouse", '')
