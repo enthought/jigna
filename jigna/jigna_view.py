@@ -114,15 +114,14 @@ class Broker(HasTraits):
         try:
             # To dispatch the request we have a method named after each one!
             method    = getattr(self, request['kind'])
-            args      = self._unmarshal_all(request['args'])
-            result    = method(*args)
+            result    = method(request)
             exception = None
 
         except Exception, e:
-            exception = repr(sys.exc_type)
-            result    = repr(sys.exc_value)
+            exception = repr(sys.exc_value)
+            result    = None
 
-        return dict(exception=exception, result=self._marshal(result))
+        return dict(exception=exception, result=result)
 
     def register_object(self, obj):
         """ Register the given object with the broker. """
@@ -141,25 +140,35 @@ class Broker(HasTraits):
 
     #### Handlers for each kind of request ####################################
 
-    def get_context(self):
-        return self.context#.copy()
+    def get_context(self, request):
+        """ Get the models and model names in the context. """
+
+        return self.context
 
     #### Instances ####
 
-    def call_instance_method(self, obj, method_name, *args):
+    def call_instance_method(self, request):
         """ Call a method on a instance. """
 
-        method = getattr(obj, method_name)
+        obj         = self._id_to_object_map[request['id']]
+        method_name = request['method_name']
+        args        = self._unmarshal_all(request['args'])
+        method      = getattr(obj, method_name)
 
-        return method(*args)
+        return self._marshal(method(*args))
 
-    def get_instance_attribute(self, obj, trait_name):
+    def get_instance_attribute(self, request):
         """ Get the value of an instance attribute. """
 
-        return getattr(obj, trait_name)
+        obj            = self._id_to_object_map[request['id']]
+        attribute_name = request['attribute_name']
 
-    def get_instance_info(self, obj):
+        return self._marshal(getattr(obj, attribute_name))
+
+    def get_instance_info(self, request):
         """ Get a description of an instance. """
+
+        obj = self._id_to_object_map[request['id']]
 
         if isinstance(obj, HasTraits):
             obj.on_trait_change(self._send_object_changed_event)
@@ -172,46 +181,55 @@ class Broker(HasTraits):
 
         return info
 
-    def set_instance_attribute(self, obj, trait_name, value):
+    def set_instance_attribute(self, request):
         """ Set an attribute on an instance. """
 
-        setattr(obj, trait_name, value)
+        obj            = self._id_to_object_map[request['id']]
+        attribute_name = request['attribute_name']
+        value          = self._unmarshal(request['value']);
+
+        setattr(obj, attribute_name, value)
 
         return
 
-    #### Lists ####
+    #### Lists/Dicts ####
 
-    def get_list_info(self, obj):
-        """ Get a description of a list. """
+    def get_dict_info(self, request):
+        """ Get a description of a dict. """
 
-        info = dict(
-            length = len(obj)
-        )
+        obj  = self._id_to_object_map[request['id']]
+        info = dict(keys=obj.keys())
 
         return info
 
-    def get_list_item(self, obj, index):
-        """ Get the value of an item in a list. """
+    def get_list_info(self, request):
+        """ Get a description of a list. """
 
-        return obj[index]
+        obj  = self._id_to_object_map[request['id']]
+        info = dict(length=len(obj))
 
-    def set_list_item(self, obj, index, value):
-        """ Set the value of a an item in a list. """
+        return info
+
+    def get_item(self, request):
+        """ Get the value of an item in a list or dict. """
+
+        obj   = self._id_to_object_map[request['id']]
+        index = request['index']
+
+        return self._marshal(obj[index])
+
+    def set_item(self, request):
+        """ Set the value of a an item in a list or dict. """
+
+        obj   = self._id_to_object_map[request['id']]
+        index = request['index']
+        value = self._unmarshal(request['value'])
 
         obj[index] = value
 
         return
 
     #### Dicts ####
-
-    def get_dict_info(self, obj):
-        """ Get a description of a dict. """
-
-        info = dict(
-            keys = obj.keys()
-        )
-
-        return info
 
     #### Private protocol #####################################################
 
@@ -272,7 +290,7 @@ class Broker(HasTraits):
             type  = 'list'
             value = obj_id
 
-        elif isinstance(obj, TraitDictObject):
+        elif isinstance(obj, dict):
             obj_id = str(id(obj))
             self._id_to_object_map[obj_id] = obj
 
@@ -280,6 +298,8 @@ class Broker(HasTraits):
             value = obj_id
 
         # fixme: Not quite right as this will be True for classes too ;^)
+        # The intent is to get objects that are non-scalar eg. int, float
+        # complex, str etc.
         elif hasattr(obj, '__dict__'):
             obj_id = str(id(obj))
             self._id_to_object_map[obj_id] = obj
@@ -322,7 +342,8 @@ class Broker(HasTraits):
             new        = getattr(obj, trait_name)
 
         else:
-            if hasattr(new, '__dict__') or isinstance(new, list):
+            # fixme: intent is non-scalar or maybe container?
+            if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
                 self.register_object(new)
 
         event = dict(
@@ -461,8 +482,11 @@ class JignaView(HasTraits):
 
     def _resolve_context_ids(self, context):
         """ Return the context mapping with respect to ids """
+
         self._context = {}
         for name, obj in context.iteritems():
             self._context[name] = str(id(obj))
+
+        return
 
 #### EOF ######################################################################
