@@ -112,10 +112,12 @@ jigna.Client = function() {
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
-    var event = JSON.parse(jsonized_event);
+    var event, handler;
+
+    event = JSON.parse(jsonized_event);
 
     // Currently, the only event we handle is 'on_object_changed'!
-    var handler = this['_on_' + event.kind];
+    handler = this['_on_' + event.kind];
     if (handler === undefined) {
         throw 'no handler for event: ' + event.kind
     }
@@ -275,7 +277,7 @@ jigna.ProxyFactory = function(client) {
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
-    /* Make a proxy for the given type and value. */
+    /* Create a proxy for the given type and value. */
 
     var factory_method = this['_create_' + type + '_proxy'];
     if (factory_method === undefined) {
