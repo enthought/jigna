@@ -8,9 +8,15 @@
 //
 
 // Namespace for all Jigna-related objects.
-var jigna = {};
+var jigna = {
+    // This attribute is not actually used by jigna itself. It is only there to
+    // make it easy to access the models when debugging the JS code in the web
+    // inspector.
+    models : {}
+};
 
 jigna.initialize = function() {
+    // This is where all the work is done!
     this.client = new jigna.Client();
 };
 
@@ -81,6 +87,11 @@ jigna.AngularJS.prototype.add_model = function(model_name, model) {
 
     scope = this.scope;
     scope.$apply(function() {scope[model_name] = model;});
+
+    // This attribute is not actually used by jigna itself. It is only there to
+    // make it easy to access the models when debugging the JS code in the web
+    // inspector.
+    jigna.models[model_name] = model;
 };
 
 jigna.AngularJS.prototype.on_object_changed = function(event) {
@@ -102,10 +113,8 @@ jigna.Client = function() {
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
-    // This attribute is not actually used by jigna itself. It is only there to
-    // make it easy to access the models when debugging the JS code in the web
-    // inspector.
-    jigna.models = this._add_models(this.get_context());
+    // Add all of the models being edited.
+    this._add_models(this.get_context());
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -258,15 +267,12 @@ jigna.Client.prototype._add_model = function(model_name, id) {
 };
 
 jigna.Client.prototype._add_models = function(context) {
-    var models, model_name;
+    var model_name;
 
-    models = {};
     for (model_name in context) {
-        models[model_name] = this._add_model(model_name, context[model_name]);
+        this._add_model(model_name, context[model_name]);
     }
-
-    return models;
-}
+};
 
 jigna.Client.prototype._create_proxy = function(type, obj) {
     var proxy;
@@ -448,7 +454,7 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 
     set = function(value) {
         // In here, 'this' refers to the proxy!
-	//
+        //
         // If the proxy is for a 'HasTraits' instance then we don't need
         // to set the cached value here as the value will get updated when
         // we get the corresponsing trait event. However, setting the value
