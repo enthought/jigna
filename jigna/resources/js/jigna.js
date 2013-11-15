@@ -94,16 +94,18 @@ jigna.AngularJS.prototype.on_object_changed = function(event) {
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.Client = function() {
-    var request, response;
+    // Client protocol.
+    this.bridge       = this._get_bridge();
+    this.js_framework = this._get_js_framework();
 
     // Private protocol
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
-    // Client protocol.
-    this.bridge       = this._create_bridge();
-    this.js_framework = new jigna.AngularJS();
-    this.models = this._add_models(this.get_context());
+    // This attribute is not actually used by jigna itself. It is only there to
+    // make it easy to access the models when debugging the JS code in the web
+    // inspector.
+    jigna.models = this._add_models(this.get_context());
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -266,7 +268,20 @@ jigna.Client.prototype._add_models = function(context) {
     return models;
 }
 
-jigna.Client.prototype._create_bridge = function() {
+jigna.Client.prototype._create_proxy = function(type, obj) {
+    var proxy;
+    if (type === 'primitive') {
+        proxy = obj;
+    }
+    else {
+        proxy = this._proxy_factory.create_proxy(type, obj);
+        this._id_to_proxy_map[obj] = proxy;
+    }
+
+    return proxy;
+};
+
+jigna.Client.prototype._get_bridge = function() {
     var bridge, qt_bridge;
 
     // Are we using the intra-process Qt Bridge...
@@ -282,17 +297,9 @@ jigna.Client.prototype._create_bridge = function() {
     return bridge;
 };
 
-jigna.Client.prototype._create_proxy = function(type, obj) {
-    var proxy;
-    if (type === 'primitive') {
-        proxy = obj;
-    }
-    else {
-        proxy = this._proxy_factory.create_proxy(type, obj);
-        this._id_to_proxy_map[obj] = proxy;
-    }
-
-    return proxy;
+jigna.Client.prototype._get_js_framework = function() {
+    // For now, just AngularJS!
+    return new jigna.AngularJS();
 };
 
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
@@ -480,9 +487,9 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
         this._add_instance_method(proxy, info.method_names[index]);
     }
 
-    // This property is not actually used by jigna at all! It is only there to
+    // This property is not actually used by jigna itself. It is only there to
     // make it easy to see what the type of the server-side object is when
-    // debugging the JS code.
+    // debugging the JS code in the web inspector.
     Object.defineProperty(proxy, '__type_name__', {value : info.type_name});
 
     return proxy;
