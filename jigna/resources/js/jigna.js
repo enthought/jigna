@@ -270,6 +270,7 @@ jigna.Client.prototype._add_models = function(context) {
 
 jigna.Client.prototype._create_proxy = function(type, obj) {
     var proxy;
+
     if (type === 'primitive') {
         proxy = obj;
     }
