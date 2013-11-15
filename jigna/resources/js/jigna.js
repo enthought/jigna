@@ -413,6 +413,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
 jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
     var method = function () {
+        // In here, 'this' refers to the proxy!
         var args = Array.prototype.slice.call(arguments);
 
         return this.__client__.call_instance_method(
@@ -445,6 +446,8 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
     };
 
     set = function(value) {
+        // In here, 'this' refers to the proxy!
+	//
         // If the proxy is for a 'HasTraits' instance then we don't need
         // to set the cached value here as the value will get updated when
         // we get the corresponsing trait event. However, setting the value
