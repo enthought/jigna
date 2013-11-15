@@ -103,11 +103,7 @@ jigna.Client = function() {
     // Client protocol.
     this.bridge       = this._create_bridge();
     this.js_framework = new jigna.AngularJS();
-
-    request  = {kind : 'get_context'};
-    response = this.send_request(request);
-
-    this.models       = this._add_models(response.result);
+    this.models = this._add_models(this.get_context());
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -141,7 +137,109 @@ jigna.Client.prototype.send_request = function(request) {
 
 // Convenience methods for each kind of request //////////////////////////////
 
-// ... ?
+jigna.Client.prototype.call_instance_method = function(id, method_name, args) {
+    var request, response;
+
+    request  = {
+        kind        : 'call_instance_method',
+        id          : id,
+        method_name : method_name,
+        args        : this._marshal_all(args)
+    };
+    response = this.send_request(request)
+
+    return this._unmarshal(response.result)
+};
+
+jigna.Client.prototype.get_context = function() {
+    var request, response;
+
+    request  = {kind : 'get_context'};
+    response = this.send_request(request);
+
+    return response.result;
+};
+
+jigna.Client.prototype.get_dict_info = function(id) {
+    var request, response;
+
+    request  = {kind : 'get_dict_info', id : id};
+    response = this.send_request(request);
+
+    return response.result;
+};
+
+jigna.Client.prototype.get_instance_attribute = function(id, attribute_name) {
+    var request, response;
+
+    request = {
+        kind           : 'get_instance_attribute',
+        id             : id,
+        attribute_name : attribute_name
+    };
+
+    response = this.send_request(request)
+
+    return this._unmarshal(response.result);
+};
+
+jigna.Client.prototype.get_instance_info = function(id) {
+    var request, response;
+
+    request  = {kind : 'get_instance_info', id : id};
+    response = this.send_request(request);
+
+    return response.result;
+};
+
+jigna.Client.prototype.get_item = function(id, index) {
+    var request, response;
+
+    request = {
+        kind  : 'get_item',
+        id    : id,
+        index : index,
+    };
+
+    response = this.send_request(request)
+
+    return this._unmarshal(response.result);
+};
+
+jigna.Client.prototype.get_list_info = function(id) {
+    var request, response;
+
+    request  = {kind : 'get_list_info', id : id};
+    response = this.send_request(request);
+
+    return response.result;
+};
+
+jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
+    var request;
+
+    request = {
+        kind           : 'set_instance_attribute',
+        id             : id,
+        attribute_name : attribute_name,
+        value          : this._marshal(value)
+    };
+
+    this.send_request(request)
+};
+
+jigna.Client.prototype.set_item = function(id, index, value) {
+    var request;
+
+    request = {
+        kind  : 'set_item',
+        id    : id,
+        index : index,
+        value : this._marshal(value)
+    };
+
+    this.send_request(request)
+};
 
 // Private protocol //////////////////////////////////////////////////////////
 
@@ -294,31 +392,12 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var request, response;
-
-        request = {
-            kind  : 'get_item',
-            id    : this.__id__,
-            index : index,
-        };
-
-        response = this.__client__.send_request(request)
-
-        return this.__client__._unmarshal(response.result);
+        return this.__client__.get_item(this.__id__, index);
     };
 
     set = function(value) {
         // In here, 'this' refers to the proxy!
-        var request;
-
-        request = {
-            kind  : 'set_item',
-            id    : this.__id__,
-            index : index,
-            value : this.__client__._marshal(value)
-        };
-
-        this.__client__.send_request(request)
+        this.__client__.set_item(this.__id__, index, value);
     };
 
     descriptor = {enumerable:true, get:get, set:set};
@@ -327,18 +406,11 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
 jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
     var method = function () {
-        var args, request, response;
+        var args = Array.prototype.slice.call(arguments);
 
-        args     = Array.prototype.slice.call(arguments);
-        request  = {
-            kind        : 'call_instance_method',
-            id          : this.__id__,
-            method_name : method_name,
-            args        : this.__client__._marshal_all(args)
-        };
-        response = this.__client__.send_request(request)
-
-        return this.__client__._unmarshal(response.result)
+        return this.__client__.call_instance_method(
+            this.__id__, method_name, args
+        );
     };
 
     proxy[method_name] = method;
@@ -349,22 +421,16 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var cached_value, request, response, value;
+        var cached_value, value;
 
         cached_value = this.__cache__[attribute_name];
         if (cached_value !== undefined) {
             value = cached_value;
 
         } else {
-            request = {
-                kind           : 'get_instance_attribute',
-                id             : this.__id__,
-                attribute_name : attribute_name
-            };
-
-            response = this.__client__.send_request(request)
-            value    = this.__client__._unmarshal(response.result);
-
+            value = this.__client__.get_instance_attribute(
+                this.__id__, attribute_name
+            );
             this.__cache__[attribute_name] = value;
         }
 
@@ -378,15 +444,9 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
         // here means that we can create jigna UIs for non-traits objects - it
         // just means we won't react to external changes to the model(s).
         this.__cache__[attribute_name] = value;
-
-        request = {
-            kind           : 'set_instance_attribute',
-            id             : this.__id__,
-            attribute_name : attribute_name,
-            value          : this.__client__._marshal(value)
-        };
-
-        this.__client__.send_request(request)
+        this.__client__.set_instance_attribute(
+            this.__id__, attribute_name, value
+        );
     };
 
     descriptor = {enumerable:true, get:get, set:set};
@@ -394,15 +454,11 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 };
 
 jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
-    var index, info, proxy, request, response;
+    var index, info, proxy;
 
-    proxy = new jigna.Proxy(id, this._client);
-    Object.defineProperty(proxy, '__type__', {value:'dict'});
+    proxy = new jigna.Proxy('dict', id, this._client);
 
-    request  = {kind : 'get_dict_info', id : proxy.__id__};
-    response = this._client.send_request(request);
-    info     = response.result;
-
+    info = this._client.get_dict_info(id);
     for (index in info.keys) {
         this._add_item_attribute(proxy, info.keys[index]);
     }
@@ -411,15 +467,11 @@ jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
 };
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
-    var index, info, proxy, request, response;
+    var index, info, proxy;
 
-    proxy = new jigna.Proxy(id, this._client);
-    Object.defineProperty(proxy, '__type__', {value:'instance'});
+    proxy = new jigna.Proxy('instance', id, this._client);
 
-    request  = {kind : 'get_instance_info', id : proxy.__id__};
-    response = this._client.send_request(request);
-    info     = response.result;
-
+    info = this._client.get_instance_info(id);
     for (index in info.attribute_names) {
         this._add_instance_attribute(proxy, info.attribute_names[index]);
     }
@@ -437,15 +489,11 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 };
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
-    var index, info, proxy, request, response;
+    var index, info, proxy;
 
-    proxy = new jigna.Proxy(id, this._client);
-    Object.defineProperty(proxy, '__type__', {value : 'list'});
+    proxy = new jigna.Proxy('list', id, this._client);
 
-    request  = {kind : 'get_list_info', id : proxy.__id__};
-    response = this._client.send_request(request);
-    info     = response.result;
-
+    info = this._client.get_list_info(id);
     for (index=0; index < info.length; index++) {
         this._add_item_attribute(proxy, index);
     }
@@ -457,7 +505,11 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
 // Proxy
 ///////////////////////////////////////////////////////////////////////////////
 
-jigna.Proxy = function(id, client) {
+jigna.Proxy = function(type, id, client) {
+    // We use the '__attribute__' pattern to reduce the risk of name clashes
+    // with the actuall attribute and methods on the object that we are a
+    // proxy for.
+    Object.defineProperty(this, '__type__',   {value : type});
     Object.defineProperty(this, '__id__',     {value : id});
     Object.defineProperty(this, '__client__', {value : client});
     Object.defineProperty(this, '__cache__',  {value : {}});
