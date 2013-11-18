@@ -337,6 +337,9 @@ class Broker(HasTraits):
     def _send_object_changed_event(self, obj, trait_name, old, new):
         """ Send an object changed event. """
 
+        if trait_name.startswith('_'):
+            return
+
         if isinstance(new, (TraitListEvent, TraitDictEvent)):
             trait_name = trait_name[:-len('_items')]
             new        = getattr(obj, trait_name)
