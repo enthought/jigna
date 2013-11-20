@@ -153,6 +153,20 @@ class TestJignaQt(unittest.TestCase):
         self.execute_js("model.friends[0].name = 'Barneyji'")
         self.assertEqual(barney.name, "Barneyji")
 
+    def test_list_sortable(self):
+        # Given
+        fred = self.fred
+        self.execute_js("model.fruits = ['peach', 'apple', 'banana']")
+        self.assertJSEqual("model.fruits", ['peach', 'apple', 'banana'])
+
+        # When
+        self.execute_js("model.fruits.sort()")
+
+        # Then
+        self.assertJSEqual("model.fruits", ['apple', 'banana', 'peach'])
+        self.assertEqual(fred.fruits, ['apple', 'banana', 'peach'])
+
+
     def test_callable(self):
         fred = self.fred
         wilma = Person(name='Wilma', age=40)
