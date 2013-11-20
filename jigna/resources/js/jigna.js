@@ -7,6 +7,80 @@
 // This file is confidential and NOT open source.  Do not distribute.
 //
 
+
+// SubArray.js ////////////////////////////////////////////////////////////////
+// (C) Copyright Juriy Zaytsev 
+// Source: 1. https://github.com/kangax/array_subclassing
+//         2. http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
+///////////////////////////////////////////////////////////////////////////////
+
+
+var makeSubArray = (function(){
+
+  var MAX_SIGNED_INT_VALUE = Math.pow(2, 32) - 1,
+      hasOwnProperty = Object.prototype.hasOwnProperty;
+
+  function ToUint32(value) {
+    return value >>> 0;
+  }
+
+  function getMaxIndexProperty(object) {
+    var maxIndex = -1, isValidProperty;
+    
+    for (var prop in object) {
+      
+      isValidProperty = (
+        String(ToUint32(prop)) === prop && 
+        ToUint32(prop) !== MAX_SIGNED_INT_VALUE && 
+        hasOwnProperty.call(object, prop));
+        
+      if (isValidProperty && prop > maxIndex) {
+        maxIndex = prop;
+      }
+    }
+    return maxIndex;
+  }
+
+  return function(methods) {
+    var length = 0;
+    methods = methods || { };
+
+    methods.length = {
+      get: function() {
+        var maxIndexProperty = +getMaxIndexProperty(this);
+        return Math.max(length, maxIndexProperty + 1);
+      },
+      set: function(value) {
+        var constrainedValue = ToUint32(value);
+        if (constrainedValue !== +value) {
+          throw new RangeError();
+        }
+        for (var i = constrainedValue, len = this.length; i < len; i++) {
+          delete this[i];
+        }
+        length = constrainedValue;
+      }
+    };
+    methods.toString = {
+      value: Array.prototype.join
+    };
+    return Object.create(Array.prototype, methods);
+  };
+})();
+
+function SubArray() {
+  var arr = makeSubArray();
+  if (arguments.length === 1) {
+    arr.length = arguments[0];
+  }
+  else {
+    arr.push.apply(arr, arguments);
+  }
+  return arr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 // Namespace for all Jigna-related objects.
 var jigna = {
     // This attribute is not actually used by jigna itself. It is only there to
@@ -406,6 +480,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
     get = function() {
         // In here, 'this' refers to the proxy!
+        console.log("getter for index:", index);
         return this.__client__.get_item(this.__id__, index);
     };
 
@@ -415,6 +490,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
     };
 
     descriptor = {enumerable:true, get:get, set:set};
+    console.log("defining index property for index:", index)
     Object.defineProperty(proxy, index, descriptor);
 };
 
@@ -508,18 +584,22 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var index, info, proxy;
 
-    proxy = new jigna.Proxy('list', id, this._client);
+    proxy = new jigna.ListProxy('list', id, this._client);
+
+    console.log("list proxy:", proxy);
 
     info = this._client.get_list_info(id);
     for (index=0; index < info.length; index++) {
         this._add_item_attribute(proxy, index);
     }
 
+    console.log("list proxy after property addition:", proxy);
+
     return proxy;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Proxy
+// Proxies
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.Proxy = function(type, id, client) {
@@ -531,6 +611,24 @@ jigna.Proxy = function(type, id, client) {
     Object.defineProperty(this, '__client__', {value : client});
     Object.defineProperty(this, '__cache__',  {value : {}});
 };
+
+// ListProxy is handled separately because it has to do special handling 
+// to behave as regular Javascript `Array` objects
+// See "Wrappers. Prototype chain injection" section in this article:
+// http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
+
+jigna.ListProxy = function(type, id, client) {
+    
+    var arr = new SubArray();
+
+    // fixme: repetition of property definition
+    Object.defineProperty(arr, '__type__',   {value : type});
+    Object.defineProperty(arr, '__id__',     {value : id});
+    Object.defineProperty(arr, '__client__', {value : client});
+    Object.defineProperty(arr, '__cache__',  {value : {}});
+    
+    return arr
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Auto-initialization!
