@@ -370,6 +370,15 @@ class Broker(HasTraits):
 class JignaView(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
 
+    ### 'JignaView' class protocol ############################################
+
+    @classmethod
+    def from_file(cls, html_file, base_url=''):
+        with open(html_file, 'rb') as f:
+            html = f.read()
+
+        return cls(html=html, base_url=base_url)
+
     #### 'JignaView' protocol #################################################
 
     #: The base url for all resources.

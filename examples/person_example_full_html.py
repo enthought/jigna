@@ -1,3 +1,5 @@
+from os.path import join
+
 from traits.api import HasTraits, Int, Str
 from jigna.api import JignaView
 from pyface.qt import QtGui
@@ -11,25 +13,7 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-html = """
-    <html ng-app>
-        <head>
-            <script src='/jigna/js/jquery.min.js'></script>
-            <script src='/jigna/js/angular.min.js'></script>
-            <script src='/jigna/js/jigna.js'></script>
-        </head>
-
-        <body>
-            Name: <input ng-model="fred.name">
-            Age: <input ng-model="fred.age" type='number'>
-
-            Name: <input ng-model="wilma.name">
-            Age: <input ng-model="wilma.age" type='number'>
-        </body>
-    </html>
-"""
-
-person_view = JignaView(html=html)
+person_view = JignaView.from_file(html_file=join('data', 'test.html'))
 
 #### Entry point ####
 
