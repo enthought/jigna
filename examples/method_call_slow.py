@@ -16,27 +16,53 @@ class Person(HasTraits):
     name = Str
     age  = Int
 
-    def do_heavy_work(self):
-        print "Starting heavy work...."
-        time.sleep(5)
-        print "in different thread: name, age", self.name, self.age
-        print "changing the name:"
-        self.name = 'Wilma'
-        print 'sleeping some more...'
-        time.sleep(5)
-        print "Done!"
+    power = Int
+
+    def install_new_power(self):
+        print "Installing new power...."
+        
+        while self.power < 100:
+            time.sleep(0.5)
+            self.power += 10
+            print "Power increased to: ", self.power
+
+        print "Superpower installed"
+        self.name = 'Batman'
+        self.age = 400
 
 #### UI layer ####
+
+head_html = """
+    <style type="text/css">
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            border: solid 1px #999;
+            background-color: white;
+            margin: 10px;
+        }
+        .completed-progress {
+            background-color: blue;
+            height: 100%;
+        }
+    </style>
+"""
 
 body_html = """
     <div>
       Name: <input ng-model="model.name">
       Age: <input ng-model="model.age" type='number'>
-      <button ng-click="model.do_heavy_work()">Do Heavy Work!</button>
+      Power: {{model.power}}
+      <button ng-click="model.install_new_power()">Install new power!</button>
+
+      <div class='progress-bar-container'>
+        <div class='completed-progress' ng-style="{ width: model.power + '%' }"></div>
+      </div>
+
     </div>
 """
 
-person_view = JignaView(body_html=body_html)
+person_view = JignaView(body_html=body_html, head_html=head_html)
 
 #### Entry point ####
 
