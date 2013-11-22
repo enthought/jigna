@@ -155,7 +155,10 @@ class Broker(HasTraits):
         args        = self._unmarshal_all(request['args'])
         method      = getattr(obj, method_name)
 
-        return self._marshal(method(*args))
+        import threading
+        t = threading.Thread(target=method, args=args)
+        t.start()
+        return
 
     def get_instance_attribute(self, request):
         """ Get the value of an instance attribute. """
@@ -171,7 +174,7 @@ class Broker(HasTraits):
         obj = self._id_to_object_map[request['id']]
 
         if isinstance(obj, HasTraits):
-            obj.on_trait_change(self._send_object_changed_event)
+            obj.on_trait_change(self._send_object_changed_event, dispatch='ui')
 
         info = dict(
             type_name        = type(obj).__module__ + '.' + type(obj).__name__,
