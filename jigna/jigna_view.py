@@ -367,10 +367,10 @@ class Broker(HasTraits):
         return
 
 
-class JignaView(HasTraits):
+class View(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
 
-    ### 'JignaView' class protocol ############################################
+    ### 'View' class protocol #################################################
 
     @classmethod
     def from_file(cls, html_file, base_url=''):
@@ -379,7 +379,7 @@ class JignaView(HasTraits):
 
         return cls(html=html, base_url=base_url)
 
-    #### 'JignaView' protocol #################################################
+    #### 'View' protocol ######################################################
 
     #: The base url for all resources.
     base_url = Property(Str)

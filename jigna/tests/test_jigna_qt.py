@@ -1,5 +1,5 @@
 from traits.api import Dict, HasTraits, Instance, Int, Str, List
-from jigna.api import JignaView
+from jigna.api import View
 from pyface.gui import GUI
 from pyface.qt import QtGui
 
@@ -54,7 +54,7 @@ class TestJignaQt(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         app = QtGui.QApplication.instance() or QtGui.QApplication([])
-        person_view = JignaView(body_html=body_html)
+        person_view = View(body_html=body_html)
         fred = Person(name='Fred', age=42)
         person_view.show(model=fred)
         GUI.process_events()

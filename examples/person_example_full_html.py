@@ -1,7 +1,7 @@
 from os.path import join
 
 from traits.api import HasTraits, Int, Str
-from jigna.api import JignaView
+from jigna.api import View
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
 
@@ -13,7 +13,7 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-person_view = JignaView.from_file(html_file=join('data', 'test.html'))
+person_view = View.from_file(html_file=join('data', 'test.html'))
 
 #### Entry point ####
 

@@ -1,2 +1,2 @@
-from jigna_view import JignaView
-from web import JignaWebView
+from jigna_view import View
+from web import WebSocketView

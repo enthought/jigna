@@ -20,7 +20,7 @@ from tornado.web import Application, RequestHandler
 from traits.api import List, Str, Int, Bool
 
 # Jigna library.
-from jigna_view import Bridge, Broker, DOCUMENT_HTML_TEMPLATE, JignaView
+from jigna_view import Bridge, Broker, DOCUMENT_HTML_TEMPLATE, View
 
 
 class WebBridge(Bridge):
@@ -59,10 +59,11 @@ class WebBridge(Bridge):
     _active_sockets = List
 
 
-class JignaWebView(JignaView):
-    """ A factory for HTML/AngularJS based user interfaces on the web. """
+class WebSocketView(View):
+    """ A factory for HTML/AngularJS based user interfaces on the web. It uses
+    web-sockets for making two-way communication"""
 
-    ### 'JignaWebView' protocol ###############################################
+    ### 'WebSocketView' protocol ##############################################
 
     #: Port to serve UI on.
     port = Int(8888)
@@ -70,7 +71,7 @@ class JignaWebView(JignaView):
     #: Address where we listen.  Defaults to localhost.
     address = Str
 
-    #### 'JignaView' protocol #################################################
+    #### 'View' protocol ######################################################
 
     def _get_control(self):
         return None

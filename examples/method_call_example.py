@@ -1,5 +1,5 @@
 from traits.api import HasTraits, Int, Str
-from jigna.api import JignaView
+from jigna.api import View
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
 
@@ -31,7 +31,7 @@ body_html = """
     </div>
 """
 
-person_view = JignaView(body_html=body_html)
+person_view = View(body_html=body_html)
 
 #### Entry point ####
 
