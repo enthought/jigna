@@ -1,12 +1,29 @@
-## Slow method call example ###################################################
-# This example calls a method in Python world which is very slow and demonstra-
-# tes that the UI does not block.
-###############################################################################
+#### Example description ######################################################
+
+import argparse
+parser = argparse.ArgumentParser(
+    description="""
+        This example demonstrates a progress bar to show how the UI is not 
+        blocked during a slow method call. This is because the method calls are 
+        performed in a separate thread.
+    """, 
+    add_help=True
+    )
+parser.add_argument("--web", 
+                    help="Run the websocket version by starting a tornado server\
+                     on port 8888", 
+                    action="store_true")
+args = parser.parse_args()
+
+#### Imports ##################################################################
 
 from traits.api import HasTraits, Int, Str
-from jigna.api import View
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
+if args.web == True:
+    from jigna.api import WebSocketView as View
+else:
+    from jigna.api import View
 
 #### Domain model ####
 

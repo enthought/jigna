@@ -1,9 +1,29 @@
-from os.path import join
+#### Example description ######################################################
 
+import argparse
+parser = argparse.ArgumentParser(
+    description="""
+        This example shows how to initialize Jigna's HTML interface by reading 
+        a full html file, rather than specifying body_html and head_html.
+    """, 
+    add_help=True
+    )
+parser.add_argument("--web", 
+                    help="Run the websocket version by starting a tornado server\
+                     on port 8888", 
+                    action="store_true")
+args = parser.parse_args()
+
+#### Imports ##################################################################
+
+from os.path import join
 from traits.api import HasTraits, Int, Str
-from jigna.api import View
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
+if args.web == True:
+    from jigna.api import WebSocketView as View
+else:
+    from jigna.api import View
 
 #### Domain model ####
 

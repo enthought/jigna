@@ -1,7 +1,28 @@
+#### Example description ######################################################
+
+import argparse
+parser = argparse.ArgumentParser(
+    description="""
+        This example shows how to add additional resources like CSS/Javascript/
+        image files in your html by specifying a base url.
+    """, 
+    add_help=True
+    )
+parser.add_argument("--web", 
+                    help="Run the websocket version by starting a tornado server\
+                     on port 8888", 
+                    action="store_true")
+args = parser.parse_args()
+
+#### Imports ##################################################################
+
 from traits.api import HasTraits, Int, Str
-from jigna.api import View
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
+if args.web == True:
+    from jigna.api import WebSocketView as View
+else:
+    from jigna.api import View
 
 #### Domain model ####
 
