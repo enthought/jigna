@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(
         so you should see the corresponding change in the HTML DOM.
     """, 
     add_help=True
-    )
+)
 parser.add_argument("--web", 
                     help="Run the websocket version by starting a tornado server\
                      on port 8888", 

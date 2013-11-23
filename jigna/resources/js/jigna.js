@@ -83,9 +83,6 @@ function SubArray() {
 
 // Namespace for all Jigna-related objects.
 var jigna = {
-    // This attribute is not actually used by jigna itself. It is only there to
-    // make it easy to access the models when debugging the JS code in the web
-    // inspector.
     models : {}
 };
 
@@ -147,41 +144,12 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// AngularJS
-///////////////////////////////////////////////////////////////////////////////
-
-// Put everything specific to AngularJS in here.
-jigna.AngularJS = function() {
-    // AngularJS protocol.
-    this.scope  = $(document.body).scope();
-};
-
-jigna.AngularJS.prototype.add_model = function(model_name, model) {
-    var scope;
-
-    scope = this.scope;
-    scope.$apply(function() {scope[model_name] = model;});
-
-    // This attribute is not actually used by jigna itself. It is only there to
-    // make it easy to access the models when debugging the JS code in the web
-    // inspector.
-    jigna.models[model_name] = model;
-};
-
-jigna.AngularJS.prototype.on_object_changed = function(event) {
-    if (this.scope.$$phase === null){
-        this.scope.$digest();
-    }
-};
-
-///////////////////////////////////////////////////////////////////////////////
 // Client
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.Client = function() {
     // Client protocol.
     this.bridge       = this._get_bridge();
-    this.js_framework = this._get_js_framework();
 
     // Private protocol
     this._id_to_proxy_map = {};
@@ -335,7 +303,7 @@ jigna.Client.prototype._add_model = function(model_name, id) {
     proxy = this._create_proxy('instance', id);
 
     // ... and expose it with the name 'model_name' to the JS framework.
-    this.js_framework.add_model(model_name, proxy);
+    jigna.models[model_name] = proxy;
 
     return proxy;
 };
@@ -376,11 +344,6 @@ jigna.Client.prototype._get_bridge = function() {
     }
 
     return bridge;
-};
-
-jigna.Client.prototype._get_js_framework = function() {
-    // For now, just AngularJS!
-    return new jigna.AngularJS();
 };
 
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
@@ -450,7 +413,12 @@ jigna.Client.prototype._on_object_changed = function(event) {
     this._create_proxy(event.new_obj.type, event.new_obj.value);
 
     // Let the JS-framework know about the change.
-    this.js_framework.on_object_changed(event);
+    // fixme: this operation should be moved to the jigna directive as an event 
+    // handler
+    scope = $(document.body).scope();
+    if (scope.$$phase === null){
+        scope.$digest();
+    }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -631,11 +599,21 @@ jigna.ListProxy = function(type, id, client) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Auto-initialization!
+// AngularJS
 ///////////////////////////////////////////////////////////////////////////////
 
-$(document).ready(function(){
-    jigna.initialize();
-});
+var module = angular.module('jigna', []);
+
+module.directive('jignaInit', function(){
+    return function(scope, element, attrs) {
+        // Auto initialization of jigna
+        jigna.initialize();
+
+        // Add all jigna models as scope variables
+        for (var model_name in jigna.models) {
+            scope[model_name] = jigna.models[model_name];
+        }
+    }
+})
 
 // EOF ////////////////////////////////////////////////////////////////////////

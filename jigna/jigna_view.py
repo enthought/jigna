@@ -30,7 +30,7 @@ from jigna.core.wsgi import FileLoader
 #### HTML templates ###########################################################
 
 DOCUMENT_HTML_TEMPLATE = """
-<html ng-app>
+<html ng-app='jigna'>
   <head>
     <script type="text/javascript" src="/jigna/js/jquery.min.js"></script>
     <script type="text/javascript" src="/jigna/js/angular.min.js"></script>
@@ -40,7 +40,7 @@ DOCUMENT_HTML_TEMPLATE = """
 
   </head>
 
-  <body>
+  <body jigna-init>
     {body_html}
   </body>
 </html>
