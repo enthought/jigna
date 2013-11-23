@@ -40,7 +40,7 @@ DOCUMENT_HTML_TEMPLATE = """
 
   </head>
 
-  <body jigna-init>
+  <body>
     {body_html}
   </body>
 </html>

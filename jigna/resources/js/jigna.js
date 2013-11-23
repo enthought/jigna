@@ -615,20 +615,19 @@ jigna.initialize();
 
 var module = angular.module('jigna', []);
 
-module.directive('jignaInit', function(){
-    return function(scope, element, attrs) {
-        // Add all jigna models as scope variables
-        for (var model_name in jigna.models) {
-            scope[model_name] = jigna.models[model_name];
-        }
-
-        // Listen to object change events in jigna
-        document.addEventListener('jigna.object_changed', function() {
-            if (scope.$$phase === null){
-                scope.$digest();
-            }
-        }, false)
+// Add initialization function on module run time
+module.run(function($rootScope){
+    // Add all jigna models as scope variables
+    for (var model_name in jigna.models) {
+        $rootScope[model_name] = jigna.models[model_name];
     }
+
+    // Listen to object change events in jigna
+    document.addEventListener('jigna.object_changed', function() {
+        if ($rootScope.$$phase === null){
+            $rootScope.$digest();
+        }
+    }, false)
 })
 
 // EOF ////////////////////////////////////////////////////////////////////////
