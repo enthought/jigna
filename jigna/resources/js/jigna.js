@@ -412,10 +412,17 @@ jigna.Client.prototype._on_object_changed = function(event) {
     // details of a TraitListEvent?
     this._create_proxy(event.new_obj.type, event.new_obj.value);
 
-    // Let the JS-framework know about the change.
-    // fixme: this operation should be moved to the jigna directive as an event 
-    // handler
-    var event = new Event('jigna.object_changed');
+    // Fire the object changed event so that the JS framework can catch it to 
+    // update the DOM etc.
+    //
+    // FIXME: this is using old-style event creation method as explained here: 
+    //
+    //  https://developer.mozilla.org/en-US/docs/Web/Guide/API/DOM/Events/Creating_and_triggering_events
+    //
+    // but we can't do anything because Qt 4.8 doesn't support new-style event 
+    // definition.
+    var event = document.createEvent('Event');
+    event.initEvent('jigna.object_changed', true, true);
     document.dispatchEvent(event);
 };
 
@@ -617,7 +624,7 @@ module.directive('jignaInit', function(){
             if (scope.$$phase === null){
                 scope.$digest();
             }
-        })
+        }, false)
     }
 })
 
