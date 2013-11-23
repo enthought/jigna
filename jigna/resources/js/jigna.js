@@ -604,6 +604,12 @@ jigna.ListProxy = function(type, id, client) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Auto-initialization
+///////////////////////////////////////////////////////////////////////////////
+
+jigna.initialize();
+
+///////////////////////////////////////////////////////////////////////////////
 // AngularJS
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -611,9 +617,6 @@ var module = angular.module('jigna', []);
 
 module.directive('jignaInit', function(){
     return function(scope, element, attrs) {
-        // Auto initialization of jigna
-        jigna.initialize();
-
         // Add all jigna models as scope variables
         for (var model_name in jigna.models) {
             scope[model_name] = jigna.models[model_name];
