@@ -415,10 +415,8 @@ jigna.Client.prototype._on_object_changed = function(event) {
     // Let the JS-framework know about the change.
     // fixme: this operation should be moved to the jigna directive as an event 
     // handler
-    scope = $(document.body).scope();
-    if (scope.$$phase === null){
-        scope.$digest();
-    }
+    var event = new Event('jigna.object_changed');
+    document.dispatchEvent(event);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -613,6 +611,13 @@ module.directive('jignaInit', function(){
         for (var model_name in jigna.models) {
             scope[model_name] = jigna.models[model_name];
         }
+
+        // Listen to object change events in jigna
+        document.addEventListener('jigna.object_changed', function() {
+            if (scope.$$phase === null){
+                scope.$digest();
+            }
+        })
     }
 })
 
