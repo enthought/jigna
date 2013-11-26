@@ -3,15 +3,15 @@
 import argparse
 parser = argparse.ArgumentParser(
     description="""
-        This example demonstrates a progress bar to show how the UI is not 
-        blocked during a slow method call. This is because the method calls are 
+        This example demonstrates a progress bar to show how the UI is not
+        blocked during a slow method call. This is because the method calls are
         performed in a separate thread.
-    """, 
+    """,
     add_help=True
     )
-parser.add_argument("--web", 
+parser.add_argument("--web",
                     help="Run the websocket version by starting a tornado server\
-                     on port 8888", 
+                     on port 8888",
                     action="store_true")
 args = parser.parse_args()
 
@@ -36,8 +36,16 @@ class Person(HasTraits):
     power = Int
 
     def install_new_power(self):
+
+        import threading
+        t = threading.Thread(None, target=self._install_new_power)
+        t.start()
+
+        return
+
+    def _install_new_power(self):
         print "Installing new power...."
-        
+
         while self.power < 100:
             time.sleep(0.5)
             self.power += 10
