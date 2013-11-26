@@ -155,10 +155,7 @@ class Broker(HasTraits):
         args        = self._unmarshal_all(request['args'])
         method      = getattr(obj, method_name)
 
-        import threading
-        t = threading.Thread(target=method, args=args)
-        t.start()
-        return self._marshal(None)
+        return self._marshal(method(*args))
 
     def get_instance_attribute(self, request):
         """ Get the value of an instance attribute. """
