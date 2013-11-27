@@ -20,7 +20,7 @@ from tornado.web import Application, RequestHandler
 from traits.api import List, Str, Int, Bool
 
 # Jigna library.
-from jigna_view import Bridge, Server, DOCUMENT_HTML_TEMPLATE, View
+from jigna.server import Bridge, Server
 
 
 class WebBridge(Bridge):
@@ -36,7 +36,6 @@ class WebBridge(Bridge):
             socket.write_message(jsonized_event)
 
         return
-
 
     #### 'WebBridge' protocol #################################################
 
@@ -74,10 +73,10 @@ class WebServer(Server):
 
     #### 'Server' protocol ####################################################
 
-    def serve(self, **context):
-        """ Create and show a view of the given context. """
+    def serve(self):
+        """ Serve the view. """
 
-        self._bridge = WebBridge()
+        self._bridge = WebBridge(server=self)
         self._serve(thread=True)
 
     #### Private protocol #####################################################

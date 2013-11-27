@@ -20,10 +20,8 @@ args = parser.parse_args()
 from traits.api import HasTraits, Int, Str
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
-if args.web == True:
-    from jigna.api import WebSocketView as View
-else:
-    from jigna.api import View
+from jigna.api import View
+
 
 #### Domain model ####
 
@@ -55,7 +53,10 @@ def main():
         fred.age = 4
 
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    person_view.show(model=fred)
+    if args.web:
+        person_view.serve(model=fred)
+    else:
+        person_view.show(model=fred)
     do_after(2000, update_fred)
     app.exec_()
     print fred.name
