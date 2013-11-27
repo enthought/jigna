@@ -59,8 +59,8 @@ class WebBridge(Bridge):
     _active_sockets = List
 
 
-class WebSocketView(View):
-    """ A factory for HTML/AngularJS based user interfaces on the web. It uses
+class WebServer(Server):
+    """ A server to serve HTML/AngularJS based user interfaces on the web. It uses
     web-sockets for making two-way communication"""
 
     ### 'WebSocketView' protocol ##############################################
@@ -71,16 +71,12 @@ class WebSocketView(View):
     #: Address where we listen.  Defaults to localhost.
     address = Str
 
-    #### 'View' protocol ######################################################
+    #### 'Server' protocol ####################################################
 
-    def _get_control(self):
-        return None
-
-
-    def show(self, **context):
+    def serve(self, **context):
         """ Create and show a view of the given context. """
 
-        self._server = Server(bridge=WebBridge(), context=context)
+        self.bridge = WebBridge()
         self._serve(thread=True)
 
     #### Private protocol #####################################################
@@ -90,7 +86,6 @@ class WebSocketView(View):
         """
 
         from tornado.ioloop import IOLoop
-        bridge = self._server.bridge
 
         # Setup the application.
         settings = {'static_path': join(dirname(__file__), 'resources'),
@@ -98,9 +93,9 @@ class WebSocketView(View):
 
         application = Application(
             [
-                (r"/_jigna_ws", JignaSocket, dict(bridge=bridge)),
-                (r"/_jigna", GetFromBridge, dict(bridge=bridge)),
-                (r".*", MainHandler, dict(jigna_view=self)),
+                (r"/_jigna_ws", JignaSocket, dict(bridge=self.bridge)),
+                (r"/_jigna", GetFromBridge, dict(bridge=self.bridge)),
+                (r".*", MainHandler, dict(server=self)),
             ],
             **settings
         )
@@ -117,23 +112,20 @@ class WebSocketView(View):
 
         return
 
-    def __widget_default(self):
-        return None
-
 ##### Request handlers ########################################################
 
 class MainHandler(RequestHandler):
-    def initialize(self, jigna_view):
-        self.jigna_view = jigna_view
+    def initialize(self, server):
+        self.server = server
 
     def get(self):
         print self.request.path
         path = self.request.path[1:]
         print path
         if not len(path):
-            self.write(self.jigna_view.html)
+            self.write(self.server.html)
         else:
-            self.write(open(join(self.jigna_view.base_url, path)).read())
+            self.write(open(join(self.server.base_url, path)).read())
 
 
 ###############################################################################

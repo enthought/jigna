@@ -1,2 +1,2 @@
 from jigna_view import View
-from web import WebSocketView
+from web import WebServer

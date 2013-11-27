@@ -101,10 +101,16 @@ class Server(HasTraits):
 
         return
 
+    #: Base url for serving the html content
+    base_url = Str
+
     #: Context mapping from object name to obj
     context = Dict
     def _context_changed(self):
         self._register_objects(self.context)
+
+    #: The html to serve
+    html = Str
 
     def send_event(self, event):
         """ Send an event to the client(s). """
@@ -422,7 +428,12 @@ class View(HasTraits):
     def show(self, **context):
         """ Create and show a view of the given context. """
 
-        self._server = Server(bridge=Bridge(widget=self._widget), context=context)
+        self._server = Server(
+            html=self.html,
+            base_url=self.base_url,
+            bridge=Bridge(widget=self._widget), 
+            context=context
+        )
         self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self.html, self.base_url)
         self.control.show()
