@@ -103,14 +103,15 @@ class View(HasTraits):
         return
 
     def serve(self, port=8888, **context):
-        """ Serve the view of the given context on port 8888. """
+        """ Serve the view of the given context on the given port. """
 
         from jigna.web_server import WebServer
 
         self._server = WebServer(
-            html     = self.html,
             base_url = self.base_url,
-            context  = context
+            context  = context,
+            html     = self.html,
+            port     = port
         )
         self._server.serve()
 
