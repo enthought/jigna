@@ -80,14 +80,10 @@ class WebSocketView(View):
     def show(self, **context):
         """ Create and show a view of the given context. """
 
-        self._resolve_context_ids(context)
-        self._broker.register_objects(context.values())
+        self._broker = Broker(bridge=WebBridge(), context=context)
         self._serve(thread=True)
 
     #### Private protocol #####################################################
-
-    def __broker_default(self):
-        return Broker(bridge=WebBridge(), context=self._context)
 
     def _serve(self, thread):
         """ Serve the given JignaWebView on a websocket.
