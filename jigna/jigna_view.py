@@ -52,8 +52,8 @@ class Bridge(HasTraits):
 
     #### 'Bridge' protocol ####################################################
 
-    #: The broker that we provide the bridge for.
-    broker = Any
+    #: The server that we provide the bridge for.
+    server = Any
 
     def send_event(self, event):
         """ Send an event. """
@@ -72,7 +72,7 @@ class Bridge(HasTraits):
         """ Handle a request from the client. """
 
         request  = json.loads(jsonized_request)
-        response = self.broker.handle_request(request)
+        response = self.server.handle_request(request)
 
         def default(obj):
             return repr(type(obj))
@@ -85,19 +85,19 @@ class Bridge(HasTraits):
     widget = Any
 
 
-class Broker(HasTraits):
-    """ Broker that exposes Python objects to JS. """
+class Server(HasTraits):
+    """ Server that exposes Python objects to JS. """
 
-    #### 'Broker' protocol ####################################################
+    #### 'Server' protocol ####################################################
 
     #: The bridge that provides the communication between Python and JS.
     bridge = Instance(Bridge)
     def _bridge_changed(self, trait_name, old, new):
         if old is not None:
-            old.broker = None
+            old.server = None
 
         if new is not None:
-            new.broker = self
+            new.server = self
 
         return
 
@@ -129,7 +129,7 @@ class Broker(HasTraits):
         return dict(exception=exception, result=result)
 
     def _register_object(self, obj):
-        """ Register the given object with the broker. """
+        """ Register the given object with the server. """
 
         self._id_to_object_map[str(id(obj))] = obj
 
@@ -422,7 +422,7 @@ class View(HasTraits):
     def show(self, **context):
         """ Create and show a view of the given context. """
 
-        self._broker = Broker(bridge=Bridge(widget=self._widget), context=context)
+        self._server = Server(bridge=Bridge(widget=self._widget), context=context)
         self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self.html, self.base_url)
         self.control.show()
@@ -438,8 +438,8 @@ class View(HasTraits):
     def __base_url_default(self):
         return os.getcwd()
 
-    #: The broker that manages the objects shared via the bridge.
-    _broker = Instance(Broker)
+    #: The server that manages the objects shared via the bridge.
+    _server = Instance(Server)
 
     #: The toolkit-specific widget that renders the HTML.
     _widget = Any
@@ -469,7 +469,7 @@ class View(HasTraits):
     def _handle_request(self, request):
         """ Handle a request from a client. """
 
-        return self._broker.bridge.handle_request(request)
+        return self._server.bridge.handle_request(request)
 
     def _load_html(self, html, base_url):
         """ Load the given HTML into the widget.

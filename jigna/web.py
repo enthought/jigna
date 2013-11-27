@@ -20,7 +20,7 @@ from tornado.web import Application, RequestHandler
 from traits.api import List, Str, Int, Bool
 
 # Jigna library.
-from jigna_view import Bridge, Broker, DOCUMENT_HTML_TEMPLATE, View
+from jigna_view import Bridge, Server, DOCUMENT_HTML_TEMPLATE, View
 
 
 class WebBridge(Bridge):
@@ -80,7 +80,7 @@ class WebSocketView(View):
     def show(self, **context):
         """ Create and show a view of the given context. """
 
-        self._broker = Broker(bridge=WebBridge(), context=context)
+        self._server = Server(bridge=WebBridge(), context=context)
         self._serve(thread=True)
 
     #### Private protocol #####################################################
@@ -90,7 +90,7 @@ class WebSocketView(View):
         """
 
         from tornado.ioloop import IOLoop
-        bridge = self._broker.bridge
+        bridge = self._server.bridge
 
         # Setup the application.
         settings = {'static_path': join(dirname(__file__), 'resources'),
