@@ -101,6 +101,11 @@ class Broker(HasTraits):
 
         return
 
+    #: Context mapping from object name to obj
+    context = Dict
+    def _context_changed(self):
+        self._register_objects(self.context)
+
     def send_event(self, event):
         """ Send an event to the client(s). """
 
@@ -123,18 +128,18 @@ class Broker(HasTraits):
 
         return dict(exception=exception, result=result)
 
-    def register_object(self, obj):
+    def _register_object(self, obj):
         """ Register the given object with the broker. """
 
         self._id_to_object_map[str(id(obj))] = obj
 
         return
 
-    def register_objects(self, objs):
+    def _register_objects(self, objs):
         """ Register more than one objects """
 
-        for obj in objs:
-            self.register_object(obj)
+        for obj_name, obj in objs.items():
+            self._register_object(obj)
 
         return
 
@@ -143,7 +148,11 @@ class Broker(HasTraits):
     def get_context(self, request):
         """ Get the models and model names in the context. """
 
-        return self.context
+        context_ids = {}
+        for obj_name, obj in self.context.items():
+            context_ids[obj_name] = str(id(obj))
+
+        return context_ids
 
     #### Instances ####
 
@@ -347,7 +356,7 @@ class Broker(HasTraits):
         else:
             # fixme: intent is non-scalar or maybe container?
             if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
-                self.register_object(new)
+                self._register_object(new)
 
         event = dict(
             kind           = 'object_changed',
@@ -413,8 +422,7 @@ class View(HasTraits):
     def show(self, **context):
         """ Create and show a view of the given context. """
 
-        self._resolve_context_ids(context)
-        self._broker.register_objects(context.values())
+        self._broker = Broker(bridge=Bridge(widget=self._widget), context=context)
         self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self.html, self.base_url)
         self.control.show()
@@ -432,12 +440,6 @@ class View(HasTraits):
 
     #: The broker that manages the objects shared via the bridge.
     _broker = Instance(Broker)
-    def __broker_default(self):
-        return Broker(bridge=Bridge(widget=self._widget), context=self._context)
-
-    #: Context mapping:
-    #: {str model_name: str model_id}
-    _context = Dict
 
     #: The toolkit-specific widget that renders the HTML.
     _widget = Any
@@ -489,15 +491,6 @@ class View(HasTraits):
         """ Called when the HTML document has finished loading. """
 
         self._load_finished = True
-
-        return
-
-    def _resolve_context_ids(self, context):
-        """ Return the context mapping with respect to ids """
-
-        self._context = {}
-        for name, obj in context.iteritems():
-            self._context[name] = str(id(obj))
 
         return
 
