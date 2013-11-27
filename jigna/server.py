@@ -6,18 +6,17 @@
 #
 # This file is confidential and NOT open source.  Do not distribute.
 #
+""" Abstract base classes for the Jigna server and bridge. """
 
 
 # Standard library.
 import inspect
 import json
-import os
 import sys
 
 # Enthought library.
 from traits.api import (
-    Any, Dict, HasTraits, Instance, Str,
-    TraitDictEvent, TraitListEvent
+    Any, Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent
 )
 
 
@@ -47,25 +46,21 @@ class Bridge(HasTraits):
 
 
 class Server(HasTraits):
-    """ Server that exposes Python objects to JS. """
+    """ Server that serves a Jigna view. """
 
     #### 'Server' protocol ####################################################
 
-    #: Base url for serving the html content
+    #: Base url for serving content.
     base_url = Str
 
-    #: Context mapping from object name to obj
+    #: Context mapping from object name to obj.
     context = Dict
     def _context_changed(self):
         self._register_objects(self.context)
+        return
 
-    #: The html to serve
+    #: The html to serve.
     html = Str
-
-    def serve(self):
-        """ Serve the view. """
-        
-        raise NotImplementedError
 
     def send_event(self, event):
         """ Send an event to the client(s). """
@@ -74,9 +69,14 @@ class Server(HasTraits):
 
         return
 
+    def serve(self):
+        """ Serve the HTML. """
+
+        raise NotImplementedError
+
     def handle_request(self, request):
         """ Handle a request from a client. """
-        
+
         try:
             # To dispatch the request we have a method named after each one!
             method    = getattr(self, request['kind'])
@@ -183,8 +183,6 @@ class Server(HasTraits):
         obj[index] = value
 
         return
-
-    #### Dicts ####
 
     #### Private protocol #####################################################
 
@@ -335,3 +333,5 @@ class Server(HasTraits):
         self.send_event(event)
 
         return
+
+#### EOF ######################################################################

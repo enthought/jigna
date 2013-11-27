@@ -14,9 +14,7 @@ from os.path import abspath, dirname, join
 
 # Enthought library.
 from pyface.api import GUI
-from traits.api import (
-    Any, Dict, HasTraits, Instance, Property, Str,
-)
+from traits.api import Any, Dict, HasTraits, Instance, Property, Str
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
@@ -42,6 +40,7 @@ DOCUMENT_HTML_TEMPLATE = """
   </body>
 </html>
 """
+
 
 class View(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
@@ -78,9 +77,9 @@ class View(HasTraits):
     def _html_default(self):
         """ Get the default HTML document for the given model. """
 
-        html     = DOCUMENT_HTML_TEMPLATE.format(
-            body_html  = self.body_html,
-            head_html  = self.head_html
+        html = DOCUMENT_HTML_TEMPLATE.format(
+            body_html = self.body_html,
+            head_html = self.head_html
         )
 
         return html
@@ -89,29 +88,33 @@ class View(HasTraits):
         """ Create and show a view of the given context. """
 
         from jigna.qt_server import QtServer
+
         self._server = QtServer(
-            html=self.html,
-            base_url=self.base_url,
-            context=context,
-            widget=self._widget
+            base_url = self.base_url,
+            context  = context,
+            html     = self.html,
+            widget   = self._widget
         )
+
         self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self.html, self.base_url)
         self.control.show()
 
         return
 
-    def serve(self, **context):
-        """ Serve the view of the given context on port 8888 """
+    def serve(self, port=8888, **context):
+        """ Serve the view of the given context on port 8888. """
 
         from jigna.web_server import WebServer
+
         self._server = WebServer(
-            html=self.html,
-            base_url=self.base_url,
-            context=context
+            html     = self.html,
+            base_url = self.base_url,
+            context  = context
         )
         self._server.serve()
 
+        return
 
     #### Private protocol #####################################################
 

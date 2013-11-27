@@ -6,6 +6,7 @@
 #
 # This file is confidential and NOT open source.  Do not distribute.
 #
+""" Web implementations of the Jigna Server and Bridge. """
 
 
 # Standard library.
@@ -13,6 +14,7 @@ import json
 from os.path import join, dirname
 
 # 3rd part library.
+from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
 
@@ -60,12 +62,17 @@ class WebBridge(Bridge):
 
 
 class WebServer(Server):
-    """ A server to serve HTML/AngularJS based user interfaces on the web. It uses
-    web-sockets for making two-way communication"""
+    """ Web-basedt server implementation.
 
-    ### 'WebSocketView' protocol ##############################################
+    This implementation uses web-sockets for making two-way communication.
 
-    #: Port to serve UI on.
+    """
+
+    ### 'WebServer' protocol ##################################################
+
+    #: Port to serve the UI on.
+    #:
+    #: Default to 8888.
     port = Int(8888)
 
     #: Address where we listen.  Defaults to localhost.
@@ -74,49 +81,50 @@ class WebServer(Server):
     #### 'Server' protocol ####################################################
 
     def serve(self):
-        """ Serve the view. """
+        """ Start the server.
 
-        self._bridge = WebBridge(server=self)
-        self._serve(thread=True)
+        This is a *blocking* call.
 
-    #### Private protocol #####################################################
-
-    def _serve(self, thread):
-        """ Serve the given JignaWebView on a websocket.
         """
 
-        from tornado.ioloop import IOLoop
+        self._bridge = WebBridge(server=self)
 
-        # Setup the application.
-        settings = {'static_path': join(dirname(__file__), 'resources'),
-                    'static_url_prefix': '/jigna/'}
-
-        application = Application(
-            [
-                (r"/_jigna_ws", JignaSocket, dict(bridge=self._bridge)),
-                (r"/_jigna", GetFromBridge, dict(bridge=self._bridge)),
-                (r".*", MainHandler, dict(server=self)),
-            ],
-            **settings
-        )
+        application = self._create_application(self._bridge)
         application.listen(self.port, address=self.address)
 
         ioloop = IOLoop.instance()
-        if thread:
-            from threading import Thread
-            t = Thread(target=ioloop.start)
-            t.daemon = True
-            t.start()
-        else:
-            ioloop.start()
+        ioloop.start()
 
         return
+
+    #### Private protocol #####################################################
+
+    def _create_application(self, bridge):
+        """ Create the Web Application. """
+
+        settings = {
+            'static_path'       : join(dirname(__file__), 'resources'),
+            'static_url_prefix' : '/jigna/'
+        }
+
+        application = Application(
+            [
+                (r"/_jigna_ws", JignaSocket,   dict(bridge=bridge)),
+                (r"/_jigna",    GetFromBridge, dict(bridge=bridge)),
+                (r".*",         MainHandler,   dict(server=self)),
+            ],
+            **settings
+        )
+
+        return application
 
 ##### Request handlers ########################################################
 
 class MainHandler(RequestHandler):
     def initialize(self, server):
         self.server = server
+
+        return
 
     def get(self):
         print self.request.path
@@ -127,34 +135,38 @@ class MainHandler(RequestHandler):
         else:
             self.write(open(join(self.server.base_url, path)).read())
 
+        return
 
 ###############################################################################
+
 class GetFromBridge(RequestHandler):
     def initialize(self, bridge):
         self.bridge = bridge
+        return
 
     def get(self):
-        print "Get from bridge"
         jsonized_request = self.get_argument("data")
         jsonized_response = self.bridge.handle_request(jsonized_request)
         self.write(jsonized_response)
-
+        return
 
 ###############################################################################
+
 class JignaSocket(WebSocketHandler):
     def initialize(self, bridge):
         self.bridge = bridge
+        return
 
     def open(self):
-        print "Opening jigna websocket"
         self.bridge.add_socket(self)
+        return
 
     def on_message(self, message):
         data = json.loads(message)
-        print "on_message", data
+        return
 
     def on_close(self):
-        print "Closing jigna websocket"
         self.bridge.remove_socket(self)
+        return
 
 #### EOF ######################################################################

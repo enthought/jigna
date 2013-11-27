@@ -6,30 +6,24 @@
 #
 # This file is confidential and NOT open source.  Do not distribute.
 #
+""" Qt implementations of the Jigna Server and Bridge. """
+
 
 # Standard library.
-import inspect
 import json
-import os
-import sys
 
 # Enthought library.
-from traits.api import (
-    Any, Dict, HasTraits, Instance, Str,
-    TraitDictEvent, TraitListEvent
-)
+from traits.api import Any, Instance
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
 from jigna.server import Bridge, Server
 
+
 class QtBridge(Bridge):
-    """ QtBridge that handles the client-server communication. """
+    """ Qt (via QWebkit) bridge implementation. """
 
     #### 'Bridge' protocol ####################################################
-
-    #: The server that we provide the bridge for.
-    server = Any
 
     def send_event(self, event):
         """ Send an event. """
@@ -44,21 +38,23 @@ class QtBridge(Bridge):
 
         return
 
-    #### 'QtBridge' protocol ############################################
+    #### 'QtBridge' protocol ##################################################
 
     #: The 'HTMLWidget' that contains the QtWebLit malarky.
     widget = Any
 
 
 class QtServer(Server):
-    """ QtServer that exposes Python objects to JS. """
+    """ Qt (via QWebkit) server implementation. """
 
-    #: The HTMLWidget which is going to attach to this server
-    #: fixme: Ideally, the callbacks etc should be attached to this widget when 
-    #: the client connects to the server. We shouldn't require the server to 
+    #: The HTMLWidget which is going to attach to this server.
+    #:
+    #: fixme: Ideally, the callbacks etc should be attached to this widget when
+    #: the client connects to the server. We shouldn't require the server to
     #: know which client it connects to.
     widget = Instance(HTMLWidget)
     def _widget_changed(self):
-        #: the circular reference to the server object is a big smell. 
-        #: it looks like we might not even need a bridge.
         self._bridge = QtBridge(widget=self.widget, server=self)
+        return
+
+#### EOF ######################################################################

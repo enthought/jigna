@@ -54,7 +54,10 @@ def main():
 
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
     if args.web:
-        person_view.serve(model=fred)
+      from threading import Thread
+      t = Thread(target=person_view.serve, kwargs=dict(model=fred))
+      t.daemon = True
+      t.start()
     else:
         person_view.show(model=fred)
     do_after(2000, update_fred)
