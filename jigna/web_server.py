@@ -62,7 +62,7 @@ class WebBridge(Bridge):
 
 
 class WebServer(Server):
-    """ Web-basedt server implementation.
+    """ Web-based server implementation.
 
     This implementation uses web-sockets for making two-way communication.
 
@@ -127,9 +127,7 @@ class MainHandler(RequestHandler):
         return
 
     def get(self):
-        print self.request.path
         path = self.request.path[1:]
-        print path
         if not len(path):
             self.write(self.server.html)
         else:
