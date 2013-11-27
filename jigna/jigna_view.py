@@ -385,22 +385,18 @@ class View(HasTraits):
     ### 'View' class protocol #################################################
 
     @classmethod
-    def from_file(cls, html_file, base_url=''):
+    def from_file(cls, html_file):
         with open(html_file, 'rb') as f:
             html = f.read()
 
-        return cls(html=html, base_url=base_url)
+        return cls(html=html)
 
     #### 'View' protocol ######################################################
 
     #: The base url for all resources.
-    base_url = Property(Str)
-    def _get_base_url(self):
-        return self._base_url
-
-    def _set_base_url(self, url):
-        self._base_url = join(os.getcwd(), url)
-        return
+    base_url = Str
+    def _base_url_default(self):
+        return os.getcwd()
 
     #: The HTML for the *body* of the view's document.
     body_html = Str
@@ -441,13 +437,6 @@ class View(HasTraits):
         return
 
     #### Private protocol #####################################################
-
-    #: Shadow trait for the 'base_url'.
-    #:
-    #: fixme: not sure what this buys us?!?
-    _base_url = Str
-    def __base_url_default(self):
-        return os.getcwd()
 
     #: The server that manages the objects shared via the bridge.
     _server = Instance(Server)
