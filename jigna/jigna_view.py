@@ -90,17 +90,6 @@ class Server(HasTraits):
 
     #### 'Server' protocol ####################################################
 
-    #: The bridge that provides the communication between Python and JS.
-    bridge = Instance(Bridge)
-    def _bridge_changed(self, trait_name, old, new):
-        if old is not None:
-            old.server = None
-
-        if new is not None:
-            new.server = self
-
-        return
-
     #: Base url for serving the html content
     base_url = Str
 
@@ -112,10 +101,20 @@ class Server(HasTraits):
     #: The html to serve
     html = Str
 
+    #: The HTMLWidget which is going to attach to this server
+    #: fixme: Ideally, the callbacks etc should be attached to this widget when 
+    #: the client connects to the server. We shouldn't require the server to 
+    #: know which client it connects to.
+    widget = Instance(HTMLWidget)
+    def _widget_changed(self):
+        #: the circular reference to the server object is a big smell. 
+        #: it looks like we might not even need a bridge.
+        self._bridge = Bridge(widget=self.widget, server=self)
+
     def send_event(self, event):
         """ Send an event to the client(s). """
 
-        self.bridge.send_event(event)
+        self._bridge.send_event(event)
 
         return
 
@@ -247,6 +246,9 @@ class Server(HasTraits):
     #### Dicts ####
 
     #### Private protocol #####################################################
+
+    #: The bridge that provides the communication between Python and JS.
+    _bridge = Instance(Bridge)
 
     #: All instance and lists that have been accessed via the bridge.
     #:
@@ -427,8 +429,8 @@ class View(HasTraits):
         self._server = Server(
             html=self.html,
             base_url=self.base_url,
-            bridge=Bridge(widget=self._widget), 
-            context=context
+            context=context,
+            widget=self._widget
         )
         self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self.html, self.base_url)
@@ -469,7 +471,7 @@ class View(HasTraits):
     def _handle_request(self, request):
         """ Handle a request from a client. """
 
-        return self._server.bridge.handle_request(request)
+        return self._server._bridge.handle_request(request)
 
     def _load_html(self, html, base_url):
         """ Load the given HTML into the widget.

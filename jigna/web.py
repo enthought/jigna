@@ -37,6 +37,7 @@ class WebBridge(Bridge):
 
         return
 
+
     #### 'WebBridge' protocol #################################################
 
     def add_socket(self, socket):
@@ -76,7 +77,7 @@ class WebServer(Server):
     def serve(self, **context):
         """ Create and show a view of the given context. """
 
-        self.bridge = WebBridge()
+        self._bridge = WebBridge()
         self._serve(thread=True)
 
     #### Private protocol #####################################################
@@ -93,8 +94,8 @@ class WebServer(Server):
 
         application = Application(
             [
-                (r"/_jigna_ws", JignaSocket, dict(bridge=self.bridge)),
-                (r"/_jigna", GetFromBridge, dict(bridge=self.bridge)),
+                (r"/_jigna_ws", JignaSocket, dict(bridge=self._bridge)),
+                (r"/_jigna", GetFromBridge, dict(bridge=self._bridge)),
                 (r".*", MainHandler, dict(server=self)),
             ],
             **settings
