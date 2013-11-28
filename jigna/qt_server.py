@@ -11,12 +11,13 @@
 
 # Standard library.
 import json
+from os.path import abspath, dirname, join
 
 # Enthought library.
 from traits.api import Any, Instance
 
 # Jigna libary.
-from jigna.core.html_widget import HTMLWidget
+from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
 
 
@@ -47,14 +48,29 @@ class QtBridge(Bridge):
 class QtServer(Server):
     """ Qt (via QWebkit) server implementation. """
 
-    #: The HTMLWidget which is going to attach to this server.
-    #:
-    #: fixme: Ideally, the callbacks etc should be attached to this widget when
-    #: the client connects to the server. We shouldn't require the server to
-    #: know which client it connects to.
-    widget = Instance(HTMLWidget)
-    def _widget_changed(self):
-        self._bridge = QtBridge(widget=self.widget, server=self)
-        return
+    def connect(self, widget):
+        """ Connect the supplied widget to the server by attaching necessary 
+        callbacks and loading the html in it.
+        """
+
+        self._bridge = QtBridge(widget=widget, server=self)
+
+        widget.callbacks = [('handle_request', self._bridge.handle_request)]
+
+        widget.python_namespace = 'qt_bridge'
+        
+        widget.root_paths = {
+            'jigna': FileLoader(
+                root = join(abspath(dirname(__file__)), 'resources')
+            )
+        }
+        
+        widget.open_externally = True
+        
+        widget.debug = True
+
+        widget.create()
+
+        widget.load_html(self.html, self.base_url)
 
 #### EOF ######################################################################

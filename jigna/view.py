@@ -10,7 +10,6 @@
 
 # Standard library.
 import os
-from os.path import abspath, dirname, join
 
 # Enthought library.
 from pyface.api import GUI
@@ -18,7 +17,6 @@ from traits.api import Any, Dict, HasTraits, Instance, Property, Str
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
-from jigna.core.wsgi import FileLoader
 from jigna.server import Server
 
 
@@ -92,10 +90,9 @@ class View(HasTraits):
         self._server = QtServer(
             base_url = self.base_url,
             context  = context,
-            html     = self.html,
-            widget   = self._widget
+            html     = self.html
         )
-        self._load_html(self.html, self.base_url)
+        self._server.connect(self._widget)
         self.control.show()
 
         return
@@ -123,42 +120,6 @@ class View(HasTraits):
     #: The toolkit-specific widget that renders the HTML.
     _widget = Any
     def __widget_default(self):
-        return self._create_widget()
-
-    def _create_widget(self):
-        """ Create the HTML widget that we use to render the view. """
-
-        root_paths = {
-            'jigna': FileLoader(
-                root = join(abspath(dirname(__file__)), 'resources')
-            )
-        }
-
-        widget = HTMLWidget(
-            callbacks        = [('handle_request', self._handle_request)],
-            python_namespace = 'qt_bridge',
-            root_paths       = root_paths,
-            open_externally  = True,
-            debug            = True
-        )
-        widget.create()
-
-        return widget
-
-    def _handle_request(self, request):
-        """ Handle a request from a client. """
-
-        return self._server._bridge.handle_request(request)
-
-    def _load_html(self, html, base_url):
-        """ Load the given HTML into the widget.
-
-        This call blocks until the document had loaded.
-
-        """
-        
-        self._widget.load_html(html, base_url)
-
-        return
+        return HTMLWidget()
 
 #### EOF ######################################################################
