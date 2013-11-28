@@ -62,11 +62,6 @@ class View(HasTraits):
     #: The HTML for the *body* of the view's document.
     body_html = Str
 
-    #: The underlying toolkit control that renders HTML.
-    control = Property(Any)
-    def _get_control(self):
-        return self._widget.control
-
     #: The HTML for the *head* of the view's document.
     head_html = Str
 
@@ -92,8 +87,10 @@ class View(HasTraits):
             context  = context,
             html     = self.html
         )
-        self._server.connect(self._widget)
-        self.control.show()
+        
+        widget = HTMLWidget()
+        self._server.connect(widget)
+        widget.control.show()
 
         return
 
@@ -116,10 +113,5 @@ class View(HasTraits):
 
     #: The server that manages the objects shared via the bridge.
     _server = Instance(Server)
-
-    #: The toolkit-specific widget that renders the HTML.
-    _widget = Any
-    def __widget_default(self):
-        return HTMLWidget()
 
 #### EOF ######################################################################
