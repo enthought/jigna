@@ -25,25 +25,10 @@ class Bridge(HasTraits):
 
     #### 'Bridge' protocol ####################################################
 
-    #: The server that we provide the bridge for.
-    server = Any
-
     def send_event(self, event):
         """ Send an event. """
 
         raise NotImplementedError
-
-    def handle_request(self, jsonized_request):
-        """ Handle a request from the client. """
-
-        request  = json.loads(jsonized_request)
-        response = self.server.handle_request(request)
-
-        def default(obj):
-            return repr(type(obj))
-
-        return json.dumps(response, default=default);
-
 
 class Server(HasTraits):
     """ Server that serves a Jigna view. """
@@ -74,20 +59,16 @@ class Server(HasTraits):
 
         raise NotImplementedError
 
-    def handle_request(self, request):
-        """ Handle a request from a client. """
+    def handle_request(self, jsonized_request):
+        """ Handle a jsonized request from a client. """
 
-        try:
-            # To dispatch the request we have a method named after each one!
-            method    = getattr(self, request['kind'])
-            result    = method(request)
-            exception = None
+        request = json.loads(jsonized_request)
+        response = self._handle_request(request)
 
-        except Exception, e:
-            exception = repr(sys.exc_value)
-            result    = None
+        def default(obj):
+            return repr(type(obj))
 
-        return dict(exception=exception, result=result)
+        return json.dumps(response, default=default);
 
     #### Handlers for each kind of request ####################################
 
@@ -193,6 +174,20 @@ class Server(HasTraits):
     #:
     #: { str id : instance_or_list obj }
     _id_to_object_map = Dict
+
+    def _handle_request(self, request):
+        """ Handle a jsonized request from a client. """
+        try:
+            # To dispatch the request we have a method named after each one!
+            method    = getattr(self, request['kind'])
+            result    = method(request)
+            exception = None
+
+        except Exception, e:
+            exception = repr(sys.exc_value)
+            result    = None
+
+        return dict(exception=exception, result=result)
 
     def _get_public_attribute_names(self, obj):
         """ Get the names of all public attributes on an object.

@@ -51,11 +51,11 @@ class QtServer(Server):
         callbacks and loading the html in it.
         """
 
-        self._bridge = QtBridge(server=self, widget=widget)
+        self._bridge = QtBridge(widget=widget)
 
         widget.trait_set(
-            callbacks = [('handle_request', self._bridge.handle_request)],
-            python_namespace = 'qt_bridge'     
+            callbacks = [('handle_request', self.handle_request)],
+            python_namespace = 'qt_bridge'
         )
         
         widget.create()

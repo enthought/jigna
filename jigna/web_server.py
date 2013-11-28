@@ -87,7 +87,7 @@ class WebServer(Server):
 
         """
 
-        self._bridge = WebBridge(server=self)
+        self._bridge = WebBridge()
 
         application = self._create_application(self._bridge)
         application.listen(self.port, address=self.address)
@@ -110,7 +110,7 @@ class WebServer(Server):
         application = Application(
             [
                 (r"/_jigna_ws", JignaSocket,   dict(bridge=bridge)),
-                (r"/_jigna",    GetFromBridge, dict(bridge=bridge)),
+                (r"/_jigna",    GetFromBridge, dict(server=self)),
                 (r".*",         MainHandler,   dict(server=self)),
             ],
             **settings
@@ -135,20 +135,18 @@ class MainHandler(RequestHandler):
 
         return
 
-###############################################################################
-
 class GetFromBridge(RequestHandler):
-    def initialize(self, bridge):
-        self.bridge = bridge
+    def initialize(self, server):
+        self.server = server
         return
 
     def get(self):
         jsonized_request = self.get_argument("data")
-        jsonized_response = self.bridge.handle_request(jsonized_request)
+        jsonized_response = self.server.handle_request(jsonized_request)
         self.write(jsonized_response)
         return
 
-###############################################################################
+##### WebSocket handler #######################################################
 
 class JignaSocket(WebSocketHandler):
     def initialize(self, bridge):
