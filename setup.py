@@ -1,5 +1,11 @@
-# Copyright (c) 2013 by Enthought, Inc.
-# All rights reserved.
+#
+# Enthought product code
+#
+# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# All right reserved.
+#
+# This file is confidential and NOT open source.  Do not distribute.
+#
 
 from setuptools import setup, find_packages
 
@@ -8,8 +14,8 @@ setup(
     version='0.0.1',
     author='Enthought, Inc',
     author_email='info@enthought.com',
-    url='https://bitbucket.org/agrawalprash/jigna',
-    description='HTML/CSS/JS based frontend for Traits.',
+    url='https://github.com/enthought/jigna',
+    description='HTML frontend for Traits models.',
     long_description=open('README.rst').read(),
     requires=['traits', 'pyface'],
     install_requires=['distribute'],
