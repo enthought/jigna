@@ -11,13 +11,11 @@
 
 # Standard library.
 import json
-from os.path import abspath, dirname, join
 
 # Enthought library.
 from traits.api import Any, Instance
 
 # Jigna libary.
-from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
 
 
@@ -53,18 +51,11 @@ class QtServer(Server):
         callbacks and loading the html in it.
         """
 
-        self._bridge = QtBridge(widget=widget, server=self)
+        self._bridge = QtBridge(server=self, widget=widget)
 
         widget.trait_set(
             callbacks = [('handle_request', self._bridge.handle_request)],
-            python_namespace = 'qt_bridge',
-            root_paths = {
-                'jigna': FileLoader(
-                    root = join(abspath(dirname(__file__)), 'resources')
-                )
-            },
-            open_externally = True,
-            debug = True                        
+            python_namespace = 'qt_bridge'     
         )
         
         widget.create()

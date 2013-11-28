@@ -10,6 +10,7 @@
 
 # Standard library.
 import os
+from os.path import abspath, dirname, join
 
 # Enthought library.
 from pyface.api import GUI
@@ -17,6 +18,7 @@ from traits.api import Any, Dict, HasTraits, Instance, Property, Str
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
+from jigna.core.wsgi import FileLoader
 from jigna.server import Server
 
 
@@ -80,6 +82,16 @@ class View(HasTraits):
     def show(self, **context):
         """ Create and show a view of the given context. """
 
+        widget = HTMLWidget(
+            root_paths = {
+                'jigna': FileLoader(
+                    root = join(abspath(dirname(__file__)), 'resources')
+                )
+            },
+            open_externally = True,
+            debug = True
+        )
+
         from jigna.qt_server import QtServer
 
         self._server = QtServer(
@@ -87,8 +99,7 @@ class View(HasTraits):
             context  = context,
             html     = self.html
         )
-        
-        widget = HTMLWidget()
+
         self._server.connect(widget)
         widget.control.show()
 
