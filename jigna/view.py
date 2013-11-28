@@ -95,8 +95,6 @@ class View(HasTraits):
             html     = self.html,
             widget   = self._widget
         )
-
-        self.control.loadFinished.connect(self._on_load_finished)
         self._load_html(self.html, self.base_url)
         self.control.show()
 
@@ -158,20 +156,8 @@ class View(HasTraits):
         This call blocks until the document had loaded.
 
         """
-
-        self._load_finished = False
-
+        
         self._widget.load_html(html, base_url)
-
-        while not self._load_finished:
-            GUI.process_events()
-
-        return
-
-    def _on_load_finished(self):
-        """ Called when the HTML document has finished loading. """
-
-        self._load_finished = True
 
         return
 
