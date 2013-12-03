@@ -111,7 +111,7 @@ class Server(HasTraits):
 
         info = dict(
             type_name        = type(obj).__module__ + '.' + type(obj).__name__,
-            attribute_names  = self._get_public_attribute_names(obj),
+            attribute_names  = self._get_attribute_names(obj),
             method_names     = self._get_public_method_names(type(obj))
         )
 
@@ -190,27 +190,25 @@ class Server(HasTraits):
 
         return dict(exception=exception, result=result)
 
-    def _get_public_attribute_names(self, obj):
-        """ Get the names of all public attributes on an object.
+    def _get_attribute_names(self, obj):
+        """ Get the names of all the attributes on an object.
 
         Return a list of strings.
 
         """
 
         if isinstance(obj, HasTraits):
-            public_attribute_names = [
+            attribute_names = [
                 name for name in obj.editable_traits()
-
-                if not name.startswith( '_' )
             ]
         else:
-            public_attribute_names = [
+            attribute_names = [
                 name for name, value in inspect.getmembers(obj)
 
-                if not name.startswith('_') and not inspect.ismethod(value)
+                if not inspect.ismethod(value)
             ]
 
-        return public_attribute_names
+        return attribute_names
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
