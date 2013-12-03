@@ -184,7 +184,8 @@ class Server(HasTraits):
             exception = None
 
         except Exception, e:
-            exception = repr(sys.exc_value)
+            import traceback
+            exception = traceback.format_exc()
             result    = None
 
         return dict(exception=exception, result=result)
