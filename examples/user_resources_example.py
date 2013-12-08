@@ -1,28 +1,27 @@
-#### Example description ######################################################
-
-import argparse
-parser = argparse.ArgumentParser(
-    description="""
-        This example shows how to add additional resources like CSS/Javascript/
-        image files in your html by specifying a base url.
-    """, 
-    add_help=True
-    )
-parser.add_argument("--web", 
-                    help="Run the websocket version by starting a tornado server\
-                     on port 8888", 
-                    action="store_true")
-args = parser.parse_args()
+"""
+This example shows how to add additional resources like CSS/Javascript/ image
+files in your html by specifying a base url.
+"""
 
 #### Imports ##################################################################
 
 from traits.api import HasTraits, Int, Str
-from pyface.qt import QtGui
-from pyface.timer.api import do_after
-if args.web == True:
-    from jigna.api import WebSocketView as View
-else:
-    from jigna.api import View
+from jigna.api import View
+
+#### Utility function    ######################################################
+def parse_command_line_args(argv=None, description="Example"):
+    import argparse
+    parser = argparse.ArgumentParser(
+        description=description,
+        add_help=True
+        )
+    parser.add_argument("--web",
+                        help="Run the websocket version by starting a tornado server\
+                        on port 8888",
+                        action="store_true")
+    args = parser.parse_args(argv)
+    return args
+
 
 #### Domain model ####
 
@@ -39,7 +38,7 @@ head_html = """
 
 body_html = """
     <div>
-        Name: <input ng-model="model.name"> 
+        Name: <input ng-model="model.name">
               <span class='red'>Always red - {{model.name}}</span>
         Age:  <input ng-model="model.age" type='number'>
               <span class='hoverme'>Hover me: {{model.age}}</span>
@@ -61,10 +60,21 @@ def main():
         fred.name = "Wilma"
         fred.age = 4
 
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    person_view.show(model=fred)
-    do_after(2000, update_fred)
-    app.exec_()
+    args = parse_command_line_args(description=__doc__)
+    if args.web:
+        import time
+        from threading import Thread
+        t = Thread(target=lambda:time.sleep(2) or update_fred())
+        t.daemon = True
+        t.start()
+        person_view.serve(model=fred)
+    else:
+        from pyface.qt import QtGui
+        from pyface.timer.api import do_after
+        app = QtGui.QApplication.instance() or QtGui.QApplication([])
+        person_view.show(model=fred)
+        do_after(2000, update_fred)
+        app.exec_()
     print fred.name
     print fred.age
 

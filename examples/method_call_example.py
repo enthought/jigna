@@ -1,29 +1,28 @@
-#### Example description ######################################################
-
-import argparse
-parser = argparse.ArgumentParser(
-    description="""
-        This example demonstrates Jigna's ability to call public methods of the
-        traits model from the HTML interface. You can supply primitive arguments 
-        and also pass model variables.
-    """, 
-    add_help=True
-    )
-parser.add_argument("--web", 
-                    help="Run the websocket version by starting a tornado server\
-                     on port 8888", 
-                    action="store_true")
-args = parser.parse_args()
+""" This example demonstrates Jigna's ability to call public methods of the
+traits model from the HTML interface. You can supply primitive arguments and
+also pass model variables.
+"""
 
 #### Imports ##################################################################
 
 from traits.api import HasTraits, Int, Str
 from pyface.qt import QtGui
-from pyface.timer.api import do_after
-if args.web == True:
-    from jigna.api import WebSocketView as View
-else:
-    from jigna.api import View
+from jigna.api import View
+
+#### Utility function    ######################################################
+def parse_command_line_args(argv=None, description="Example"):
+    import argparse
+    parser = argparse.ArgumentParser(
+        description=description,
+        add_help=True
+        )
+    parser.add_argument("--web",
+                        help="Run the websocket version by starting a tornado server\
+                        on port 8888",
+                        action="store_true")
+    args = parser.parse_args(argv)
+    return args
+
 
 #### Domain model ####
 
@@ -60,10 +59,14 @@ person_view = View(body_html=body_html)
 def main():
     fred  = Person(name='Fred', age=42)
 
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    person_view.show(model=fred)
+    args = parse_command_line_args(description=__doc__)
+    if args.web:
+        person_view.serve(model=fred)
+    else:
+        app = QtGui.QApplication.instance() or QtGui.QApplication([])
+        person_view.show(model=fred)
 
-    app.exec_()
+        app.exec_()
 
     return
 

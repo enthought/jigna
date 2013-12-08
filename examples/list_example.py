@@ -1,29 +1,30 @@
-#### Example description ######################################################
-
-import argparse
-parser = argparse.ArgumentParser(
-    description="""
-        This example shows two-way data bindings in `List` traits. Both - a list
-        of primitive variables and a list of instance traits are supported and 
-        demonstrated.
-    """, 
-    add_help=True
-    )
-parser.add_argument("--web", 
-                    help="Run the websocket version by starting a tornado server\
-                     on port 8888", 
-                    action="store_true")
-args = parser.parse_args()
+"""
+This example shows two-way data bindings in `List` traits. Both - a list
+of primitive variables and a list of instance traits are supported and
+demonstrated.
+"""
 
 #### Imports ##################################################################
 
 from traits.api import HasTraits, Instance, Int, Str, List
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
-if args.web == True:
-    from jigna.api import WebSocketView as View
-else:
-    from jigna.api import View
+from jigna.api import View
+
+#### Utility function    ######################################################
+def parse_command_line_args(argv=None, description="Example"):
+    import argparse
+    parser = argparse.ArgumentParser(
+        description=description,
+        add_help=True
+        )
+    parser.add_argument("--web",
+                        help="Run the websocket version by starting a tornado server\
+                        on port 8888",
+                        action="store_true")
+    args = parser.parse_args(argv)
+    return args
+
 
 #### Domain model ####
 
@@ -91,12 +92,15 @@ def main():
         wilma.fruits.append('guava')
         wilma.fruits[0] = 'strawberry'
 
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    do_after(3000, set_list)
-    do_after(4000, update_list)
-
-    person_view.show(model=fred)
-    app.exec_()
+    args = parse_command_line_args(description=__doc__)
+    if args.web:
+        person_view.serve(model=fred)
+    else:
+        app = QtGui.QApplication.instance() or QtGui.QApplication([])
+        do_after(3000, set_list)
+        do_after(4000, update_list)
+        person_view.show(model=fred)
+        app.exec_()
     print fred.fruits
     print wilma.fruits
     print [x.name for x in fred.friends]

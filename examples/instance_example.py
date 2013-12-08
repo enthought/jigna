@@ -1,27 +1,28 @@
-#### Example description ######################################################
-
-import argparse
-parser = argparse.ArgumentParser(
-    description="""
-        This example shows two-way data binding on an `Instance` trait.
-    """, 
-    add_help=True
-    )
-parser.add_argument("--web", 
-                    help="Run the websocket version by starting a tornado server\
-                     on port 8888", 
-                    action="store_true")
-args = parser.parse_args()
+"""
+This example shows two-way data binding on an `Instance` trait.
+"""
 
 #### Imports ##################################################################
 
 from traits.api import HasTraits, Instance, Int, Str
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
-if args.web == True:
-    from jigna.api import WebSocketView as View
-else:
-    from jigna.api import View
+from jigna.api import View
+
+#### Utility function    ######################################################
+def parse_command_line_args(argv=None, description="Example"):
+    import argparse
+    parser = argparse.ArgumentParser(
+        description=description,
+        add_help=True
+        )
+    parser.add_argument("--web",
+                        help="Run the websocket version by starting a tornado server\
+                        on port 8888",
+                        action="store_true")
+    args = parser.parse_args(argv)
+    return args
+
 
 #### Domain model ####
 
@@ -45,6 +46,7 @@ body_html = """
 
 person_view = View(body_html=body_html)
 
+
 #### Entry point ####
 
 def main():
@@ -63,12 +65,17 @@ def main():
         print "Setting friend to Dino"
         fred.friend = Person(name="Dino", age=10)
 
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    do_after(3000, update_friend)
-    do_after(4000, set_friend)
+    args = parse_command_line_args(description=__doc__)
+    if args.web:
+        person_view.serve(model=fred)
+    else:
+        app = QtGui.QApplication.instance() or QtGui.QApplication([])
+        do_after(3000, update_friend)
+        do_after(4000, set_friend)
 
-    person_view.show(model=fred)
-    app.exec_()
+        person_view.show(model=fred)
+        app.exec_()
+
     print fred.name
     print fred.age
     print fred.friend.name, fred.friend.age

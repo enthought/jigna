@@ -1,18 +1,7 @@
-#### Example description ######################################################
-
-import argparse
-parser = argparse.ArgumentParser(
-    description="""
-        This example shows how to initialize Jigna's HTML interface by reading 
-        a full html file, rather than specifying body_html and head_html.
-    """, 
-    add_help=True
-    )
-parser.add_argument("--web", 
-                    help="Run the websocket version by starting a tornado server\
-                     on port 8888", 
-                    action="store_true")
-args = parser.parse_args()
+"""
+This example shows how to initialize Jigna's HTML interface by reading
+a full html file, rather than specifying body_html and head_html.
+"""
 
 #### Imports ##################################################################
 
@@ -20,10 +9,23 @@ from os.path import join
 from traits.api import HasTraits, Int, Str
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
-if args.web == True:
-    from jigna.api import WebSocketView as View
-else:
-    from jigna.api import View
+from jigna.api import View
+
+#### Utility function    ######################################################
+def parse_command_line_args(argv=None, description="Example"):
+    import argparse
+    parser = argparse.ArgumentParser(
+        description=description,
+        add_help=True
+        )
+    parser.add_argument("--web",
+                        help="Run the websocket version by starting a tornado server\
+                        on port 8888",
+                        action="store_true")
+    args = parser.parse_args(argv)
+    return args
+
+
 
 #### Domain model ####
 
@@ -43,7 +45,7 @@ def main():
 
     fred  = Person(name='Fred', age=42)
     wilma = Person(name='Wilma', age=4)
-    
+
     fred.on_trait_change(listener)
     def update_fred():
         fred.name = "Freddie"
@@ -54,7 +56,15 @@ def main():
         wilma.age = 25
 
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    person_view.show(fred=fred, wilma=wilma)
+    args = parse_command_line_args(description=__doc__)
+    if args.web:
+        from threading import Thread
+        t = Thread(target=person_view.serve, kwargs=dict(fred=fred, wilma=wilma))
+        t.daemon = True
+        t.start()
+    else:
+        person_view.show(fred=fred, wilma=wilma)
+
     do_after(2000, update_fred)
     do_after(3000, update_wilma)
     app.exec_()

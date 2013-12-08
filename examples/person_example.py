@@ -1,19 +1,8 @@
-#### Example description ######################################################
-
-import argparse
-parser = argparse.ArgumentParser(
-    description="""
-        This example is the most basic example which shows two-way data binding 
-        in Jigna. Some traits change automatically after some time on the model
-        so you should see the corresponding change in the HTML DOM.
-    """, 
-    add_help=True
-)
-parser.add_argument("--web", 
-                    help="Run the websocket version by starting a tornado server\
-                     on port 8888", 
-                    action="store_true")
-args = parser.parse_args()
+"""
+This example is the most basic example which shows two-way data binding
+in Jigna. Some traits change automatically after some time on the model
+so you should see the corresponding change in the HTML DOM.
+"""
 
 #### Imports ##################################################################
 
@@ -21,6 +10,20 @@ from traits.api import HasTraits, Int, Str
 from pyface.qt import QtGui
 from pyface.timer.api import do_after
 from jigna.api import View
+
+#### Utility function    ######################################################
+def parse_command_line_args(argv=None, description="Example"):
+    import argparse
+    parser = argparse.ArgumentParser(
+        description=description,
+        add_help=True
+        )
+    parser.add_argument("--web",
+                        help="Run the websocket version by starting a tornado server\
+                        on port 8888",
+                        action="store_true")
+    args = parser.parse_args(argv)
+    return args
 
 
 #### Domain model ####
@@ -53,11 +56,12 @@ def main():
         fred.age = 4
 
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
+    args = parse_command_line_args(description=__doc__)
     if args.web:
-      from threading import Thread
-      t = Thread(target=person_view.serve, kwargs=dict(model=fred))
-      t.daemon = True
-      t.start()
+        from threading import Thread
+        t = Thread(target=person_view.serve, kwargs=dict(model=fred))
+        t.daemon = True
+        t.start()
     else:
         person_view.show(model=fred)
     do_after(2000, update_fred)
