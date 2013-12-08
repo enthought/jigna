@@ -1,57 +1,12 @@
 from jigna.api import View
-from traits.api import Dict, HasTraits, Instance, Int, Str, List
 from threading import Thread
 
 from selenium import webdriver
 import unittest
 
 # Local imports.
-from test_jigna_qt import TestJignaQt, Person
+from test_jigna_qt import TestJignaQt, Person, body_html
 
-#### Test model ####
-
-#class Person(HasTraits):
-#    name = Str
-#    age  = Int
-#    spouse = Instance('Person')
-#    fruits = List(Str)
-#    friends = List(Instance('Person'))
-#    phonebook = Dict(Str, Int)
-#
-#    def method(self, value):
-#        self.called_with = value
-
-#### UI for model ####
-
-body_html = """
-    <div>
-      Name: <input ng-model="model.name">
-      Age: <input ng-model="model.age" type='number'>
-      <br/>
-      Fruits:
-      <ul>
-        <li ng-repeat="fruit in model.fruits track by $index">
-          <input ng-model="model.fruits[$index]">
-        </li>
-      </ul>
-
-      <br/>
-
-      Friends:
-      <ul>
-        <li ng-repeat="friend in model.friends">
-          Name: <input ng-model="friend.name">
-          Age: <input ng-model="friend.age" type="number">
-          Fruits:
-          <ul>
-            <li ng-repeat="fruit in friend.fruits track by $index">
-              <input ng-model="friend.fruits[$index]">
-            </li>
-          </ul>
-        </li>
-      </ul>
-    </div>
-"""
 
 class TestJignaWeb(TestJignaQt):
     @classmethod
@@ -101,6 +56,7 @@ class TestJignaWeb(TestJignaQt):
             self.assertEqual(value, result, msg)
 
     def test_instance_trait(self):
+        # Overridden to work with the web backend.
         self.assertJSEqual("jigna.models.model.spouse", None)
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
@@ -113,7 +69,7 @@ class TestJignaWeb(TestJignaQt):
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
 
-
+# Delete this so running just this file does not run all the tests.
 del TestJignaQt
 
 if __name__ == "__main__":
