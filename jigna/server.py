@@ -46,6 +46,9 @@ class Server(HasTraits):
     #: The html to serve.
     html = Str
 
+    #: The trait change dispatch mechanism to use when traits change.
+    trait_change_dispatch = Str('ui')
+
     def send_event(self, event):
         """ Send an event to the client(s). """
 
@@ -106,7 +109,8 @@ class Server(HasTraits):
         obj = self._id_to_object_map[request['id']]
 
         if isinstance(obj, HasTraits):
-            obj.on_trait_change(self._send_object_changed_event, dispatch='ui')
+            obj.on_trait_change(self._send_object_changed_event,
+                                dispatch=self.trait_change_dispatch)
 
         info = dict(
             type_name        = type(obj).__module__ + '.' + type(obj).__name__,

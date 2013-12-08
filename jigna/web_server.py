@@ -97,6 +97,9 @@ class WebServer(Server):
 
         return
 
+    #: The trait change dispatch mechanism to use when traits change.
+    trait_change_dispatch = Str('same')
+
     #### Private protocol #####################################################
 
     def _create_application(self, bridge):

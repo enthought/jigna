@@ -13,7 +13,7 @@
 import json
 
 # Enthought library.
-from traits.api import Any, Instance
+from traits.api import Any, Str
 
 # Jigna libary.
 from jigna.server import Bridge, Server
@@ -46,8 +46,11 @@ class QtBridge(Bridge):
 class QtServer(Server):
     """ Qt (via QWebkit) server implementation. """
 
+    #: The trait change dispatch mechanism to use when traits change.
+    trait_change_dispatch = Str('ui')
+
     def connect(self, widget):
-        """ Connect the supplied widget to the server by attaching necessary 
+        """ Connect the supplied widget to the server by attaching necessary
         callbacks and loading the html in it.
         """
 
@@ -57,7 +60,7 @@ class QtServer(Server):
             callbacks = [('handle_request', self.handle_request)],
             python_namespace = 'qt_bridge'
         )
-        
+
         widget.create()
 
         widget.load_html(self.html, self.base_url)
