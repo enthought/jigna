@@ -12,11 +12,10 @@
 # Standard library.
 import inspect
 import json
-import sys
 
 # Enthought library.
 from traits.api import (
-    Any, Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent
+    Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent
 )
 
 

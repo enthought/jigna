@@ -13,12 +13,9 @@ import os
 from os.path import abspath, dirname, join
 
 # Enthought library.
-from pyface.api import GUI
-from traits.api import Any, Dict, HasTraits, Instance, Property, Str
+from traits.api import HasTraits, Instance, Str
 
 # Jigna libary.
-from jigna.core.html_widget import HTMLWidget
-from jigna.core.wsgi import FileLoader
 from jigna.server import Server
 
 
@@ -81,6 +78,9 @@ class View(HasTraits):
 
     def show(self, **context):
         """ Create and show a view of the given context. """
+
+        from jigna.core.html_widget import HTMLWidget
+        from jigna.core.wsgi import FileLoader
 
         widget = HTMLWidget(
             root_paths = {
