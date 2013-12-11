@@ -35,12 +35,10 @@ class Person(HasTraits):
     power = Int
 
     def install_new_power(self):
+        from jigna.api import Future
 
-        import threading
-        t = threading.Thread(None, target=self._install_new_power)
-        t.start()
-
-        return
+        f = Future(self._install_new_power)
+        f.on_done(self._install_completed)
 
     def _install_new_power(self):
         print "Installing new power...."
@@ -50,6 +48,7 @@ class Person(HasTraits):
             self.power += 10
             print "Power increased to: ", self.power
 
+    def _install_completed(self, value):
         print "Superpower installed"
         self.name = 'Batman'
         self.age = 400
