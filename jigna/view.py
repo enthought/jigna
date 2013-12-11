@@ -53,10 +53,9 @@ class View(HasTraits):
 
     #### 'View' protocol ######################################################
 
-    #: The base url for all resources.
+    #: The base url for all resources (relative urls are resolved corresponding 
+    #: to the current working directory).
     base_url = Str
-    def _base_url_default(self):
-        return os.getcwd()
 
     #: The HTML for the *body* of the view's document.
     body_html = Str
@@ -95,7 +94,7 @@ class View(HasTraits):
         from jigna.qt_server import QtServer
 
         self._server = QtServer(
-            base_url = self.base_url,
+            base_url = join(os.getcwd(), self.base_url),
             context  = context,
             html     = self.html
         )
@@ -111,7 +110,7 @@ class View(HasTraits):
         from jigna.web_server import WebServer
 
         self._server = WebServer(
-            base_url = self.base_url,
+            base_url = join(os.getcwd(), self.base_url),
             context  = context,
             html     = self.html,
             port     = port
