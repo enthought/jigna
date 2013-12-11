@@ -109,7 +109,20 @@ jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
 jigna.QtBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
-    return this._qt_bridge.handle_request(jsonized_request);
+    def_obj = this._qt_bridge.handle_request(jsonized_request);
+
+    def_proxy = proxy_factory.create_proxy('instance', def_obj)
+
+    def_proxy.done()
+};
+
+jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
+    /* Send a request to the server and wait for the reply. */
+
+    var deferred = new $.Deferred();
+
+    def = this._qt_bridge.handle_request_async(jsonized_request);
+
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -188,9 +201,30 @@ jigna.Client.prototype.send_request = function(request) {
     return response;
 };
 
+jigna.Client.prototype.send_request_async = function(request) {
+    /* Send a request to the server and wait for (and return) the response. */
+
+    var jsonized_request, deferred;
+
+    jsonized_request  = JSON.stringify(request);
+
+    deferred = new $.Deferred()
+    
+    this.bridge.send_request_async(jsonized_request)
+    .done(function(){
+        deferred.resolve();
+    })
+    .fail(function(error){
+        deferred.reject();
+        throw error;
+    });
+
+    return deferred;
+};
+
 // Convenience methods for each kind of request //////////////////////////////
 
-jigna.Client.prototype.call_instance_method = function(id, method_name, args) {
+jigna.Client.prototype.call_instance_method = function(id, method_name, async, args) {
     var request, response;
 
     request  = {
@@ -199,9 +233,25 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, args) {
         method_name : method_name,
         args        : this._marshal_all(args)
     };
-    response = this.send_request(request)
 
-    return this._unmarshal(response.result)
+    if (!async) {
+        response = this.send_request(request)
+
+        return this._unmarshal(response.result)
+    }
+    else {
+        var deferred = new $.Deferred();
+
+        this.send_request_async(request)
+        .done(function(){
+            deferred.resolve();
+        })
+        .fail(function(){
+            deferred.reject();
+        })
+
+        return deferred
+    }
 };
 
 jigna.Client.prototype.get_context = function() {
@@ -468,16 +518,25 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 };
 
 jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
-    var method = function () {
-        // In here, 'this' refers to the proxy!
-        var args = Array.prototype.slice.call(arguments);
-
+    var method = function (async, args) {
         return this.__client__.call_instance_method(
-            this.__id__, method_name, args
+            this.__id__, method_name, async, args
         );
     };
 
-    proxy[method_name] = method;
+    proxy[method_name] = function() {
+        // In here, 'this' refers to the proxy!
+        var args = Array.prototype.slice.call(arguments);
+
+        return method(false, args);
+    };
+
+    proxy[method_name+"_async"] = function(){
+        // In here, 'this' refers to the proxy!
+        var args = Array.prototype.slice.call(arguments);
+
+        return method(true, args);        
+    };
 };
 
 jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute_name){
