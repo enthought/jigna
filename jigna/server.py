@@ -77,7 +77,8 @@ class Server(HasTraits):
         
         from jigna.core.concurrent import Future
 
-        future = Future(self.handle_request, args=(jsonized_request,))
+        future = Future(self.handle_request, args=(jsonized_request,),
+                        dispatch=self.trait_change_dispatch)
         future_id = self._marshal(future)['value']
         
         def _on_done(result):
@@ -85,6 +86,7 @@ class Server(HasTraits):
                          future_id=future_id,
                          status='done',
                          result=result)
+            print "done, send_event:", event
             self.send_event(event)
 
         def _on_error(error):

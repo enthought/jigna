@@ -169,12 +169,13 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
 
     var deferred = new $.Deferred();
 
-    var future = this._qt_bridge.handle_request_async(jsonized_request);
+    var future_id = this._qt_bridge.handle_request_async(jsonized_request);
 
     this._client.event_target.addListener(
         'future_updated', 
         function(event){
-            if (event.future.value != future.value) {
+            console.log("future updated", event);
+            if (event.future_id != future_id) {
                 return
             }
 
@@ -187,8 +188,7 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
                 }
 
                 // remove the event listener
-                this._client.event_target.removeListener('future_updated',
-                                                         arguments.callee)
+                this.removeListener('future_updated', arguments.callee)
             }
         }
     )
@@ -279,19 +279,11 @@ jigna.Client.prototype.send_request_async = function(request) {
     var jsonized_request, deferred;
 
     jsonized_request  = JSON.stringify(request);
+    deferred = this.bridge.send_request_async(jsonized_request);
 
-    deferred = new $.Deferred()
-    
-    this.bridge.send_request_async(jsonized_request)
-    .done(function(){
-        deferred.resolve();
-    })
-    .fail(function(error){
-        deferred.reject();
-        throw error;
-    });
+    deferred.fail(function(error){ throw error; })
 
-    return deferred;
+    return deferred
 };
 
 // Convenience methods for each kind of request //////////////////////////////
@@ -314,17 +306,7 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
         return this._unmarshal(response.result)
     }
     else {
-        var deferred = new $.Deferred();
-
-        this.send_request_async(request)
-        .done(function(){
-            deferred.resolve();
-        })
-        .fail(function(){
-            deferred.reject();
-        })
-
-        return deferred
+        return this.send_request_async(request)
     }
 };
 
@@ -586,7 +568,6 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
 jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
     var method = function (async, args) {
-        console.log('client inside:', this.__client__, async, args)
         return this.__client__.call_instance_method(
             this.__id__, method_name, async, args
         );
@@ -603,7 +584,6 @@ jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name)
         // In here, 'this' refers to the proxy!
         var args = Array.prototype.slice.call(arguments);
 
-        console.log('client:', this.__client__)
         return method.call(this, true, args);
     };
 };
