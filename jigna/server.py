@@ -72,6 +72,23 @@ class Server(HasTraits):
 
         return json.dumps(response, default=default);
 
+    def handle_request_async(self, jsonized_request):
+        """ Handle a jsonized request from a client. """
+        
+        from jigna.core.concurrent import Future
+
+        future = Future(self.handle_request, jsonized_request)
+        
+        future.on_done(self.send_event, 
+                       dict(kind='deferred_updated', 
+                            obj=self._marshal(future),
+                            status='done'
+                       )
+        )
+
+        return self._marshal(future)
+
+
     #### Handlers for each kind of request ####################################
 
     def get_context(self, request):

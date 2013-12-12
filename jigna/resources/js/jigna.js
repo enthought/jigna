@@ -1,17 +1,62 @@
-//
-// Enthought product code
-//
-// (C) Copyright 2013 Enthought, Inc., Austin, TX
-// All right reserved.
-//
-// This file is confidential and NOT open source.  Do not distribute.
-//
+///// EventTarget /////////////////////////////////////////////////////////////
+// Copyright (c) 2010 Nicholas C. Zakas. All rights reserved.
+// MIT License
+///////////////////////////////////////////////////////////////////////////////
 
+function EventTarget(){
+    this._listeners = {};
+}
+
+EventTarget.prototype = {
+
+    constructor: EventTarget,
+
+    addListener: function(type, listener){
+        if (typeof this._listeners[type] == "undefined"){
+            this._listeners[type] = [];
+        }
+
+        this._listeners[type].push(listener);
+    },
+
+    fire: function(event){
+        if (typeof event == "string"){
+            event = { type: event };
+        }
+        if (!event.target){
+            event.target = this;
+        }
+
+        if (!event.type){  //falsy
+            throw new Error("Event object missing 'type' property.");
+        }
+
+        if (this._listeners[event.type] instanceof Array){
+            var listeners = this._listeners[event.type];
+            for (var i=0, len=listeners.length; i < len; i++){
+                listeners[i].call(this, event);
+            }
+        }
+    },
+
+    removeListener: function(type, listener){
+        if (this._listeners[type] instanceof Array){
+            var listeners = this._listeners[type];
+            for (var i=0, len=listeners.length; i < len; i++){
+                if (listeners[i] === listener){
+                    listeners.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    }
+};
 
 // SubArray.js ////////////////////////////////////////////////////////////////
 // (C) Copyright Juriy Zaytsev 
 // Source: 1. https://github.com/kangax/array_subclassing
-//         2. http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
+//         2. http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-
+//            to-subclass-an-array/
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -80,6 +125,13 @@ function SubArray() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Enthought product code
+//
+// (C) Copyright 2013 Enthought, Inc., Austin, TX
+// All right reserved.
+//
+// This file is confidential and NOT open source.  Do not distribute.
+///////////////////////////////////////////////////////////////////////////////
 
 // Namespace for all Jigna-related objects.
 var jigna = {
@@ -109,11 +161,7 @@ jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
 jigna.QtBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
-    def_obj = this._qt_bridge.handle_request(jsonized_request);
-
-    def_proxy = proxy_factory.create_proxy('instance', def_obj)
-
-    def_proxy.done()
+    return this._qt_bridge.handle_request(jsonized_request);
 };
 
 jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
@@ -121,7 +169,15 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
 
     var deferred = new $.Deferred();
 
-    def = this._qt_bridge.handle_request_async(jsonized_request);
+    def_obj = this._qt_bridge.handle_request_async(jsonized_request);
+
+    def_proxy = proxy_factory.create_proxy('deferred', def_obj)
+
+    def_proxy.done(def_proxy.on_done)
+
+    def_proxy.fail(def_proxy.on_error)
+
+
 
 };
 
@@ -163,6 +219,7 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
 jigna.Client = function() {
     // Client protocol.
     this.bridge       = this._get_bridge();
+    this.event_target = new EventTarget()
 
     // Private protocol
     this._id_to_proxy_map = {};
@@ -462,16 +519,23 @@ jigna.Client.prototype._on_object_changed = function(event) {
     // details of a TraitListEvent?
     this._create_proxy(event.new_obj.type, event.new_obj.value);
 
-    // Fire the object changed event so that the JS framework can catch it to 
-    // update the DOM etc.
-    //
+    this.event_target.fire('jigna.object_changed');
+};
+
+jigna.Client.prototype._on_deferred_updated = function(event) {
+    this._get_bridge
+
+    deferred = this._id_to_proxy_map[event.obj.value];
+
+    deferred.emit(event.status)
+
     // FIXME: this is using old-style event creation method as explained here: 
     //
     //  https://developer.mozilla.org/en-US/docs/Web/Guide/API/DOM/Events/Creating_and_triggering_events
     //
     // but we can't do anything because Qt 4.8 doesn't support new-style event 
     // definition.
-    var event = document.createEvent('Event');
+    var event = document.createEvent('CustomEvent', {});
     event.initEvent('jigna.object_changed', true, true);
     document.dispatchEvent(event);
 };
@@ -682,7 +746,7 @@ module.run(function($rootScope){
     }
 
     // Listen to object change events in jigna
-    document.addEventListener('jigna.object_changed', function() {
+    jigna.client.event_target.addListener('jigna.object_changed', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }
