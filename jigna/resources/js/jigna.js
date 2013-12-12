@@ -169,16 +169,31 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
 
     var deferred = new $.Deferred();
 
-    def_obj = this._qt_bridge.handle_request_async(jsonized_request);
+    var future = this._qt_bridge.handle_request_async(jsonized_request);
 
-    def_proxy = proxy_factory.create_proxy('deferred', def_obj)
+    this._client.event_target.addListener(
+        'future_updated', 
+        function(event){
+            if (event.future.value != future.value) {
+                return
+            }
 
-    def_proxy.done(def_proxy.on_done)
+            else {
+                if (event.status == 'done') {
+                    deferred.resolve(event.result);
+                }
+                else if (event.status == 'error') {
+                    deferred.reject(event.result);
+                }
 
-    def_proxy.fail(def_proxy.on_error)
+                // remove the event listener
+                this._client.event_target.removeListener('future_updated',
+                                                         arguments.callee)
+            }
+        }
+    )
 
-
-
+    return deferred
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -236,9 +251,9 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
     event = JSON.parse(jsonized_event);
 
     // Currently, the only event we handle is 'on_object_changed'!
-    handler = this['_on_' + event.kind];
+    handler = this['_on_' + event.type];
     if (handler === undefined) {
-        throw 'no handler for event: ' + event.kind
+        throw 'no handler for event: ' + event.type
     }
 
     handler.apply(this, [event]);
@@ -290,6 +305,8 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
         method_name : method_name,
         args        : this._marshal_all(args)
     };
+
+    console.log('request', request);
 
     if (!async) {
         response = this.send_request(request)
@@ -519,25 +536,11 @@ jigna.Client.prototype._on_object_changed = function(event) {
     // details of a TraitListEvent?
     this._create_proxy(event.new_obj.type, event.new_obj.value);
 
-    this.event_target.fire('jigna.object_changed');
+    this.event_target.fire(event);
 };
 
-jigna.Client.prototype._on_deferred_updated = function(event) {
-    this._get_bridge
-
-    deferred = this._id_to_proxy_map[event.obj.value];
-
-    deferred.emit(event.status)
-
-    // FIXME: this is using old-style event creation method as explained here: 
-    //
-    //  https://developer.mozilla.org/en-US/docs/Web/Guide/API/DOM/Events/Creating_and_triggering_events
-    //
-    // but we can't do anything because Qt 4.8 doesn't support new-style event 
-    // definition.
-    var event = document.createEvent('CustomEvent', {});
-    event.initEvent('jigna.object_changed', true, true);
-    document.dispatchEvent(event);
+jigna.Client.prototype._on_future_updated = function(event) {
+    this.event_target.fire(event);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -583,6 +586,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
 jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
     var method = function (async, args) {
+        console.log('client inside:', this.__client__, async, args)
         return this.__client__.call_instance_method(
             this.__id__, method_name, async, args
         );
@@ -592,14 +596,15 @@ jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name)
         // In here, 'this' refers to the proxy!
         var args = Array.prototype.slice.call(arguments);
 
-        return method(false, args);
+        return method.call(this, false, args);
     };
 
     proxy[method_name+"_async"] = function(){
         // In here, 'this' refers to the proxy!
         var args = Array.prototype.slice.call(arguments);
 
-        return method(true, args);        
+        console.log('client:', this.__client__)
+        return method.call(this, true, args);
     };
 };
 
@@ -746,7 +751,7 @@ module.run(function($rootScope){
     }
 
     // Listen to object change events in jigna
-    jigna.client.event_target.addListener('jigna.object_changed', function() {
+    jigna.client.event_target.addListener('object_changed', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }

@@ -77,16 +77,28 @@ class Server(HasTraits):
         
         from jigna.core.concurrent import Future
 
-        future = Future(self.handle_request, jsonized_request)
+        future = Future(self.handle_request, args=(jsonized_request,))
+        future_id = self._marshal(future)['value']
         
-        future.on_done(self.send_event, 
-                       dict(kind='deferred_updated', 
-                            obj=self._marshal(future),
-                            status='done'
-                       )
-        )
+        def _on_done(result):
+            event = dict(type='future_updated', 
+                         future_id=future_id,
+                         status='done',
+                         result=result)
+            self.send_event(event)
 
-        return self._marshal(future)
+        def _on_error(error):
+            print "error"
+            event = dict(type='future_updated', 
+                         future_id=future_id,
+                         status='error',
+                         result=error)
+            self.send_event(event)
+
+        future.on_done(_on_done)
+        future.on_error(_on_error)
+
+        return future_id
 
 
     #### Handlers for each kind of request ####################################
@@ -109,6 +121,7 @@ class Server(HasTraits):
         method_name = request['method_name']
         args        = self._unmarshal_all(request['args'])
         method      = getattr(obj, method_name)
+        print "calling instance method", method_name
 
         return self._marshal(method(*args))
 
@@ -206,6 +219,7 @@ class Server(HasTraits):
         except Exception, e:
             import traceback
             exception = traceback.format_exc()
+            print exception
             result    = None
 
         return dict(exception=exception, result=result)
@@ -332,7 +346,7 @@ class Server(HasTraits):
                 self._register_object(new)
 
         event = dict(
-            kind           = 'object_changed',
+            type           = 'object_changed',
             obj            = str(id(obj)),
             attribute_name = trait_name,
             # fixme: This smells a bit, but marhsalling the new value gives us

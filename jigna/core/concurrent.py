@@ -353,7 +353,7 @@ class Future(Promise):
     # `object` interface.
     ############################################################################
     def __init__(self, func, f_on_status=None, f_on_progress=None,
-                 future_kw=None, dispatch='same', *args, **kw):
+                 future_kw=None, dispatch='same', args=None, kw=None):
         """Constructor for a Future.
 
         If an exception is raised when the future runs, ``sys.exc_info()``
@@ -406,6 +406,8 @@ class Future(Promise):
         # Pass self to the function if it needs it.
         if future_kw is not None and type(future_kw) in (str, unicode):
             kw[future_kw] = self
+        args = args or ()
+        kw = kw or {}
         t = Thread(target=_f, args=(self,) + args, kwargs=kw)
         self._thread = t
         t.daemon = True

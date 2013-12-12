@@ -35,12 +35,6 @@ class Person(HasTraits):
     power = Int
 
     def install_new_power(self):
-        from jigna.api import Future
-
-        f = Future(self._install_new_power)
-        f.on_done(self._install_completed)
-
-    def _install_new_power(self):
         print "Installing new power...."
 
         while self.power < 100:
@@ -48,8 +42,6 @@ class Person(HasTraits):
             self.power += 10
             print "Power increased to: ", self.power
 
-    def _install_completed(self, value):
-        print "Superpower installed"
         self.name = 'Batman'
         self.age = 400
 
@@ -76,7 +68,9 @@ body_html = """
       Name: <input ng-model="model.name">
       Age: <input ng-model="model.age" type='number'>
       Power: {{model.power}}
-      <button ng-click="model.install_new_power()">Install new power!</button>
+      <button ng-click="model.install_new_power_async()">
+        Install new power!
+      </button>
 
       <div class='progress-bar-container'>
         <div class='completed-progress' ng-style="{ width: model.power + '%' }"></div>
