@@ -47,48 +47,59 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-head_html = """
-    <style type="text/css">
-        .progress-bar-container {
-            height: 10px;
-            border: solid 1px #999;
-            background-color: white;
-            margin-top: 10px;
-        }
-        .completed-progress {
-            background-color: blue;
-            height: 100%;
-        }
-    </style>
-    <script type="text/javascript">
-        window.install_new_power_async = function(element) {
-            var scope = $(element).scope();
-            scope.model.install_new_power_async()
-            .done(function(){
-                console.log('done');
-                $('#'+element.id).html('Installed!');
-            });
-        }
-    </script>
+html = """
+<html ng-app='MyApp'>
+    <head>
+        <style type="text/css">
+            .progress-bar-container {
+                height: 10px;
+                border: solid 1px #999;
+                background-color: white;
+                margin-top: 10px;
+            }
+            .completed-progress {
+                background-color: blue;
+                height: 100%;
+            }
+        </style>
+        
+        <script src='/jigna/js/jquery.min.js'></script>
+        <script src='/jigna/js/angular.min.js'></script>
+        <script src='/jigna/js/jigna.js'></script>
+
+        <script type="text/javascript">
+            var app = angular.module('MyApp', ['jigna']);
+
+            app.controller('MainCtrl', function($scope){
+                $scope.install_new_power_async = function(event) {
+                    $scope.model.install_new_power_async()
+                    .done(function(){
+                        $(event.target).html("Installed")
+                    })
+                }
+            })
+        </script>
+    </head>
+
+    <body ng-controller='MainCtrl'>
+        <div>
+          Name: <input ng-model="model.name">
+          Age: <input ng-model="model.age" type='number'>
+          Power: {{model.power}}
+          <button id="install_btn" ng-click="install_new_power_async($event)">
+            Install new power!
+          </button>
+
+          <div class='progress-bar-container'>
+            <div class='completed-progress' ng-style="{ width: model.power + '%' }"></div>
+          </div>
+
+        </div>
+    </body>
+</html>
 """
 
-body_html = """
-    <div>
-      Name: <input ng-model="model.name">
-      Age: <input ng-model="model.age" type='number'>
-      Power: {{model.power}}
-      <button id="install_btn" onclick="install_new_power_async(this)">
-        Install new power!
-      </button>
-
-      <div class='progress-bar-container'>
-        <div class='completed-progress' ng-style="{ width: model.power + '%' }"></div>
-      </div>
-
-    </div>
-"""
-
-person_view = View(body_html=body_html, head_html=head_html)
+person_view = View(html=html)
 
 #### Entry point ####
 
