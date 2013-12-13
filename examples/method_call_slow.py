@@ -50,17 +50,26 @@ class Person(HasTraits):
 head_html = """
     <style type="text/css">
         .progress-bar-container {
-            width: 100%;
             height: 10px;
             border: solid 1px #999;
             background-color: white;
-            margin: 10px;
+            margin-top: 10px;
         }
         .completed-progress {
             background-color: blue;
             height: 100%;
         }
     </style>
+    <script type="text/javascript">
+        window.install_new_power_async = function(element) {
+            var scope = $(element).scope();
+            scope.model.install_new_power_async()
+            .done(function(){
+                console.log('done');
+                $('#'+element.id).html('Installed!');
+            });
+        }
+    </script>
 """
 
 body_html = """
@@ -68,7 +77,7 @@ body_html = """
       Name: <input ng-model="model.name">
       Age: <input ng-model="model.age" type='number'>
       Power: {{model.power}}
-      <button ng-click="model.install_new_power_async()">
+      <button id="install_btn" onclick="install_new_power_async(this)">
         Install new power!
       </button>
 
@@ -84,17 +93,17 @@ person_view = View(body_html=body_html, head_html=head_html)
 #### Entry point ####
 
 def main():
-    fred  = Person(name='Fred', age=42)
+    bruce  = Person(name='Bruce', age=30)
 
     args = parse_command_line_args(description=__doc__)
     if args.web:
-        person_view.serve(model=fred)
+        person_view.serve(model=bruce)
     else:
         app = QtGui.QApplication.instance() or QtGui.QApplication([])
-        person_view.show(model=fred)
+        person_view.show(model=bruce)
         app.exec_()
 
-    print fred.name, fred.age
+    print bruce.name, bruce.age
 
     return
 
