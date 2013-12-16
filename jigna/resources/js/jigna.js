@@ -135,7 +135,8 @@ function SubArray() {
 
 // Namespace for all Jigna-related objects.
 var jigna = {
-    models : {}
+    models : {},
+    event_target : new EventTarget()
 };
 
 jigna.initialize = function() {
@@ -171,7 +172,7 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
 
     var future_id = this._qt_bridge.handle_request_async(jsonized_request);
 
-    this._client.event_target.addListener(
+    jigna.event_target.addListener(
         'future_updated', 
         function(event){
             console.log("future updated", event);
@@ -234,7 +235,6 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
 jigna.Client = function() {
     // Client protocol.
     this.bridge       = this._get_bridge();
-    this.event_target = new EventTarget()
 
     // Private protocol
     this._id_to_proxy_map = {};
@@ -518,11 +518,11 @@ jigna.Client.prototype._on_object_changed = function(event) {
     // details of a TraitListEvent?
     this._create_proxy(event.new_obj.type, event.new_obj.value);
 
-    this.event_target.fire(event);
+    jigna.event_target.fire(event);
 };
 
 jigna.Client.prototype._on_future_updated = function(event) {
-    this.event_target.fire(event);
+    jigna.event_target.fire(event);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -731,7 +731,7 @@ module.run(function($rootScope){
     }
 
     // Listen to object change events in jigna
-    jigna.client.event_target.addListener('object_changed', function() {
+    jigna.event_target.addListener('object_changed', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }
