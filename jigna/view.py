@@ -119,6 +119,16 @@ class View(HasTraits):
 
         return
 
+    def send_event(self, event):
+        """ Sends a generic event to the clients via the View server. 
+
+        event: (dict) A dictionary containing event data. Must have an attribute 
+        'type' whose value is a string which uniquely identifies the event to be
+        emitted. 
+        """
+
+        self._server.send_event(event)
+
     #### Private protocol #####################################################
 
     #: The server that manages the objects shared via the bridge.
