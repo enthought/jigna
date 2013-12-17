@@ -15,7 +15,7 @@ import json
 
 # Enthought library.
 from traits.api import (
-    Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent
+    Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent, Event
 )
 
 
@@ -346,16 +346,25 @@ class Server(HasTraits):
             # fixme: intent is non-scalar or maybe container?
             if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
                 self._register_object(new)
+        
+        if obj.trait(trait_name).is_trait_type(Event):
+            event = dict(
+                type           = '_event_trait_fired',
+                obj            = str(id(obj)),
+                attribute_name = trait_name,
+                data           = self._marshal(new)
+            )
 
-        event = dict(
-            type           = 'object_changed',
-            obj            = str(id(obj)),
-            attribute_name = trait_name,
-            # fixme: This smells a bit, but marhsalling the new value gives us
-            # a type/value pair which we need on the client side to determine
-            # what (if any) proxy we need to create.
-            new_obj        = self._marshal(new)
-        )
+        else:
+            event = dict(
+                type           = '_object_changed',
+                obj            = str(id(obj)),
+                attribute_name = trait_name,
+                # fixme: This smells a bit, but marhsalling the new value gives us
+                # a type/value pair which we need on the client side to determine
+                # what (if any) proxy we need to create.
+                new_obj        = self._marshal(new)
+            )
 
         self.send_event(event)
 

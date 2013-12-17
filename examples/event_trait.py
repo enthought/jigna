@@ -16,7 +16,7 @@ class Person(HasTraits):
     name = Str
     age  = Int(25)
 
-    retired = Event
+    status = Event
 
     def grow_old(self, max_age=100):
         while self.age < max_age:
@@ -24,7 +24,7 @@ class Person(HasTraits):
             self.age += 1
             print "Age increased to:", self.age
             if self.age == 60:
-                self.retired = True
+                self.status = "Retired due to old age"
 
 #### UI layer ####
 
@@ -39,11 +39,8 @@ html = """
             var app = angular.module('MyApp', ['jigna']);
 
             app.controller('MainCtrl', function($scope){
-                jigna.event_target.addListener('object_changed', function(evt){
-                    if (evt.attribute_name == 'retired') {
-                        proxy = jigna.client.get_proxy(evt.obj);
-                        proxy['retired'] = 'Yes';
-                    }
+                jigna.event_target.addListener('event_trait_fired', function(event){
+                    event.obj[event.attribute_name] = event.data;
                 })
             })
 
@@ -55,7 +52,7 @@ html = """
 
          <button ng-click="model.grow_old_async()">Grow old</button><br>
 
-         Retired?: {{model.retired || 'No'}}
+         Professional status: {{model.status || 'Working'}}
     </body>
 </html>
 """
