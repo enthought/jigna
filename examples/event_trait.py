@@ -28,36 +28,24 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-html = """
-<html ng-app='MyApp'>
-    <head>
-        <script src='/jigna/js/jquery.min.js'></script>
-        <script src='/jigna/js/angular.min.js'></script>
-        <script src='/jigna/js/jigna.js'></script>
-        <script>
-            
-            var app = angular.module('MyApp', ['jigna']);
-
-            app.controller('MainCtrl', function($scope){
-                jigna.event_target.addListener('event_trait_fired', function(event){
-                    event.obj[event.attribute_name] = event.data;
-                })
-            })
-
-        </script>
-    </head>
-    <body ng-controller='MainCtrl'>
+body_html = """
+    <div>
          Name: {{model.name}}<br>
          Age:  {{model.age}}
 
          <button ng-click="model.grow_old_async()">Grow old</button><br>
 
          Professional status: {{model.status || 'Working'}}
-    </body>
-</html>
+
+         <script type='text/javascript'>
+            jigna.event_target.addListener('event_trait_fired', function(event){
+                event.obj[event.attribute_name] = event.data;
+            })
+        </script>
+    </div>
 """
 
-person_view = View(html=html)
+person_view = View(body_html=body_html)
 
 #### Entry point ####
 
