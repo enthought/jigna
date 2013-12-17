@@ -255,11 +255,6 @@ jigna.Client = function() {
                                    this)
 };
 
-jigna.Client.prototype.get_proxy = function(id) {
-    /* Returns the proxy object corresponding to the given id, or undefined */
-    return this._id_to_proxy_map[id];
-};
-
 jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var event = JSON.parse(jsonized_event);
