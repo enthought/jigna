@@ -90,11 +90,13 @@ class Server(HasTraits):
             self.send_event(event)
 
         def _on_error(error):
-            print "error"
+            import traceback
+            type, value, tb = error
+            error_msg = '\n'.join(traceback.format_tb(tb))
             event = dict(type='future_updated', 
                          future_id=future_id,
                          status='error',
-                         result=error)
+                         result=error_msg)
             self.send_event(event)
 
         future.on_done(_on_done)
@@ -212,17 +214,10 @@ class Server(HasTraits):
 
     def _handle_request(self, request):
         """ Handle a jsonized request from a client. """
-        try:
-            # To dispatch the request we have a method named after each one!
-            method    = getattr(self, request['kind'])
-            result    = method(request)
-            exception = None
-
-        except Exception, e:
-            import traceback
-            exception = traceback.format_exc()
-            print exception
-            result    = None
+        # To dispatch the request we have a method named after each one!
+        method    = getattr(self, request['kind'])
+        result    = method(request)
+        exception = None
 
         return dict(exception=exception, result=result)
 

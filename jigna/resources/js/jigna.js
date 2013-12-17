@@ -178,7 +178,7 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
     jigna.event_target.addListener(
         'future_updated', 
         function(event){
-            console.log("future updated", event);
+            console.log("future updated", event, future_id);
             if (event.future_id != future_id) {
                 return
             }
@@ -188,6 +188,7 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
                     deferred.resolve(event.result);
                 }
                 else if (event.status == 'error') {
+                    console.log("error occured", event.result);
                     deferred.reject(event.result);
                 }
 
@@ -271,8 +272,6 @@ jigna.Client.prototype.send_request = function(request) {
     jsonized_response = this.bridge.send_request(jsonized_request);
     response          = JSON.parse(jsonized_response);
 
-    if (response.exception !== null) throw response.exception;
-
     return response;
 };
 
@@ -283,8 +282,6 @@ jigna.Client.prototype.send_request_async = function(request) {
 
     jsonized_request  = JSON.stringify(request);
     deferred = this.bridge.send_request_async(jsonized_request);
-
-    deferred.fail(function(error){ throw error; })
 
     return deferred
 };

@@ -45,6 +45,17 @@ class Person(HasTraits):
         self.name = 'Batman'
         self.age = 400
 
+    def download_new_power(self):
+        print "Downloading new power...."
+        
+        time.sleep(1)
+        
+        import urllib2
+        response = urllib2.urlopen('http://someboguswebsite.com')
+
+        print "response"
+        return "response"
+
 #### UI layer ####
 
 html = """
@@ -77,6 +88,14 @@ html = """
                         $(event.target).html("Installed")
                     })
                 }
+
+                $scope.download_new_power_async = function(event) {
+                    $scope.model.download_new_power_async()
+                    .fail(function(error){
+                        console.log("error:", error);
+                        $(event.target).html("Error!")
+                    })
+                }
             })
         </script>
     </head>
@@ -88,6 +107,10 @@ html = """
           Power: {{model.power}}
           <button id="install_btn" ng-click="install_new_power_async($event)">
             Install new power!
+          </button>
+
+          <button id="download_btn" ng-click="download_new_power_async($event)">
+            Download new power!
           </button>
 
           <div class='progress-bar-container'>
