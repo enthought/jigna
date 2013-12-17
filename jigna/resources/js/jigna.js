@@ -11,12 +11,12 @@ EventTarget.prototype = {
 
     constructor: EventTarget,
 
-    addListener: function(type, listener){
+    addListener: function(type, listener, thisArg){
         if (typeof this._listeners[type] == "undefined"){
             this._listeners[type] = [];
         }
 
-        this._listeners[type].push(listener);
+        this._listeners[type].push({thisArg: thisArg || this, listener: listener});
     },
 
     fire: function(event){
@@ -34,7 +34,10 @@ EventTarget.prototype = {
         if (this._listeners[event.type] instanceof Array){
             var listeners = this._listeners[event.type];
             for (var i=0, len=listeners.length; i < len; i++){
-                listeners[i].call(this, event);
+                listener = listeners[i].listener;
+                thisArg = listeners[i].thisArg;
+                console.log('firing event, calling listener', event, thisArg);
+                listener.call(thisArg, event);
             }
         }
     },
@@ -242,6 +245,9 @@ jigna.Client = function() {
 
     // Add all of the models being edited.
     this._add_models(this.get_context());
+
+    // Add event handler for 'object_changed' event
+    jigna.event_target.addListener('object_changed', this._on_object_changed, this)
 };
 
 jigna.Client.prototype.get_proxy = function(id) {
@@ -251,17 +257,9 @@ jigna.Client.prototype.get_proxy = function(id) {
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
-    var event, handler;
+    var event = JSON.parse(jsonized_event);
 
-    event = JSON.parse(jsonized_event);
-
-    // Currently, the only event we handle is 'on_object_changed'!
-    handler = this['_on_' + event.type];
-    if (handler === undefined) {
-        throw 'no handler for event: ' + event.type
-    }
-
-    handler.apply(this, [event]);
+    jigna.event_target.fire(event);
 };
 
 jigna.Client.prototype.send_request = function(request) {
@@ -523,11 +521,7 @@ jigna.Client.prototype._on_object_changed = function(event) {
     // details of a TraitListEvent?
     this._create_proxy(event.new_obj.type, event.new_obj.value);
 
-    jigna.event_target.fire(event);
-};
-
-jigna.Client.prototype._on_future_updated = function(event) {
-    jigna.event_target.fire(event);
+    jigna.event_target.fire('digest');
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -736,7 +730,7 @@ module.run(function($rootScope){
     }
 
     // Listen to object change events in jigna
-    jigna.event_target.addListener('object_changed', function() {
+    jigna.event_target.addListener('digest', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }
