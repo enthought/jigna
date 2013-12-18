@@ -31,11 +31,6 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-head_html = """
-      <script type='text/javascript' src='data/colorchange.js'></script>
-      <link rel='stylesheet' href='data/color.css' />
-"""
-
 body_html = """
     <div>
         Name: <input ng-model="model.name">
@@ -43,10 +38,12 @@ body_html = """
         Age:  <input ng-model="model.age" type='number'>
               <span class='hoverme'>Hover me: {{model.age}}</span>
         <img src='data/lena.png' />
-      </div>
+    </div>
+    <script type='text/javascript' src='data/colorchange.js'></script>
+    <link rel='stylesheet' href='data/color.css' />
 """
 
-person_view = View(body_html=body_html, head_html=head_html, base_url='')
+person_view = View(body_html=body_html, base_url='')
 
 #### Entry point ####
 
