@@ -30,17 +30,12 @@ def main():
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
 
     fred  = Person(name='Fred', age=42)
-    wilma = Person(name='Wilma', age=25)
-
-    person_view.show(fred=fred, wilma=wilma)
-
+    person_view.show(fred=fred)
     do_after(2000, fred.update_name, "Freddie")
-    do_after(3000, wilma.update_name, "Mrs. Wilma")
 
     app.exec_()
     
 if __name__ == "__main__":
-    main()
-    
+    main()    
 
 #### EOF ######################################################################
