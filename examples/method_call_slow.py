@@ -98,14 +98,12 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
     bruce = Person(name='Bruce', age=30)
     person_view.show(model=bruce)
-    app.exec_()
-
-    return
-
+    
 if __name__ == '__main__':
+    app = QtGui.QApplication.instance() or QtGui.QApplication([])
     main()
+    app.exec_()
 
 #### EOF ######################################################################

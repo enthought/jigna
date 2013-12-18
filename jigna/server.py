@@ -82,7 +82,7 @@ class Server(HasTraits):
         future_id = self._marshal(future)['value']
         
         def _on_done(result):
-            event = dict(type='future_updated', 
+            event = dict(type='_future_updated', 
                          future_id=future_id,
                          status='done',
                          result=result)
@@ -93,7 +93,7 @@ class Server(HasTraits):
             import traceback
             type, value, tb = error
             error_msg = '\n'.join(traceback.format_tb(tb))
-            event = dict(type='future_updated', 
+            event = dict(type='_future_updated', 
                          future_id=future_id,
                          status='error',
                          result=error_msg)

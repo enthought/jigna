@@ -176,7 +176,7 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
     var future_id = this._qt_bridge.handle_request_async(jsonized_request);
 
     jigna.event_target.addListener(
-        'future_updated', 
+        '_future_updated',
         function(event){
             console.log("future updated", event, future_id);
             if (event.future_id != future_id) {
