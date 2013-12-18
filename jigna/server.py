@@ -125,7 +125,6 @@ class Server(HasTraits):
         method_name = request['method_name']
         args        = self._unmarshal_all(request['args'])
         method      = getattr(obj, method_name)
-        print "calling instance method", method_name
 
         return self._marshal(method(*args))
 
