@@ -35,7 +35,7 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-person_view = View.from_file(html_file=join('data', 'test.html'))
+person_view = View(html_file=join('data', 'test.html'))
 
 #### Entry point ####
 

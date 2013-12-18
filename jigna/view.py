@@ -13,7 +13,7 @@ import os
 from os.path import abspath, dirname, join
 
 # Enthought library.
-from traits.api import HasTraits, Instance, Str
+from traits.api import HasTraits, Instance, Str, Property
 
 # Jigna libary.
 from jigna.server import Server
@@ -42,15 +42,6 @@ DOCUMENT_HTML_TEMPLATE = """
 class View(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
 
-    ### 'View' class protocol #################################################
-
-    @classmethod
-    def from_file(cls, html_file):
-        with open(html_file, 'rb') as f:
-            html = f.read()
-
-        return cls(html=html)
-
     #### 'View' protocol ######################################################
 
     #: The base url for all resources (relative urls are resolved corresponding 
@@ -63,17 +54,42 @@ class View(HasTraits):
     #: The HTML for the *head* of the view's document.
     head_html = Str
 
+    #: The file which contains the html
+    html_file = Str
+
     #: The HTML for the entire document.
-    html = Str
-    def _html_default(self):
+    #: 
+    #: The order of precedence in determining its value is:
+    #:  1. Directly specified `html` trait
+    #:  2. Read the contents of the file specified by `html_file` trait
+    #:  3. Create the jigna template out of specified `body_html` and `head_html`
+    #:     traits
+    html = Property(Str)
+    _html = Str
+
+    def _get_html(self):
         """ Get the default HTML document for the given model. """
 
-        html = DOCUMENT_HTML_TEMPLATE.format(
-            body_html = self.body_html,
-            head_html = self.head_html
-        )
+        # Return the cached html value if the trait is specified directly
+        if len(self._html) > 0:
+            return self._html
+
+        # Else, read from the html file if it is specified...
+        if len(self.html_file) > 0:
+            with open(self.html_file) as f:
+                html = f.read()
+
+        # ...otherwise, create the template out of body and head htmls
+        else:
+            html = DOCUMENT_HTML_TEMPLATE.format(
+                body_html = self.body_html,
+                head_html = self.head_html
+            )
 
         return html
+
+    def _set_html(self, html):
+        self._html = html
 
     def show(self, **context):
         """ Create and show a view of the given context. """
