@@ -61,7 +61,7 @@ class View(HasTraits):
     #: 
     #: The order of precedence in determining its value is:
     #:  1. Directly specified `html` trait
-    #:  2. Read the contents of the file specified by `html_file` trait
+    #:  2. Read the contents of the file specified by the `html_file` trait
     #:  3. Create the jigna template out of specified `body_html` and `head_html`
     #:     traits
     html = Property(Str)
