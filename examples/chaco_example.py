@@ -1,6 +1,6 @@
 """
 This example shows how to embed a generic QWidget inside Jigna web page using 
-the object tag.
+the object tag by embedding a Chaco plot.
 """
 
 #### Imports ##################################################################
@@ -41,7 +41,7 @@ class LinePlot(HasTraits):
         from traitsui.api import View, Item
         from enable.api import ComponentEditor
 
-        view = View(Item('plot', editor=ComponentEditor()))
+        view = View(Item('plot', editor=ComponentEditor(), show_label=False))
         ui = self.edit_traits(view=view, parent=QtGui.QWidget(), kind='subpanel')
 
         return ui.control
@@ -56,7 +56,8 @@ body_html = """
       Plot:<br>
 
       <object type="application/x-qwidget"
-              widget-factory="model.create_plot_widget">
+               widget-factory="model.create_plot_widget" 
+               width="500" height="400">
       </object>
     </div>
 """
