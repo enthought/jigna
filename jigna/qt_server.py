@@ -13,11 +13,11 @@
 import json
 
 # Enthought library.
-from traits.api import Any, Str
+from traits.api import Any, Str, Instance
+from pyface.qt import QtWebKit
 
 # Jigna libary.
 from jigna.server import Bridge, Server
-
 
 class QtBridge(Bridge):
     """ Qt (via QWebkit) bridge implementation. """
@@ -64,6 +64,50 @@ class QtServer(Server):
 
         widget.create()
 
+        self._enable_qwidget_embedding(widget)
+
         widget.load_html(self.html, self.base_url)
+
+    #### Private protocol #####################################################
+    
+    _factory = Instance('QtWebPluginFactory')
+
+    def _enable_qwidget_embedding(self, widget):
+        """ Allow generic qwidgets to be embedded in the generated QWebView.
+        """
+        global_settings = QtWebKit.QWebSettings.globalSettings()
+        global_settings.setAttribute(QtWebKit.QWebSettings.PluginsEnabled, True)
+
+        self._factory = QtWebPluginFactory(context=self.context)
+        widget.control.page().setPluginFactory(self._factory)
+
+
+class QtWebPluginFactory(QtWebKit.QWebPluginFactory):
+
+    MIME_TYPE = 'application/x-qwidget'
+
+    def __init__(self, context):
+        self.context = context
+        super(self.__class__, self).__init__()
+
+    def plugins(self):
+        plugin = QtWebKit.QWebPluginFactory.Plugin()
+        plugin.name = 'QWidget'
+        mimeType = QtWebKit.QWebPluginFactory.MimeType()
+        mimeType.name = self.MIME_TYPE
+        plugin.mimeTypes = [mimeType]
+
+        return [plugin]
+
+    def create(self, mimeType, url, argNames, argVals):
+        """ Return the QWidget to be embedded.
+        """
+        if mimeType != self.MIME_TYPE:
+            return
+
+        args = dict(zip(argNames, argVals))
+        factory = eval(args.get('widget-factory'), self.context)
+        
+        return factory()
 
 #### EOF ######################################################################
