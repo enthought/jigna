@@ -30,16 +30,16 @@ class Person(HasTraits):
 
 body_html = """
     <div>
-         Name: {{model.name}}<br>
-         Age:  {{model.age}}
+         Name: {{person.name}}<br>
+         Age:  {{person.age}}
 
-         <button ng-click="model.grow_old_async()">Grow old</button><br>
+         <button ng-click="person.grow_old_async()">Grow old</button><br>
 
-         Professional status: {{model.status || 'Working'}}
+         Professional status: {{person.status || 'Working'}}
 
          <script type='text/javascript'>
-            jigna.event_target.addListener('event_trait_fired', function(event){
-                event.obj[event.attribute_name] = event.data;
+            jigna.addListener('person.status', function(event){
+                jigna.models.person['status'] = event.data;
             })
         </script>
     </div>
@@ -52,7 +52,7 @@ person_view = View(body_html=body_html)
 def main():
     fred = Person(name='Fred')
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    person_view.show(model=fred)
+    person_view.show(person=fred)
     app.exec_()
 
 if __name__ == "__main__":

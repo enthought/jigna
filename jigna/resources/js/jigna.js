@@ -11,40 +11,53 @@ EventTarget.prototype = {
 
     constructor: EventTarget,
 
-    addListener: function(type, listener, thisArg){
-        if (typeof this._listeners[type] == "undefined"){
-            this._listeners[type] = [];
+    addListener: function(obj, event_name, listener, thisArg){
+        var id = obj.__id__;
+        if (this._listeners[id] === undefined){
+            this._listeners[id] = {};
         }
 
-        this._listeners[type].push({thisArg: thisArg || this, listener: listener});
+        if (this._listeners[id][event_name] === undefined) {
+            this._listeners[id][event_name] = [];
+        }
+
+        this._listeners[id][event_name].push({thisArg: thisArg, listener: listener});
     },
 
-    fire: function(event){
+    fire: function(obj, event){
+        var id = obj.__id__;
+
         if (typeof event == "string"){
-            event = { type: event };
+            event = { name: event };
         }
         if (!event.target){
-            event.target = this;
+            event.target = obj;
         }
 
-        if (!event.type){  //falsy
-            throw new Error("Event object missing 'type' property.");
+        if (!event.name){  //falsy
+            console.log('event:', event);
+            throw new Error("Event object missing 'name' property.");
         }
 
-        if (this._listeners[event.type] instanceof Array){
-            var listeners = this._listeners[event.type];
+        if (this._listeners[id] === undefined) {
+            return;
+        }
+
+        if (this._listeners[id][event.name] instanceof Array){
+            var listeners = this._listeners[id][event.name];
             for (var i=0, len=listeners.length; i < len; i++){
                 listener = listeners[i].listener;
                 thisArg = listeners[i].thisArg;
-                console.log('firing event, calling listener', event, thisArg);
                 listener.call(thisArg, event);
             }
         }
     },
 
-    removeListener: function(type, listener){
-        if (this._listeners[type] instanceof Array){
-            var listeners = this._listeners[type];
+    removeListener: function(obj, event_name, listener){
+        var id = obj.__id__;
+
+        if (this._listeners[id][event_name] instanceof Array){
+            var listeners = this._listeners[id][event_name];
             for (var i=0, len=listeners.length; i < len; i++){
                 if (listeners[i] === listener){
                     listeners.splice(i, 1);
@@ -137,12 +150,10 @@ function SubArray() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Namespace for all Jigna-related objects.
-var jigna = {
-    models : {},
-    event_target : new EventTarget()
-};
+var jigna = new EventTarget();
 
 jigna.initialize = function() {
+    this.models = {};
     // This is where all the work is done!
     this.client = new jigna.Client();
 };
@@ -175,7 +186,7 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
 
     var future_id = this._qt_bridge.handle_request_async(jsonized_request);
 
-    jigna.event_target.addListener(
+    jigna.addListener(
         '_future_updated',
         function(event){
             console.log("future updated", event, future_id);
@@ -256,36 +267,16 @@ jigna.Client = function() {
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
-    // Add event handler for '_object_changed' and '_event_fired' events
-    jigna.event_target.addListener(
-        '_object_changed',
-        this._on_object_changed,
-        this
-    );
-    jigna.event_target.addListener(
-        '_event_trait_fired',
-        this._on_event_trait_fired,
-        this
-    );
-    jigna.event_target.addListener(
-        '_context_updated',
-        this._on_context_updated,
-        this
-    );
-
-    // Fire a '_context_updated' event to setup the initial context.
-    jigna.event_target.fire({
-        type: '_context_updated',
-        data: this.get_context(),
-    });
-
+    // Add all of the models being edited.
+    this._add_models(this.get_context());
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var event = JSON.parse(jsonized_event);
 
-    jigna.event_target.fire(event);
+    var obj = this._id_to_proxy_map[event.obj];
+    jigna.fire(obj, event);
 };
 
 jigna.Client.prototype.send_request = function(request) {
@@ -535,41 +526,6 @@ jigna.Client.prototype._unmarshal_all = function(objs) {
     return objs;
 };
 
-jigna.Client.prototype._on_object_changed = function(event) {
-    this._invalidate_cached_attribute(event.obj, event.attribute_name);
-
-    // fixme: This smells... It is used when we have a list of instances but it
-    // blows away caching advantages. Can we make it smarter by managing the
-    // details of a TraitListEvent?
-    this._create_proxy(event.new_obj.type, event.new_obj.value);
-
-    jigna.event_target.fire({
-        type: 'object_changed'
-    });
-};
-
-jigna.Client.prototype._on_event_trait_fired = function(event) {
-    obj_proxy = this._id_to_proxy_map[event.obj];
-    data_proxy = this._create_proxy(event.data.type, event.data.value);
-
-    jigna.event_target.fire({
-        type: 'event_trait_fired',
-        obj: obj_proxy,
-        attribute_name: event.attribute_name,
-        data: data_proxy,
-    });
-};
-
-jigna.Client.prototype._on_context_updated = function(event) {
-    this._add_models(event.data);
-
-    jigna.event_target.fire({
-        type: 'context_updated',
-        data: event.data,
-    });
-};
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // ProxyFactory
 ///////////////////////////////////////////////////////////////////////////////
@@ -670,6 +626,41 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 
     descriptor = {enumerable:true, get:get, set:set};
     Object.defineProperty(proxy, attribute_name, descriptor);
+
+    jigna.addListener(proxy, attribute_name, this._on_instance_attribute_change, this);
+};
+
+jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
+    var descriptor, set;
+
+    set = function(value) {
+        this.__cache__[event_name] = value;
+        this.__client__.set_instance_attribute(
+            this.__id__, event_name, value
+        );
+    };
+
+    descriptor = {enumerable:false, set:set};
+    Object.defineProperty(proxy, event_name, descriptor);
+
+    jigna.addListener(proxy, event_name, this._on_instance_attribute_change, this);
+};
+
+jigna.ProxyFactory.prototype._on_instance_attribute_change = function(event){
+    console.log("called _on_instance_attribute_change:", event);
+    // fixme: accessing private variable of client object
+    var proxy = this._client._id_to_proxy_map[event.obj];
+    
+    // invalidate cache
+    proxy.__cache__[event.name] = undefined;
+
+    // fixme: This smells... It is used when we have a list of instances but it
+    // blows away caching advantages. Can we make it smarter by managing the
+    // details of a TraitListEvent?
+    this._client._create_proxy(event.new_obj.type, event.new_obj.value);
+
+    jigna.fire(jigna, '$digest');
+
 };
 
 jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
@@ -693,6 +684,10 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     info = this._client.get_instance_info(id);
     for (index in info.attribute_names) {
         this._add_instance_attribute(proxy, info.attribute_names[index]);
+    }
+
+    for (index in info.event_names) {
+        this._add_instance_event(proxy, info.event_names[index]);
     }
 
     for (index in info.method_names) {
@@ -752,9 +747,9 @@ jigna.ListProxy = function(type, id, client) {
     Object.defineProperty(arr, '__id__',     {value : id});
     Object.defineProperty(arr, '__client__', {value : client});
     Object.defineProperty(arr, '__cache__',  {value : {}});
-
-    return arr
-}
+    
+    return arr;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Auto-initialization
@@ -769,43 +764,18 @@ jigna.initialize();
 var module = angular.module('jigna', []);
 
 // Add initialization function on module run time
-module.run(function($rootScope, $compile){
-
-    var update_scope_with_models = function(context) {
-        for (var model_name in context) {
-            $rootScope[model_name] = jigna.models[model_name];
-        }
+module.run(function($rootScope){
+    // Add all jigna models as scope variables
+    for (var model_name in jigna.models) {
+        $rootScope[model_name] = jigna.models[model_name];
     }
 
-    // Initialize the scope with the jigna models.
-    update_scope_with_models(jigna.models);
-
     // Listen to object change events in jigna
-    jigna.event_target.addListener('object_changed', function() {
+    jigna.addListener(jigna, '$digest', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }
-    }, false);
-
-    // Listen to 'context_updated' events in jigna and update the scope.
-    jigna.event_target.addListener('context_updated', function(event) {
-        update_scope_with_models(event.data);
-    }, false);
-
-    // A method that allows us to recompile a part of the document after
-    // DOM modifications.  For example one could have:
-    //
-    // var new_elem = $("<input ng-model='model.name'>");
-    // $("#some-element").append(new_elem);
-    // scope.recompile(new_elem);
-    //
-    $rootScope.recompile = function(element) {
-        $compile(element)($rootScope);
-        if ($rootScope.$$phase === null){
-            $rootScope.$digest();
-        }
-    };
-
-})
+    });
+});
 
 // EOF ////////////////////////////////////////////////////////////////////////

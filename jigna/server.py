@@ -43,17 +43,6 @@ class Server(HasTraits):
         self._register_objects(self.context)
         return
 
-    def _context_items_changed(self, dict_event):
-        context = dict(dict_event.added)
-        context.update(dict_event.changed)
-
-        self._register_objects(context)
-
-        data = self._get_context_data_for_event(context)
-        event = dict(type='_context_updated',
-                     data=data)
-        self.send_event(event)
-
     #: The html to serve.
     html = Str
 
@@ -121,7 +110,11 @@ class Server(HasTraits):
     def get_context(self, request):
         """ Get the models and model names in the context. """
 
-        return self._get_context_data_for_event(self.context)
+        context_ids = {}
+        for obj_name, obj in self.context.items():
+            context_ids[obj_name] = str(id(obj))
+
+        return context_ids
 
     #### Instances ####
 
@@ -155,6 +148,7 @@ class Server(HasTraits):
         info = dict(
             type_name        = type(obj).__module__ + '.' + type(obj).__name__,
             attribute_names  = self._get_attribute_names(obj),
+            event_names      = self._get_event_names(obj),
             method_names     = self._get_public_method_names(type(obj))
         )
 
@@ -247,15 +241,21 @@ class Server(HasTraits):
 
         return attribute_names
 
-    def _get_context_data_for_event(self, context):
-        """Given a context dictionary, return data for the event.
+    def _get_event_names(self, obj):
+        """ Get the names of all the attributes on an object.
+
+        Return a list of strings.
+
         """
 
-        context_ids = {}
-        for obj_name, obj in context.items():
-            context_ids[obj_name] = str(id(obj))
+        event_names = []
 
-        return context_ids
+        if isinstance(obj, HasTraits):
+            for trait_name in obj.class_trait_names():
+                if obj.trait(trait_name).is_trait_type(Event):
+                    event_names.append(trait_name)
+        
+        return event_names
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
@@ -357,25 +357,15 @@ class Server(HasTraits):
             # fixme: intent is non-scalar or maybe container?
             if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
                 self._register_object(new)
-
-        if obj.trait(trait_name).is_trait_type(Event):
-            event = dict(
-                type           = '_event_trait_fired',
-                obj            = str(id(obj)),
-                attribute_name = trait_name,
-                data           = self._marshal(new)
-            )
-
-        else:
-            event = dict(
-                type           = '_object_changed',
-                obj            = str(id(obj)),
-                attribute_name = trait_name,
-                # fixme: This smells a bit, but marhsalling the new value gives us
-                # a type/value pair which we need on the client side to determine
-                # what (if any) proxy we need to create.
-                new_obj        = self._marshal(new)
-            )
+        
+        event = dict(
+            obj            = str(id(obj)),
+            name           = trait_name,
+            # fixme: This smells a bit, but marhsalling the new value gives us
+            # a type/value pair which we need on the client side to determine
+            # what (if any) proxy we need to create.
+            new_obj        = self._marshal(new)
+        )
 
         self.send_event(event)
 
