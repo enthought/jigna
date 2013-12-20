@@ -1,2 +1,2 @@
-PYNAME = 'session'
-APPNAME = 'jigna_app'
+from view import View
+from core.concurrent import Future

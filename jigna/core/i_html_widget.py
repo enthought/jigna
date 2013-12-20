@@ -90,13 +90,6 @@ class IHTMLWidget(IWidget):
     # The name of the Javascript object that will contain the registered
     # callbacks and properties.
     python_namespace = Str('python')
-
-    #### Advanced Python-Javascript interoperation ############################
-
-    # Provides advanced Python-Javascript interoperation. Any handlers defined
-    # here take precedence over the simplified API above. See
-    # ``WebAccessManager`` for documentation.
-    access_manager = Any
     
     ###########################################################################
     # 'IHTMLWidget' interface.
