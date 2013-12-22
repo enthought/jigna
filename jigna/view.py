@@ -44,7 +44,7 @@ class View(HasTraits):
 
     #### 'View' protocol ######################################################
 
-    #: The base url for all resources (relative urls are resolved corresponding 
+    #: The base url for all resources (relative urls are resolved corresponding
     #: to the current working directory).
     base_url = Str
 
@@ -58,7 +58,7 @@ class View(HasTraits):
     html_file = Str
 
     #: The HTML for the entire document.
-    #: 
+    #:
     #: The order of precedence in determining its value is:
     #:  1. Directly specified `html` trait
     #:  2. Read the contents of the file specified by the `html_file` trait
@@ -134,6 +134,12 @@ class View(HasTraits):
         self._server.serve()
 
         return
+
+    def update_context(self, **context):
+        """Update the server's context.
+        """
+        self._server.context.update(context)
+
 
     #### Private protocol #####################################################
 

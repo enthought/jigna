@@ -60,9 +60,11 @@ class TestJignaQt(unittest.TestCase):
         GUI.process_events()
         cls.person_view = person_view
         cls.fred = fred
+        cls.app = app
 
     def setUp(self):
         cls = self.__class__
+        self.app = cls.app
         self.person_view = cls.person_view
         self.bridge = self.person_view._server._bridge
         self.fred = cls.fred
@@ -171,7 +173,6 @@ class TestJignaQt(unittest.TestCase):
         )
         self.assertEqual(fred.fruits, ['apple', 'banana', 'peach'])
 
-
     def test_callable(self):
         fred = self.fred
         wilma = Person(name='Wilma', age=40)
@@ -186,6 +187,15 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.called_with, [1,2])
         self.execute_js("jigna.models.model.method(jigna.models.model.spouse)")
         self.assertEqual(fred.called_with, wilma)
+
+    def test_update_context_injects_model_in_js(self):
+        self.fred.name = 'Fred'
+        new_model = Person(name='New', age=10)
+        self.assertJSEqual("jigna.models.model.name", 'Fred')
+        self.assertJSEqual("jigna.models.new_model", None)
+        self.person_view.update_context(new_model=new_model)
+        self.assertJSEqual("jigna.models.new_model.name", new_model.name)
+        self.assertJSEqual("$(document.body).scope().new_model.name", new_model.name)
 
 if __name__ == "__main__":
     unittest.main()

@@ -43,6 +43,19 @@ class Server(HasTraits):
         self._register_objects(self.context)
         return
 
+    def _context_items_changed(self, dict_event):
+        self._register_objects(dict_event.added)
+        self._register_objects(dict_event.changed)
+
+        context_ids = {}
+        for ctx in (dict_event.added, dict_event.changed):
+            for obj_name, obj in ctx.iteritems():
+                context_ids[obj_name] = str(id(obj))
+
+        event = dict(type='_context_updated',
+                     data=context_ids)
+        self.send_event(event)
+
     #: The html to serve.
     html = Str
 
@@ -74,15 +87,15 @@ class Server(HasTraits):
 
     def handle_request_async(self, jsonized_request):
         """ Handle a jsonized request from a client. """
-        
+
         from jigna.core.concurrent import Future
 
         future = Future(self.handle_request, args=(jsonized_request,),
                         dispatch=self.trait_change_dispatch)
         future_id = self._marshal(future)['value']
-        
+
         def _on_done(result):
-            event = dict(type='_future_updated', 
+            event = dict(type='_future_updated',
                          future_id=future_id,
                          status='done',
                          result=result)
@@ -93,7 +106,7 @@ class Server(HasTraits):
             import traceback
             type, value, tb = error
             error_msg = '\n'.join(traceback.format_tb(tb))
-            event = dict(type='_future_updated', 
+            event = dict(type='_future_updated',
                          future_id=future_id,
                          status='error',
                          result=error_msg)
@@ -340,7 +353,7 @@ class Server(HasTraits):
             # fixme: intent is non-scalar or maybe container?
             if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
                 self._register_object(new)
-        
+
         if obj.trait(trait_name).is_trait_type(Event):
             event = dict(
                 type           = '_event_trait_fired',
