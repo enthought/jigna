@@ -187,11 +187,12 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
     var future_id = this._qt_bridge.handle_request_async(jsonized_request);
 
     jigna.addListener(
+
         '_future_updated',
         function(event){
             console.log("future updated", event, future_id);
             if (event.future_id != future_id) {
-                return
+                return;
             }
 
             else {
@@ -204,12 +205,12 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
                 }
 
                 // remove the event listener
-                this.removeListener('future_updated', arguments.callee)
+                this.removeListener('future_updated', arguments.callee);
             }
         }
-    )
+    );
 
-    return deferred
+    return deferred;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -563,7 +564,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
     };
 
     descriptor = {enumerable:true, get:get, set:set};
-    console.log("defining index property for index:", index)
+    console.log("defining index property for index:", index);
     Object.defineProperty(proxy, index, descriptor);
 };
 
