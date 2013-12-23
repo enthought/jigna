@@ -56,7 +56,7 @@ EventTarget.prototype = {
 };
 
 // SubArray.js ////////////////////////////////////////////////////////////////
-// (C) Copyright Juriy Zaytsev 
+// (C) Copyright Juriy Zaytsev
 // Source: 1. https://github.com/kangax/array_subclassing
 //         2. http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-
 //            to-subclass-an-array/
@@ -74,14 +74,14 @@ var makeSubArray = (function(){
 
   function getMaxIndexProperty(object) {
     var maxIndex = -1, isValidProperty;
-    
+
     for (var prop in object) {
-      
+
       isValidProperty = (
-        String(ToUint32(prop)) === prop && 
-        ToUint32(prop) !== MAX_SIGNED_INT_VALUE && 
+        String(ToUint32(prop)) === prop &&
+        ToUint32(prop) !== MAX_SIGNED_INT_VALUE &&
         hasOwnProperty.call(object, prop));
-        
+
       if (isValidProperty && prop > maxIndex) {
         maxIndex = prop;
       }
@@ -253,16 +253,23 @@ jigna.Client = function() {
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
-    // Add all of the models being edited.
-    this._add_models(this.get_context());
-
     // Add event handler for '_object_changed' and '_event_fired' events
     jigna.event_target.addListener('_object_changed',
                                    this._on_object_changed,
-                                   this)
+                                   this);
     jigna.event_target.addListener('_event_trait_fired',
                                    this._on_event_trait_fired,
-                                   this)
+                                   this);
+    jigna.event_target.addListener('_context_updated',
+                                   this._on_context_updated,
+                                   this);
+
+    // Fire a '_context_updated' event to setup the initial context.
+    jigna.event_target.fire({
+        type: '_context_updated',
+        data: this.get_context(),
+    });
+
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -535,14 +542,24 @@ jigna.Client.prototype._on_object_changed = function(event) {
 jigna.Client.prototype._on_event_trait_fired = function(event) {
     obj_proxy = this._id_to_proxy_map[event.obj];
     data_proxy = this._create_proxy(event.data.type, event.data.value);
-    
+
     jigna.event_target.fire({
         type: 'event_trait_fired',
         obj: obj_proxy,
         attribute_name: event.attribute_name,
         data: data_proxy,
-    })
+    });
 };
+
+jigna.Client.prototype._on_context_updated = function(event) {
+    this._add_models(event.data);
+
+    jigna.event_target.fire({
+        type: 'context_updated',
+        data: event.data,
+    });
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // ProxyFactory
@@ -712,13 +729,13 @@ jigna.Proxy = function(type, id, client) {
     Object.defineProperty(this, '__cache__',  {value : {}});
 };
 
-// ListProxy is handled separately because it has to do special handling 
+// ListProxy is handled separately because it has to do special handling
 // to behave as regular Javascript `Array` objects
 // See "Wrappers. Prototype chain injection" section in this article:
 // http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
 
 jigna.ListProxy = function(type, id, client) {
-    
+
     var arr = new SubArray();
 
     // fixme: repetition of property definition
@@ -726,7 +743,7 @@ jigna.ListProxy = function(type, id, client) {
     Object.defineProperty(arr, '__id__',     {value : id});
     Object.defineProperty(arr, '__client__', {value : client});
     Object.defineProperty(arr, '__cache__',  {value : {}});
-    
+
     return arr
 }
 
@@ -744,17 +761,20 @@ var module = angular.module('jigna', []);
 
 // Add initialization function on module run time
 module.run(function($rootScope){
-    // Add all jigna models as scope variables
-    for (var model_name in jigna.models) {
-        $rootScope[model_name] = jigna.models[model_name];
-    }
-
     // Listen to object change events in jigna
     jigna.event_target.addListener('object_changed', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }
-    }, false)
+    }, false);
+
+    // Listen to 'context_updated' events in jigna and update the scope.
+    jigna.event_target.addListener('context_updated', function(event) {
+        for (var model_name in event.data) {
+            $rootScope[model_name] = jigna.models[model_name];
+        }
+    }, false);
+
 })
 
 // EOF ////////////////////////////////////////////////////////////////////////

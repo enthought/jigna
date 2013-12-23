@@ -43,6 +43,17 @@ class Server(HasTraits):
         self._register_objects(self.context)
         return
 
+    def _context_items_changed(self, dict_event):
+        context = dict(dict_event.added)
+        context.update(dict_event.changed)
+
+        self._register_objects(context)
+
+        data = self._get_context_data_for_event(context)
+        event = dict(type='_context_updated',
+                     data=data)
+        self.send_event(event)
+
     #: The html to serve.
     html = Str
 
@@ -74,15 +85,15 @@ class Server(HasTraits):
 
     def handle_request_async(self, jsonized_request):
         """ Handle a jsonized request from a client. """
-        
+
         from jigna.core.concurrent import Future
 
         future = Future(self.handle_request, args=(jsonized_request,),
                         dispatch=self.trait_change_dispatch)
         future_id = self._marshal(future)['value']
-        
+
         def _on_done(result):
-            event = dict(type='_future_updated', 
+            event = dict(type='_future_updated',
                          future_id=future_id,
                          status='done',
                          result=result)
@@ -93,7 +104,7 @@ class Server(HasTraits):
             import traceback
             type, value, tb = error
             error_msg = '\n'.join(traceback.format_tb(tb))
-            event = dict(type='_future_updated', 
+            event = dict(type='_future_updated',
                          future_id=future_id,
                          status='error',
                          result=error_msg)
@@ -110,11 +121,7 @@ class Server(HasTraits):
     def get_context(self, request):
         """ Get the models and model names in the context. """
 
-        context_ids = {}
-        for obj_name, obj in self.context.items():
-            context_ids[obj_name] = str(id(obj))
-
-        return context_ids
+        return self._get_context_data_for_event(self.context)
 
     #### Instances ####
 
@@ -240,6 +247,16 @@ class Server(HasTraits):
 
         return attribute_names
 
+    def _get_context_data_for_event(self, context):
+        """Given a context dictionary, return data for the event.
+        """
+
+        context_ids = {}
+        for obj_name, obj in context.items():
+            context_ids[obj_name] = str(id(obj))
+
+        return context_ids
+
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
 
@@ -340,7 +357,7 @@ class Server(HasTraits):
             # fixme: intent is non-scalar or maybe container?
             if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
                 self._register_object(new)
-        
+
         if obj.trait(trait_name).is_trait_type(Event):
             event = dict(
                 type           = '_event_trait_fired',
