@@ -254,15 +254,21 @@ jigna.Client = function() {
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
     // Add event handler for '_object_changed' and '_event_fired' events
-    jigna.event_target.addListener('_object_changed',
-                                   this._on_object_changed,
-                                   this);
-    jigna.event_target.addListener('_event_trait_fired',
-                                   this._on_event_trait_fired,
-                                   this);
-    jigna.event_target.addListener('_context_updated',
-                                   this._on_context_updated,
-                                   this);
+    jigna.event_target.addListener(
+        '_object_changed',
+        this._on_object_changed,
+        this
+    );
+    jigna.event_target.addListener(
+        '_event_trait_fired',
+        this._on_event_trait_fired,
+        this
+    );
+    jigna.event_target.addListener(
+        '_context_updated',
+        this._on_context_updated,
+        this
+    );
 
     // Fire a '_context_updated' event to setup the initial context.
     jigna.event_target.fire({
