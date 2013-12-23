@@ -244,9 +244,6 @@ jigna.Client = function() {
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
-    // Add all of the models being edited.
-    this._add_models(this.get_context());
-
     // Add event handler for '_object_changed' and '_event_fired' events
     jigna.event_target.addListener('_object_changed',
                                    this._on_object_changed,
@@ -257,6 +254,13 @@ jigna.Client = function() {
     jigna.event_target.addListener('_context_updated',
                                    this._on_context_updated,
                                    this);
+
+    // Fire a '_context_updated' event to setup the initial context.
+    jigna.event_target.fire({
+        type: '_context_updated',
+        data: this.get_context(),
+    });
+
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -748,11 +752,6 @@ var module = angular.module('jigna', []);
 
 // Add initialization function on module run time
 module.run(function($rootScope){
-    // Add all jigna models as scope variables
-    for (var model_name in jigna.models) {
-        $rootScope[model_name] = jigna.models[model_name];
-    }
-
     // Listen to object change events in jigna
     jigna.event_target.addListener('object_changed', function() {
         if ($rootScope.$$phase === null){
@@ -760,6 +759,7 @@ module.run(function($rootScope){
         }
     }, false);
 
+    // Listen to 'context_updated' events in jigna and update the scope.
     jigna.event_target.addListener('context_updated', function(event) {
         for (var model_name in event.data) {
             $rootScope[model_name] = jigna.models[model_name];
