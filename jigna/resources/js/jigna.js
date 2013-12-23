@@ -541,12 +541,6 @@ jigna.Client.prototype._on_event_trait_fired = function(event) {
 jigna.Client.prototype._on_context_updated = function(event) {
     this._add_models(event.data);
 
-    // fixme: this angular dependence should go elsewhere.
-    var scope = $(document.body).scope();
-    for (var model_name in event.data) {
-        scope[model_name] = jigna.models[model_name];
-    }
-
     jigna.event_target.fire({
         type: 'context_updated',
         data: event.data,
@@ -764,7 +758,14 @@ module.run(function($rootScope){
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }
-    }, false)
+    }, false);
+
+    jigna.event_target.addListener('context_updated', function(event) {
+        for (var model_name in event.data) {
+            $rootScope[model_name] = jigna.models[model_name];
+        }
+    }, false);
+
 })
 
 // EOF ////////////////////////////////////////////////////////////////////////
