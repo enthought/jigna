@@ -766,7 +766,7 @@ jigna.initialize();
 var module = angular.module('jigna', []);
 
 // Add initialization function on module run time
-module.run(function($rootScope){
+module.run(function($rootScope, $compile){
 
     var update_scope_with_models = function(context) {
         for (var model_name in context) {
@@ -788,6 +788,20 @@ module.run(function($rootScope){
     jigna.event_target.addListener('context_updated', function(event) {
         update_scope_with_models(event.data);
     }, false);
+
+    // A method that allows us to recompile a part of the document after
+    // DOM modifications.  For example one could have:
+    //
+    // var new_elem = $("<input ng-model='model.name'>")
+    // $("#some-element").append(new_elem)
+    // jigna.recompile(new_elem)
+    //
+    jigna.recompile = function(element) {
+        $compile(element)($rootScope);
+        if ($rootScope.$$phase === null){
+            $rootScope.$digest();
+        }
+    };
 
 })
 
