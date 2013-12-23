@@ -44,16 +44,14 @@ class Server(HasTraits):
         return
 
     def _context_items_changed(self, dict_event):
-        self._register_objects(dict_event.added)
-        self._register_objects(dict_event.changed)
+        context = dict(dict_event.added)
+        context.update(dict_event.changed)
 
-        context_ids = {}
-        for ctx in (dict_event.added, dict_event.changed):
-            for obj_name, obj in ctx.iteritems():
-                context_ids[obj_name] = str(id(obj))
+        self._register_objects(context)
 
+        data = self._get_context_data_for_event(context)
         event = dict(type='_context_updated',
-                     data=context_ids)
+                     data=data)
         self.send_event(event)
 
     #: The html to serve.
@@ -123,11 +121,7 @@ class Server(HasTraits):
     def get_context(self, request):
         """ Get the models and model names in the context. """
 
-        context_ids = {}
-        for obj_name, obj in self.context.items():
-            context_ids[obj_name] = str(id(obj))
-
-        return context_ids
+        return self._get_context_data_for_event(self.context)
 
     #### Instances ####
 
@@ -252,6 +246,16 @@ class Server(HasTraits):
             ]
 
         return attribute_names
+
+    def _get_context_data_for_event(self, context):
+        """Given a context dictionary, return data for the event.
+        """
+
+        context_ids = {}
+        for obj_name, obj in context.items():
+            context_ids[obj_name] = str(id(obj))
+
+        return context_ids
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
