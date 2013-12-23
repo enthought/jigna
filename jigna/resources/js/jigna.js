@@ -767,6 +767,16 @@ var module = angular.module('jigna', []);
 
 // Add initialization function on module run time
 module.run(function($rootScope){
+
+    var update_scope_with_models = function(context) {
+        for (var model_name in context) {
+            $rootScope[model_name] = jigna.models[model_name];
+        }
+    }
+
+    // Initialize the scope with the jigna models.
+    update_scope_with_models(jigna.models);
+
     // Listen to object change events in jigna
     jigna.event_target.addListener('object_changed', function() {
         if ($rootScope.$$phase === null){
@@ -776,9 +786,7 @@ module.run(function($rootScope){
 
     // Listen to 'context_updated' events in jigna and update the scope.
     jigna.event_target.addListener('context_updated', function(event) {
-        for (var model_name in event.data) {
-            $rootScope[model_name] = jigna.models[model_name];
-        }
+        update_scope_with_models(event.data);
     }, false);
 
 })
