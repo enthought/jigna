@@ -230,10 +230,13 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
 
     $.ajax(
         {
-            url     : this._server_url + '/_jigna',
+            url     : '/_jigna',
             type    : 'GET',
             data    : {'data': jsonized_request},
             success : function(result) {jsonized_response = result;},
+            error   : function(status, error) {
+                          console.warning("Error: " + error);
+                      },
             async   : false
         }
     );
