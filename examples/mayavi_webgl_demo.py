@@ -3,10 +3,38 @@ import numpy as np
 from mayavi import mlab
 from mayavi.core.api import PipelineBase
 from traits.api import HasTraits, Instance, Int, Str
+from tvtk.api import tvtk
 
 mlab.options.offscreen = True
 mlab.options.backend = 'test'
 
+def dataset_to_string(dataset, **kwargs):
+    """Given a TVTK `dataset` this writes the `dataset` to an old style VTK
+    file.
+
+    Any additional keyword arguments are passed to the writer used.
+    """
+
+    err_msg = "Can only write tvtk.DataSet instances "\
+              "'got %s instead"%(dataset.__class__.__name__)
+    assert isinstance(dataset, tvtk.DataSet), err_msg
+
+    # Mapping to determine appropriate extension and writer.
+    d2r = {'vtkImageData': ('.vti', tvtk.StructuredPointsWriter),
+           'vtkRectilinearGrid': ('.vtr', tvtk.RectilinearGridWriter),
+           'vtkStructuredGrid': ('.vts', tvtk.StructuredGridWriter),
+           'vtkPolyData': ('.vtp', tvtk.PolyDataWriter),
+           'vtkUnstructuredGrid': ('.vtu', tvtk.UnstructuredGridWriter)
+           }
+
+    for type in d2r:
+        if dataset.is_a(type):
+            datatype = d2r[type]
+            break
+
+    writer = datatype[1](write_to_output_string=True, input=dataset, **kwargs)
+    writer.write()
+    return writer.output_string
 
 def get_point_idx_from_poly(dataset):
     """Given the dataset, this gets the polygon connectivity array
@@ -19,8 +47,15 @@ def get_point_idx_from_poly(dataset):
         choice[start-1::3] = np.arange(start, npoly*4, step=4)
     return conn[choice]
 
+def get_colors(dataset, module_manager):
+    scm = module_manager.scalar_lut_manager
+    scalars = dataset.point_data.scalars
+    return scm.lut.map_scalars(scalars, 0, -1).to_array()/255.
+
 
 class MeshData(HasTraits):
+    # Optional data from a file that can be used.
+    filedata = Str('')
     # The points for the mesh, this is a json string of a list.
     points = Str
     # The normals for the mesh, this is a json string of a list.
@@ -32,14 +67,21 @@ class MeshData(HasTraits):
     type = Str("POLYGONS")
 
     @classmethod
+    def from_file(cls, dataset, module_manager):
+        filedata = dataset_to_string(dataset)
+        point_idx = get_point_idx_from_poly(dataset)
+        colors = get_colors(dataset, module_manager)
+        colors_xtk = colors[point_idx]
+        result = MeshData(filedata=filedata,
+                          colors=json.dumps(colors_xtk.tolist()))
+        return result
+
+    @classmethod
     def from_data(cls, dataset, module_manager):
         points = dataset.points.to_array()
         normals = dataset.point_data.normals.to_array()
-        scm = module_manager.scalar_lut_manager
-        scalars = dataset.point_data.scalars
-        colors = scm.lut.map_scalars(scalars, 0, -1).to_array()/255.
+        colors = get_colors(dataset, module_manager)
         point_idx = get_point_idx_from_poly(dataset)
-
         result = MeshData()
         data = {'points': points, 'normals': normals, 'colors': colors}
         for attr, array in data.iteritems():
@@ -83,8 +125,8 @@ class Model3D(HasTraits):
             self._setup_plot_output()
 
     def _setup_plot_output(self):
-        self.plot_output = MeshData.from_data(self.plot.contour.outputs[0],
-                                                self.plot.module_manager)
+        self.plot_output = MeshData.from_file(self.plot.contour.outputs[0],
+                                              self.plot.module_manager)
 
 
 body_html = """
@@ -93,11 +135,31 @@ body_html = """
 window.on_data_changed = function(new_data) {
     var mesh = window.mesh;
     mesh.file = null;
-    mesh.points = window.array_to_triplets(new_data.points);
-    mesh.normals = window.array_to_triplets(new_data.normals);
-    mesh.colors = window.array_to_triplets(new_data.colors);
-    mesh.type = new_data.type;
+    if (new_data.filedata.length > 0) {
+        var arr = window.strtobuf(new_data.filedata);
+        mesh.filedata = arr;
+        var p = new X.parserVTK();
+        p.parse(mesh, mesh, arr, null);
+    }
+    else {
+        mesh.points = window.array_to_triplets(new_data.points);
+        if (new_data.normals.length > 0) {
+            mesh.normals = window.array_to_triplets(new_data.normals);
+        }
+        mesh.type = new_data.type;
+    }
+    if (new_data.colors.length > 0) {
+        mesh.colors = window.array_to_triplets(new_data.colors);
+    }
     mesh.modified();
+};
+
+window.strtobuf = function (str) {
+    var buf = new Uint8Array(str.length);
+    for (var i=0; i<str.length; i++) {
+        buf[i] = str.charCodeAt(i);
+    }
+    return buf;
 };
 
 window.array_to_triplets = function(json_data) {
