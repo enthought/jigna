@@ -795,11 +795,11 @@ module.run(function($rootScope, $compile){
     // A method that allows us to recompile a part of the document after
     // DOM modifications.  For example one could have:
     //
-    // var new_elem = $("<input ng-model='model.name'>")
-    // $("#some-element").append(new_elem)
-    // jigna.recompile(new_elem)
+    // var new_elem = $("<input ng-model='model.name'>");
+    // $("#some-element").append(new_elem);
+    // scope.recompile(new_elem);
     //
-    jigna.recompile = function(element) {
+    $rootScope.recompile = function(element) {
         $compile(element)($rootScope);
         if ($rootScope.$$phase === null){
             $rootScope.$digest();

@@ -44,7 +44,7 @@ class JignaNotebook(object):
                 }});
             }} finally {{
                 setTimeout(function() {{
-                    jigna.recompile($("#{div_id}"));
+                    $(document.body).scope().recompile($("#{div_id}"));
                 }}, 0);
             }}
             </script>
