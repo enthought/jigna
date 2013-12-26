@@ -1,57 +1,56 @@
-
+import json
 import numpy as np
 from mayavi import mlab
 from mayavi.core.api import PipelineBase
-from tvtk.api import tvtk
 from traits.api import HasTraits, Instance, Int, Str
 
 mlab.options.offscreen = True
 mlab.options.backend = 'test'
 
-def dataset_to_string(dataset, **kwargs):
-    """Given a TVTK `dataset` this writes the `dataset` to an old style VTK
-    file.
 
-    Any additional keyword arguments are passed to the writer used.
+def get_point_idx_from_poly(dataset):
+    """Given the dataset, this gets the polygon connectivity array
+    and generates the indices of the points in the polygon.
     """
-
-    err_msg = "Can only write tvtk.DataSet instances "\
-              "'got %s instead"%(dataset.__class__.__name__)
-    assert isinstance(dataset, tvtk.DataSet), err_msg
-
-    # Mapping to determine appropriate extension and writer.
-    d2r = {'vtkImageData': ('.vti', tvtk.StructuredPointsWriter),
-           'vtkRectilinearGrid': ('.vtr', tvtk.RectilinearGridWriter),
-           'vtkStructuredGrid': ('.vts', tvtk.StructuredGridWriter),
-           'vtkPolyData': ('.vtp', tvtk.PolyDataWriter),
-           'vtkUnstructuredGrid': ('.vtu', tvtk.UnstructuredGridWriter)
-           }
-
-    for type in d2r:
-        if dataset.is_a(type):
-            datatype = d2r[type]
-            break
-
-    writer = datatype[1](write_to_output_string=True, input=dataset, **kwargs)
-    writer.write()
-    return writer.output_string
+    conn = dataset.polys.to_array()
+    npoly = conn.size/4
+    choice = np.zeros(npoly*3, dtype=int)
+    for start in (1, 2, 3):
+        choice[start-1::3] = np.arange(start, npoly*4, step=4)
+    return conn[choice]
 
 
-def get_data1():
-    s = mlab.test_contour3d()
-    return s.contour.outputs[0]
+class MeshData(HasTraits):
+    # The points for the mesh, this is a json string of a list.
+    points = Str
+    # The normals for the mesh, this is a json string of a list.
+    normals = Str
+    # The colors to use for the points, again a json string.
+    colors = Str
 
+    # The type of the mesh, for now only polygons are supported.
+    type = Str("POLYGONS")
 
-def get_data():
-    #s = mlab.test_contour3d()
-    #return s.contour.outputs[0]
-    s = mlab.test_plot3d()
-    return s.module_manager.source.outputs[0]
+    @classmethod
+    def from_data(cls, dataset, module_manager):
+        points = dataset.points.to_array()
+        normals = dataset.point_data.normals.to_array()
+        scm = module_manager.scalar_lut_manager
+        scalars = dataset.point_data.scalars
+        colors = scm.lut.map_scalars(scalars, 0, -1).to_array()/255.
+        point_idx = get_point_idx_from_poly(dataset)
+
+        result = MeshData()
+        data = {'points': points, 'normals': normals, 'colors': colors}
+        for attr, array in data.iteritems():
+            arr_xtk = array[point_idx]
+            setattr(result, attr, json.dumps(arr_xtk.tolist()))
+        return result
 
 
 class Model3D(HasTraits):
     expression = Str("x*x*0.5 + y*y + z*z*2.0")
-    plot_output = Str
+    plot_output = Instance(MeshData)
     n_contour = Int(4)
 
     plot = Instance(PipelineBase)
@@ -76,62 +75,60 @@ class Model3D(HasTraits):
                 self.plot = mlab.contour3d(x, y, z, s, contours=self.n_contour)
             else:
                 self.plot.mlab_source.set(scalars=s)
-            self.plot_output = dataset_to_string(self.plot.contour.outputs[0])
+            self._setup_plot_output()
 
     def _n_contour_changed(self, value):
-        self.plot.contour.number_of_contours = value
-        self.plot_output = dataset_to_string(self.plot.contour.outputs[0])
+        if 0 < value < 20:
+            self.plot.contour.number_of_contours = value
+            self._setup_plot_output()
 
+    def _setup_plot_output(self):
+        self.plot_output = MeshData.from_data(self.plot.contour.outputs[0],
+                                                self.plot.module_manager)
 
 
 body_html = """
 <script type="text/javascript" src="http://get.goXTK.com/xtk.js"></script>
 <script>
 window.on_data_changed = function(new_data) {
-    var arr = window.strtobuf(new_data);
     var mesh = window.mesh;
     mesh.file = null;
-    mesh.filedata = arr;
-    mesh._filedata = arr;
-    var p = new X.parserVTK();
-    p.parse(mesh, mesh, arr, null);
+    mesh.points = window.array_to_triplets(new_data.points);
+    mesh.normals = window.array_to_triplets(new_data.normals);
+    mesh.colors = window.array_to_triplets(new_data.colors);
+    mesh.type = new_data.type;
     mesh.modified();
 };
 
-window.strtobuf = function (str) {
-    var buf = new Uint8Array(str.length);
-    for (var i=0; i<str.length; i++) {
-        buf[i] = str.charCodeAt(i);
+window.array_to_triplets = function(json_data) {
+    var data = JSON.parse(json_data);
+    var triplets = new X.triplets(4*3*data.length);
+    for (var i=0; i<data.length; i++) {
+        triplets.add(data[i][0], data[i][1], data[i][2]);
     }
-    return buf;
+    return triplets;
 };
 
-
 window.onload = function() {
-var r = new X.renderer3D();
-window.renderer = r;
-r.container = "3d-scene";
-r.init();
+    var r = new X.renderer3D();
+    window.renderer = r;
+    r.container = "3d-scene";
+    r.init();
 
-var mesh = new X.mesh();
-window.mesh = mesh;
-//mesh.file = 'foo.vtk';
-//mesh.filedata = jigna.models.model.plot_data;
+    var mesh = new X.mesh();
+    window.mesh = mesh;
 
-// add the object
-r.add(mesh);
+    r.add(mesh);
+    r.render();
 
-// .. and render it
-r.render();
+    window.on_data_changed(jigna.models.model.plot_output);
 
-window.on_data_changed(jigna.models.model.plot_output);
-
-$(document.body).scope().$watchCollection(
-    "[model.expression, model.n_contour]",
-    function (new_data) {
-        console.log("Updating plot.");
-        window.on_data_changed(jigna.models.model.plot_output);
-    });
+    $(document.body).scope().$watchCollection(
+        "[model.expression, model.n_contour]",
+        function (new_data) {
+            console.log("Updating plot.");
+            window.on_data_changed(jigna.models.model.plot_output);
+        });
 
 };
 
