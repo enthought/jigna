@@ -206,6 +206,7 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
 ///////////////////////////////////////////////////////////////////////////////
 
 jigna.WebBridge = function(client) {
+    this._client = client;
 
     // The jigna_server attribute can be set by a client to point to a
     // different Jigna server.
@@ -218,12 +219,20 @@ jigna.WebBridge = function(client) {
     var url = 'ws://' + jigna_server + '/_jigna_ws';
 
     this._web_socket = new WebSocket(url);
+
+    var bridge = this;
     this._web_socket.onmessage = function(event) {
-        client.handle_event(event.data);
+        bridge.handle_event(event.data);
     };
 };
 
-jigna.WebBridge.prototype.send_request = function(jsonized_request) {
+jigna.WebBridge.prototype.handle_event = function(jsonized_event) {
+    /* Handle an event from the server. */
+    this._client.handle_event(jsonized_event);
+};
+
+
+jigna.WebBridge.prototype.send_request = function(jsonized_request, callback) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_response;
@@ -241,7 +250,7 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
         }
     );
 
-    return jsonized_response;
+    callback(jsonized_response);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
