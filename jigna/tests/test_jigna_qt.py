@@ -177,15 +177,15 @@ class TestJignaQt(unittest.TestCase):
         fred = self.fred
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
-        self.execute_js("jigna.models.model.method('hello')")
+        self.execute_js("var x; jigna.models.model.method(function(r){x=r;}, 'hello'); return x;")
         self.assertEqual(fred.called_with, "hello")
-        self.execute_js("jigna.models.model.method(1)")
+        self.execute_js("var x; jigna.models.model.method(function(r){x=r;},1); return x;")
         self.assertEqual(fred.called_with, 1)
-        self.execute_js("jigna.models.model.method(10.0)")
+        self.execute_js("var x; jigna.models.model.method(function(r){x=r;},10.0); return x;")
         self.assertEqual(fred.called_with, 10.0)
-        self.execute_js("jigna.models.model.method([1, 2])")
+        self.execute_js("var x; jigna.models.model.method(function(r){x=r;},[1,2]); return x;")
         self.assertEqual(fred.called_with, [1,2])
-        self.execute_js("jigna.models.model.method(jigna.models.model.spouse)")
+        self.execute_js("var x; jigna.models.model.method(function(r){x=r;},jigna.models.model.spouse); return x;")
         self.assertEqual(fred.called_with, wilma)
 
     def test_update_context_injects_model_in_js(self):
