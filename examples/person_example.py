@@ -18,7 +18,7 @@ class Person(HasTraits):
     age  = Int
 
     def update_name(self, name):
-        self.name = name 
+        self.name = name
 
 #### UI layer ####
 
@@ -35,6 +35,9 @@ person_view = View(body_html=body_html)
 
 def main():
     fred  = Person(name='Fred', age=42)
+    def on_trait_change(obj, trait, old, new):
+        print trait, old, new
+    fred.on_trait_change(on_trait_change)
     person_view.show(model=fred)
     do_after(2000, fred.update_name, "Freddie")
 

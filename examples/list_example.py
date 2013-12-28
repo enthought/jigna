@@ -94,6 +94,8 @@ def main():
 
     args = parse_command_line_args(description=__doc__)
     if args.web:
+        set_list()
+        update_list()
         person_view.serve(model=fred)
     else:
         app = QtGui.QApplication.instance() or QtGui.QApplication([])

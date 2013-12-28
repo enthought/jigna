@@ -36,7 +36,7 @@ EventTarget.prototype = {
             for (var i=0, len=listeners.length; i < len; i++){
                 listener = listeners[i].listener;
                 thisArg = listeners[i].thisArg;
-                console.log('firing event, calling listener', event, thisArg);
+                //console.log('firing event, calling listener', event, thisArg);
                 listener.call(thisArg, event);
             }
         }
@@ -218,9 +218,15 @@ jigna.WebBridge = function(client) {
 
     var url = 'ws://' + jigna_server + '/_jigna_ws';
 
-    this._web_socket = new WebSocket(url);
+    this._messages = {};
+    this._message_count = 0;
 
+    this._web_socket = new WebSocket(url);
+    this._ws_opened = new $.Deferred;
     var bridge = this;
+    this._web_socket.onopen = function() {
+        bridge._ws_opened.resolve();
+    }
     this._web_socket.onmessage = function(event) {
         bridge.handle_event(event.data);
     };
@@ -228,11 +234,40 @@ jigna.WebBridge = function(client) {
 
 jigna.WebBridge.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
-    this._client.handle_event(jsonized_event);
+    var response = JSON.parse(jsonized_event);
+    var message_id = response[0];
+    var jsonized_response = response[1];
+    if (message_id === -1) {
+        this._client.handle_event(jsonized_response);
+    }
+    else {
+        var callback = this._messages[message_id];
+        callback(jsonized_response);
+        delete this._messages[message_id];
+    }
 };
 
+jigna.WebBridge.prototype._get_message_id = function() {
+    var id = this._message_count;
+    if (id > 1048576) {
+        this._message_count = 0;
+    }
+    this._message_count += 1;
+    return id;
+};
 
 jigna.WebBridge.prototype.send_request = function(jsonized_request, callback) {
+    /* Send a request to the server and do not wait but call a callback. */
+
+    var message_id = this._get_message_id();
+    this._messages[message_id] = callback;
+    var bridge = this;
+    this._ws_opened.done(function() {
+        bridge._web_socket.send(JSON.stringify([message_id, jsonized_request]));
+    });
+};
+
+jigna.WebBridge.prototype.send_request_sync = function(jsonized_request, callback) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_response;
@@ -623,7 +658,6 @@ jigna.Client.prototype._on_context_updated = function(event) {
     };
 
     this._add_models(event.data, on_added);
-
 };
 
 
@@ -662,11 +696,13 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
             console.log("getter for index:", index);
             var p = this;
             var on_client_get_item = function(result) {
-                p[index] = result;
                 p.__cache__[index] = result;
             };
+            // Set this to a sentinel value so angular does not call us a
+            // million times before our real value is set.
+            this.__cache__[index] = null;
             this.__client__.get_item(this.__id__, index, on_client_get_item);
-            value = this[index];
+            value = this.__cache__[index];
         }
         return value;
     };
@@ -719,7 +755,9 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
             var on_result = function(result) {
                 p.__cache__[attribute_name] = result;
             };
-
+            // Set this to a sentinel value so angular does not call us a
+            // million times before our real value is set.
+            this.__cache__[attribute_name] = null;
             this.__client__.get_instance_attribute(
                 this.__id__, attribute_name, on_result
             );
@@ -859,6 +897,12 @@ var module = angular.module('jigna', []);
 // Add initialization function on module run time
 module.run(function($rootScope, $compile){
 
+    $rootScope.safe_digest = function() {
+        if ($rootScope.$$phase === null){
+            $rootScope.$digest();
+        }
+    }
+
     var update_scope_with_models = function(context) {
         for (var model_name in context) {
             $rootScope[model_name] = jigna.models[model_name];
@@ -870,9 +914,7 @@ module.run(function($rootScope, $compile){
 
     // Listen to object change events in jigna
     jigna.event_target.addListener('object_changed', function() {
-        if ($rootScope.$$phase === null){
-            $rootScope.$digest();
-        }
+        $rootScope.safe_digest();
     }, false);
 
     // Listen to 'context_updated' events in jigna and update the scope.
@@ -889,10 +931,13 @@ module.run(function($rootScope, $compile){
     //
     $rootScope.recompile = function(element) {
         $compile(element)($rootScope);
-        if ($rootScope.$$phase === null){
-            $rootScope.$digest();
-        }
+        $rootScope.safe_digest();
     };
+
+    if (jigna.client.bridge_mode === 'async') {
+        // fixme: digesting on document.ready doesn't work and this smells.
+        setTimeout($rootScope.safe_digest, 200);
+    }
 
 })
 

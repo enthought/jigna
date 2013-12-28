@@ -12,14 +12,15 @@
 # Standard library.
 import json
 from os.path import join, dirname
+import traceback
 
-# 3rd part library.
+# 3rd party library.
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
 
 # Enthought library.
-from traits.api import List, Str, Int, Bool
+from traits.api import List, Str, Int
 
 # Jigna library.
 from jigna.server import Bridge, Server
@@ -33,13 +34,20 @@ class WebBridge(Bridge):
     def send_event(self, event):
         """ Send an event. """
 
-        jsonized_event = json.dumps(event)
-        for socket in self._active_sockets:
-            socket.write_message(jsonized_event)
+        try:
+            jsonized_event = json.dumps(event)
+            message_id = -1
+            self.send_data(json.dumps([message_id, jsonized_event]))
+        except:
+            traceback.print_exc()
 
         return
 
     #### 'WebBridge' protocol #################################################
+
+    def send_data(self, data):
+        for socket in self._active_sockets:
+            socket.write_message(data)
 
     def add_socket(self, socket):
         """ Add a client socket. """
@@ -112,7 +120,7 @@ class WebServer(Server):
 
         application = Application(
             [
-                (r"/_jigna_ws", JignaSocket,   dict(bridge=bridge)),
+                (r"/_jigna_ws", JignaSocket,   dict(bridge=bridge, server=self)),
                 (r"/_jigna",    GetFromBridge, dict(server=self)),
                 (r".*",         MainHandler,   dict(server=self)),
             ],
@@ -152,8 +160,9 @@ class GetFromBridge(RequestHandler):
 ##### WebSocket handler #######################################################
 
 class JignaSocket(WebSocketHandler):
-    def initialize(self, bridge):
+    def initialize(self, bridge, server):
         self.bridge = bridge
+        self.server = server
         return
 
     def open(self):
@@ -161,7 +170,14 @@ class JignaSocket(WebSocketHandler):
         return
 
     def on_message(self, message):
-        data = json.loads(message)
+        try:
+            msg_id, jsonized_request = json.loads(message)
+            #print "server got message", msg_id, jsonized_request
+            jsonized_response = self.server.handle_request(jsonized_request)
+            self.bridge.send_data(json.dumps([msg_id, jsonized_response]))
+        except:
+            traceback.print_exc()
+            self.bridge.send_data(json.dumps([msg_id, '{}']))
         return
 
     def on_close(self):

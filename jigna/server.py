@@ -12,6 +12,7 @@
 # Standard library.
 import inspect
 import json
+import traceback
 
 # Enthought library.
 from traits.api import (
@@ -222,8 +223,12 @@ class Server(HasTraits):
         """ Handle a jsonized request from a client. """
         # To dispatch the request we have a method named after each one!
         method    = getattr(self, request['kind'])
-        result    = method(request)
         exception = None
+        try:
+            result    = method(request)
+        except:
+            exception = traceback.format_exc()
+            result = None
 
         return dict(exception=exception, result=result)
 
