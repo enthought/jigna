@@ -162,10 +162,10 @@ jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
     this._client.handle_event(jsonized_event);
 };
 
-jigna.QtBridge.prototype.send_request = function(jsonized_request) {
+jigna.QtBridge.prototype.send_request = function(jsonized_request, callback) {
     /* Send a request to the server and wait for the reply. */
 
-    return this._qt_bridge.handle_request(jsonized_request);
+    callback(this._qt_bridge.handle_request(jsonized_request));
 };
 
 jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
@@ -274,11 +274,13 @@ jigna.Client = function() {
     );
 
     // Fire a '_context_updated' event to setup the initial context.
-    jigna.event_target.fire({
-        type: '_context_updated',
-        data: this.get_context(),
-    });
-
+    var fire_context_updated = function(result) {
+        jigna.event_target.fire({
+            type: '_context_updated',
+            data: result,
+        });
+    };
+    this.get_context(fire_context_updated);
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -288,16 +290,19 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
     jigna.event_target.fire(event);
 };
 
-jigna.Client.prototype.send_request = function(request) {
+jigna.Client.prototype.send_request = function(request, on_done) {
     /* Send a request to the server and wait for (and return) the response. */
 
-    var jsonized_request, jsonized_response, response;
+    var jsonized_request;
 
     jsonized_request  = JSON.stringify(request);
-    jsonized_response = this.bridge.send_request(jsonized_request);
-    response          = JSON.parse(jsonized_response);
 
-    return response;
+    var callback = function(jsonized_response) {
+        var response = JSON.parse(jsonized_response);
+        on_done(response);
+    }
+
+    this.bridge.send_request(jsonized_request, callback);
 };
 
 jigna.Client.prototype.send_request_async = function(request) {
@@ -335,13 +340,15 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
     }
 };
 
-jigna.Client.prototype.get_context = function() {
-    var request, response;
+jigna.Client.prototype.get_context = function(callback) {
+    var request;
 
     request  = {kind : 'get_context'};
-    response = this.send_request(request);
 
-    return response.result;
+    var on_response = function(response) {
+        callback(response.result);
+    }
+    this.send_request(request, on_response);
 };
 
 jigna.Client.prototype.get_dict_info = function(id) {
@@ -353,27 +360,37 @@ jigna.Client.prototype.get_dict_info = function(id) {
     return response.result;
 };
 
-jigna.Client.prototype.get_instance_attribute = function(id, attribute_name) {
-    var request, response;
-
-    request = {
+jigna.Client.prototype.get_instance_attribute = function(id, attribute_name, on_result) {
+    var request = {
         kind           : 'get_instance_attribute',
         id             : id,
         attribute_name : attribute_name
     };
 
-    response = this.send_request(request)
+    var client = this;
 
-    return this._unmarshal(response.result);
+    var callback = function(response) {
+        client._unmarshal(response.result, function(result) {
+            on_result(result);
+            if (client.bridge_mode === 'async') {
+                jigna.event_target.fire({
+                    type: 'object_changed'
+                });
+            }
+        });
+    };
+
+    this.send_request(request, callback)
 };
 
-jigna.Client.prototype.get_instance_info = function(id) {
-    var request, response;
+jigna.Client.prototype.get_instance_info = function(id, on_result) {
 
-    request  = {kind : 'get_instance_info', id : id};
-    response = this.send_request(request);
+    var request = {kind : 'get_instance_info', id : id};
 
-    return response.result;
+    this.send_request(request, function(response) {
+            on_result(response.result);
+        }
+    );
 };
 
 jigna.Client.prototype.get_item = function(id, index) {
@@ -430,13 +447,13 @@ jigna.Client.prototype.set_item = function(id, index, value) {
 jigna.Client.prototype._add_model = function(model_name, id) {
     var proxy;
 
+    // Expose created proxy with the name 'model_name' to the JS framework.
+    var on_create = function(proxy) {
+        jigna.models[model_name] = proxy;
+    }
+
     // Create a proxy for the object identified by the Id...
-    proxy = this._create_proxy('instance', id);
-
-    // ... and expose it with the name 'model_name' to the JS framework.
-    jigna.models[model_name] = proxy;
-
-    return proxy;
+    this._create_proxy('instance', id, on_create);
 };
 
 jigna.Client.prototype._add_models = function(context) {
@@ -447,18 +464,20 @@ jigna.Client.prototype._add_models = function(context) {
     }
 };
 
-jigna.Client.prototype._create_proxy = function(type, obj) {
+jigna.Client.prototype._create_proxy = function(type, obj, on_create) {
     var proxy;
 
     if (type === 'primitive') {
-        proxy = obj;
+        on_create(obj);
     }
     else {
-        proxy = this._proxy_factory.create_proxy(type, obj);
-        this._id_to_proxy_map[obj] = proxy;
+        var client = this;
+        var callback = function(proxy) {
+            client._id_to_proxy_map[obj] = proxy;
+            on_create(proxy);
+        }
+        this._proxy_factory.create_proxy(type, obj, callback);
     }
-
-    return proxy;
 };
 
 jigna.Client.prototype._get_bridge = function() {
@@ -468,10 +487,11 @@ jigna.Client.prototype._get_bridge = function() {
     qt_bridge = window['qt_bridge'];
     if (qt_bridge !== undefined) {
         bridge = new jigna.QtBridge(this, qt_bridge);
-
+        this.bridge_mode = 'sync';
     // ... or the inter-process web bridge?
     } else {
         bridge = new jigna.WebBridge(this);
+        this.bridge_mode = 'async';
     }
 
     return bridge;
@@ -508,20 +528,20 @@ jigna.Client.prototype._marshal_all = function(objs) {
     return objs;
 };
 
-jigna.Client.prototype._unmarshal = function(obj) {
-    var value;
-
+jigna.Client.prototype._unmarshal = function(obj, callback) {
     if (obj.type === 'primitive') {
-        value = obj.value;
+        callback(obj.value);
 
     } else {
         value = this._id_to_proxy_map[obj.value];
         if (value === undefined) {
-            value = this._create_proxy(obj.type, obj.value);
+            this._create_proxy(obj.type, obj.value, callback);
+        }
+        else {
+            callback(value);
         }
     }
 
-    return value;
 };
 
 jigna.Client.prototype._unmarshal_all = function(objs) {
@@ -541,7 +561,7 @@ jigna.Client.prototype._on_object_changed = function(event) {
     // fixme: This smells... It is used when we have a list of instances but it
     // blows away caching advantages. Can we make it smarter by managing the
     // details of a TraitListEvent?
-    this._create_proxy(event.new_obj.type, event.new_obj.value);
+    //this._create_proxy(event.new_obj.type, event.new_obj.value);
 
     jigna.event_target.fire({
         type: 'object_changed'
@@ -579,15 +599,14 @@ jigna.ProxyFactory = function(client) {
     this._client = client;
 };
 
-jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
+jigna.ProxyFactory.prototype.create_proxy = function(type, obj, on_create) {
     /* Create a proxy for the given type and value. */
 
     var factory_method = this['_create_' + type + '_proxy'];
     if (factory_method === undefined) {
         throw 'cannot create proxy for: ' + type;
     }
-
-    return factory_method.apply(this, [obj]);
+    factory_method.apply(this, [obj, on_create]);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
@@ -645,10 +664,15 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
             value = cached_value;
 
         } else {
-            value = this.__client__.get_instance_attribute(
-                this.__id__, attribute_name
+            var p = this;
+            var on_result = function(result) {
+                p.__cache__[attribute_name] = result;
+            };
+
+            this.__client__.get_instance_attribute(
+                this.__id__, attribute_name, on_result
             );
-            this.__cache__[attribute_name] = value;
+            value = this.__cache__[attribute_name];
         }
 
         return value;
@@ -685,26 +709,30 @@ jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
     return proxy;
 };
 
-jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
-    var index, info, proxy;
+jigna.ProxyFactory.prototype._create_instance_proxy = function(id, on_create) {
+    var proxy_factory = this;
+    var on_get_instance_info = function(info) {
+        var index, proxy;
 
-    proxy = new jigna.Proxy('instance', id, this._client);
+        proxy = new jigna.Proxy('instance', id, proxy_factory._client);
 
-    info = this._client.get_instance_info(id);
-    for (index in info.attribute_names) {
-        this._add_instance_attribute(proxy, info.attribute_names[index]);
-    }
+        for (index in info.attribute_names) {
+            proxy_factory._add_instance_attribute(proxy, info.attribute_names[index]);
+        }
 
-    for (index in info.method_names) {
-        this._add_instance_method(proxy, info.method_names[index]);
-    }
+        for (index in info.method_names) {
+            proxy_factory._add_instance_method(proxy, info.method_names[index]);
+        }
 
-    // This property is not actually used by jigna itself. It is only there to
-    // make it easy to see what the type of the server-side object is when
-    // debugging the JS code in the web inspector.
-    Object.defineProperty(proxy, '__type_name__', {value : info.type_name});
+        // This property is not actually used by jigna itself. It is only there to
+        // make it easy to see what the type of the server-side object is when
+        // debugging the JS code in the web inspector.
+        Object.defineProperty(proxy, '__type_name__', {value : info.type_name});
 
-    return proxy;
+        on_create(proxy);
+    };
+
+    this._client.get_instance_info(id, on_get_instance_info);
 };
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
