@@ -143,6 +143,14 @@ var jigna = {
 };
 
 jigna.initialize = function() {
+    // Determine if jigna is to run async or sync.  This can be set
+    // by setting window.jigna_async to true or false.  The jigna.async
+    // option can also be changed at runtime.  Async is meaningful only with
+    // the web bridge.
+    this.async = false;
+    if (window.jigna_async !== undefined) {
+        this.async = window.jigna_async;
+    }
     // This is where all the work is done!
     this.client = new jigna.Client();
 };
@@ -307,7 +315,18 @@ jigna.WebBridge.prototype._get_message_id = function() {
 };
 
 jigna.WebBridge.prototype.send_request = function(jsonized_request, callback) {
-    /* Send a request to the server and do not wait but call a callback. */
+    if (jigna.async) {
+        this._send_request_async(jsonized_request, callback);
+    }
+    else {
+        this._send_request_sync(jsonized_request, callback);
+    }
+};
+
+jigna.WebBridge.prototype._send_request_async = function(jsonized_request, callback) {
+    /* Send a request to the server and do not wait but call a callback
+       upon completion of the request.
+    */
 
     var message_id = this._get_message_id();
     this._messages[message_id] = callback;
@@ -317,7 +336,7 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request, callback) {
     });
 };
 
-jigna.WebBridge.prototype.send_request_sync = function(jsonized_request, callback) {
+jigna.WebBridge.prototype._send_request_sync = function(jsonized_request, callback) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_response;
@@ -466,7 +485,7 @@ jigna.Client.prototype.get_instance_attribute = function(id, attribute_name, on_
     var callback = function(response) {
         client._unmarshal(response.result, function(result) {
                 on_result(result);
-                if (client.bridge_mode === 'async') {
+                if (jigna.async) {
                     jigna.event_target.fire({
                         type           : 'object_changed',
                         obj            : id,
@@ -502,7 +521,7 @@ jigna.Client.prototype.get_item = function(id, index, on_result) {
     var callback = function(response) {
         client._unmarshal(response.result, function(result) {
                 on_result(result);
-                if (client.bridge_mode === 'async') {
+                if (jigna.async) {
                     jigna.event_target.fire({
                         type           : 'object_changed',
                         obj            : id,
@@ -604,11 +623,9 @@ jigna.Client.prototype._get_bridge = function() {
     qt_bridge = window['qt_bridge'];
     if (qt_bridge !== undefined) {
         bridge = new jigna.QtBridge(this, qt_bridge);
-        this.bridge_mode = 'sync';
     // ... or the inter-process web bridge?
     } else {
         bridge = new jigna.WebBridge(this);
-        this.bridge_mode = 'async';
     }
 
     return bridge;
@@ -758,9 +775,11 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
             var on_client_get_item = function(result) {
                 p.__cache__[index] = result;
             };
-            // Set this to a sentinel value so angular does not call us a
-            // million times before our real value is set.
-            this.__cache__[index] = null;
+            if (jigna.async) {
+                // Set this to a sentinel value so angular does not call us a
+                // million times before our real value is set.
+                this.__cache__[index] = null;
+            }
             this.__client__.get_item(this.__id__, index, on_client_get_item);
             value = this.__cache__[index];
         }
@@ -820,9 +839,11 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
             var on_result = function(result) {
                 p.__cache__[attribute_name] = result;
             };
-            // Set this to a sentinel value so angular does not call us a
-            // million times before our real value is set.
-            this.__cache__[attribute_name] = null;
+            if (jigna.async) {
+                // Set this to a sentinel value so angular does not call us a
+                // million times before our real value is set.
+                this.__cache__[attribute_name] = null;
+            }
             this.__client__.get_instance_attribute(
                 this.__id__, attribute_name, on_result
             );
@@ -1003,7 +1024,7 @@ module.run(function($rootScope, $compile){
         $rootScope.safe_digest();
     };
 
-    if (jigna.client.bridge_mode === 'async') {
+    if (jigna.async) {
         // fixme: digesting on document.ready doesn't work and this smells.
         setTimeout($rootScope.safe_digest, 200);
     }

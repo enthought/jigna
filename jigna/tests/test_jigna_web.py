@@ -1,33 +1,35 @@
 from jigna.api import View
 from threading import Thread
+import unittest
 
 from selenium import webdriver
-import time
-import unittest
 
 # Local imports.
 from test_jigna_qt import TestJignaQt, Person, body_html
 
 
-
-class TestJignaWeb(TestJignaQt):
+class TestJignaWebSync(TestJignaQt):
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls, port=8888):
         person_view = View(body_html=body_html)
         fred = Person(name='Fred', age=42)
-        t = Thread(target=person_view.serve, kwargs=dict(model=fred))
+        t = Thread(target=person_view.serve, kwargs=dict(port=port, model=fred))
         t.setDaemon(True)
         t.start()
 
         browser = webdriver.Firefox()
-        browser.get('http://localhost:8888')
+        browser.get('http://localhost:%d'%port)
         cls.person_view = person_view
         cls.fred = fred
         cls.browser = browser
 
     @classmethod
     def tearDownClass(cls):
+        from tornado.ioloop import IOLoop
         cls.browser.quit()
+        IOLoop.instance().stop()
+        import time
+        time.sleep(1)
 
     def setUp(self):
         cls = self.__class__
@@ -41,22 +43,8 @@ class TestJignaWeb(TestJignaQt):
     def execute_js(self, js):
         return self.browser.execute_script(js)
 
-    def reset_user_var(self):
-        self.execute_js("jigna.user = undefined;")
-
     def get_attribute(self, js, expect):
-        self.reset_user_var()
-        get_js = """jigna.get_attribute(\'%s\', function(result) {jigna.user = result;})"""%js
-        #from IPython.core.debugger import Tracer; Tracer()()
-        self.execute_js(get_js)
-
-        check_js = "return jigna.user;"
-        result = self.execute_js(check_js)
-        while result is None and expect is not None:
-            time.sleep(0.1)
-            result = self.execute_js(check_js)
-        self.reset_user_var()
-        return result
+        return self.execute_js("return " + js + ";")
 
     def assertJSEqual(self, js, value):
         result = self.get_attribute(js, value)
@@ -87,6 +75,7 @@ class TestJignaWeb(TestJignaQt):
         self.execute_js("jigna.models.model.spouse.age = 41")
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
+
 
 # Delete this so running just this file does not run all the tests.
 del TestJignaQt
