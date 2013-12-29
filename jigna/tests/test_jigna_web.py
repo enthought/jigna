@@ -2,10 +2,12 @@ from jigna.api import View
 from threading import Thread
 
 from selenium import webdriver
+import time
 import unittest
 
 # Local imports.
 from test_jigna_qt import TestJignaQt, Person, body_html
+
 
 
 class TestJignaWeb(TestJignaQt):
@@ -37,11 +39,27 @@ class TestJignaWeb(TestJignaQt):
         self.fred.friends = []
 
     def execute_js(self, js):
-        result = self.browser.execute_script(js)
+        return self.browser.execute_script(js)
+
+    def reset_user_var(self):
+        self.execute_js("jigna.user = undefined;")
+
+    def get_attribute(self, js, expect):
+        self.reset_user_var()
+        get_js = """jigna.get_attribute(\'%s\', function(result) {jigna.user = result;})"""%js
+        #from IPython.core.debugger import Tracer; Tracer()()
+        self.execute_js(get_js)
+
+        check_js = "return jigna.user;"
+        result = self.execute_js(check_js)
+        while result is None and expect is not None:
+            time.sleep(0.1)
+            result = self.execute_js(check_js)
+        self.reset_user_var()
         return result
 
     def assertJSEqual(self, js, value):
-        result = self.execute_js('return ' + js + ';')
+        result = self.get_attribute(js, value)
         if isinstance(value, (list, tuple)):
             msg = "Lengths different: expected %d, got %d" % \
                 (len(value), len(result))
@@ -60,6 +78,7 @@ class TestJignaWeb(TestJignaQt):
         self.assertJSEqual("jigna.models.model.spouse", None)
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
+        self.get_attribute("jigna.models.model.spouse.name", "")
         self.assertJSEqual("jigna.models.model.spouse.name", 'Wilma')
         self.assertJSEqual("jigna.models.model.spouse.age", 40)
 

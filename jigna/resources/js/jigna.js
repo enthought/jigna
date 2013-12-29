@@ -147,6 +147,56 @@ jigna.initialize = function() {
     this.client = new jigna.Client();
 };
 
+// A convenience function to get a particular expression once it is really
+// set.
+// Arguments:
+//   - expr a javascript expression to evaluate,
+//   - timeout (optional) in seconds; defaults to 2 seconds,
+//   - a callback which is called with the result.
+jigna.get_attribute = function (args) {
+    var expr, timeout, callback;
+
+    expr = Array.prototype.slice.call(arguments, 0)[0];
+
+    if (arguments.length === 1) {
+        throw TypeError("Expected at least 2 arguments for function jigna.get_attribute.");
+    }
+    if (arguments.length === 2) {
+        timeout = 2;
+        callback = Array.prototype.slice.call(arguments, 1, 2)[0];
+    }
+    else {
+        timeout = Array.prototype.slice.call(arguments, 1, 2)[0];
+        callback = Array.prototype.slice.call(arguments, 2, 3)[0];
+    }
+
+    var wait = 100;
+    var result;
+    try {
+        result = eval(expr);
+    }
+    catch(err) {
+        result = undefined;
+        if (timeout <= 0) {
+            throw(err);
+        }
+    }
+    if (result === undefined) {
+        if (timeout <= 0) {
+            throw "Timeout exceeded while waiting for expression:" + expr;
+        }
+        console.log("waiting for: ", expr);
+        setTimeout(function() {
+                jigna.get_attribute(expr, (timeout*1000 - wait)/1000., callback);
+            }, wait
+        );
+    }
+    else {
+        callback(result);
+    }
+};
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // QtBridge (intra-process)
 ///////////////////////////////////////////////////////////////////////////////
@@ -418,7 +468,10 @@ jigna.Client.prototype.get_instance_attribute = function(id, attribute_name, on_
                 on_result(result);
                 if (client.bridge_mode === 'async') {
                     jigna.event_target.fire({
-                        type: 'object_changed'
+                        type           : 'object_changed',
+                        obj            : id,
+                        attribute_name : attribute_name,
+                        new_obj        : result,
                     });
                 }
             }
@@ -451,7 +504,10 @@ jigna.Client.prototype.get_item = function(id, index, on_result) {
                 on_result(result);
                 if (client.bridge_mode === 'async') {
                     jigna.event_target.fire({
-                        type: 'object_changed'
+                        type           : 'object_changed',
+                        obj            : id,
+                        attribute_name : index,
+                        new_obj        : result,
                     });
                 }
             }
@@ -623,12 +679,16 @@ jigna.Client.prototype._unmarshal_all = function(objs, callback) {
 jigna.Client.prototype._on_object_changed = function(event) {
     this._invalidate_cached_attribute(event.obj, event.attribute_name);
 
-    // fixme: This smells... It is used when we have a list of instances but it
-    // blows away caching advantages. Can we make it smarter by managing the
-    // details of a TraitListEvent?
+    // fixme: Creating a new proxy smells... It is used when we have a list of
+    // instances but it blows away caching advantages. Can we make it smarter
+    // by managing the details of a TraitListEvent?
+
     var on_new_proxy = function(new_proxy) {
         jigna.event_target.fire({
-            type: 'object_changed'
+            type           : 'object_changed',
+            obj            : event.obj,
+            attribute_name : event.attribute_name,
+            new_obj        : event.new_obj,
         });
     };
     this._create_proxy(event.new_obj.type, event.new_obj.value, on_new_proxy);
@@ -704,7 +764,12 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
             this.__client__.get_item(this.__id__, index, on_client_get_item);
             value = this.__cache__[index];
         }
-        return value;
+        if (value === null) {
+            return undefined;
+        }
+        else {
+            return value;
+        }
     };
 
     set = function(value) {
@@ -764,8 +829,12 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
             // In the async case, this will be up-to-date.
             value = this.__cache__[attribute_name];
         }
-
-        return value;
+        if (value === null) {
+            return undefined;
+        }
+        else {
+            return value;
+        }
     };
 
     set = function(value) {
