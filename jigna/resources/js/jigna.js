@@ -156,26 +156,26 @@ jigna.initialize = function() {
 };
 
 // A convenience function to get a particular expression once it is really
-// set.
+// set.  This returns a promise object.
 // Arguments:
 //   - expr a javascript expression to evaluate,
 //   - timeout (optional) in seconds; defaults to 2 seconds,
-//   - a callback which is called with the result.
 jigna.get_attribute = function (args) {
-    var expr, timeout, callback;
+    var expr, timeout, deferred;
 
     expr = Array.prototype.slice.call(arguments, 0)[0];
 
     if (arguments.length === 1) {
-        throw TypeError("Expected at least 2 arguments for function jigna.get_attribute.");
-    }
-    if (arguments.length === 2) {
         timeout = 2;
-        callback = Array.prototype.slice.call(arguments, 1, 2)[0];
+        deferred = $.Deferred();
+    }
+    else if (arguments.length === 2) {
+        timeout = Array.prototype.slice.call(arguments, 1, 2)[0];
+        deferred = $.Deferred();
     }
     else {
         timeout = Array.prototype.slice.call(arguments, 1, 2)[0];
-        callback = Array.prototype.slice.call(arguments, 2, 3)[0];
+        deferred = Array.prototype.slice.call(arguments, 2, 3)[0];
     }
 
     var wait = 100;
@@ -186,22 +186,22 @@ jigna.get_attribute = function (args) {
     catch(err) {
         result = undefined;
         if (timeout <= 0) {
-            throw(err);
+            deferred.reject(err);
         }
     }
     if (result === undefined) {
         if (timeout <= 0) {
-            throw "Timeout exceeded while waiting for expression:" + expr;
+            deferred.reject("Timeout exceeded while waiting for expression: " + expr);
         }
-        console.log("waiting for: ", expr);
         setTimeout(function() {
-                jigna.get_attribute(expr, (timeout*1000 - wait)/1000., callback);
+                jigna.get_attribute(expr, (timeout*1000 - wait)/1000., deferred);
             }, wait
         );
     }
     else {
-        callback(result);
+        deferred.resolve(result);
     }
+    return deferred.promise();
 };
 
 

@@ -15,7 +15,8 @@ class TestJignaWebAsync(TestJignaWebSync):
 
     def get_attribute(self, js, expect):
         self.reset_user_var()
-        get_js = """jigna.get_attribute(\'%s\', function(result) {jigna.user = result;})"""%js
+        get_js = """jigna.get_attribute(\'%s\').done(function(result)
+                                {jigna.user = result;})"""%js
         self.execute_js(get_js)
 
         check_js = "return jigna.user;"
