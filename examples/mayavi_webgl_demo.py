@@ -193,7 +193,7 @@ window.onload = function() {
     );
 
     $(document.body).scope().$watchCollection(
-        "[model.plot_output.filedata !== null, model.plot_output.colors !== null]",
+        "[model.plot_output.filedata, model.plot_output.colors]",
         function (new_data) {
             console.log("Updating plot.");
             window.on_data_changed(jigna.models.model.plot_output);
