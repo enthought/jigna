@@ -35,11 +35,11 @@ body_html = """
 
          <button ng-click="person.grow_old_async()">Grow old</button><br>
 
-         Professional status: {{person.status || 'Working'}}
+         Professional status: {{person.status_message || 'Working'}}
 
          <script type='text/javascript'>
-            jigna.addListener('person.status', function(event){
-                jigna.models.person['status'] = event.data;
+            jigna.addListener(jigna.models.person, 'status', function(event){
+                jigna.models.person['status_message'] = event.data.value;
             })
         </script>
     </div>

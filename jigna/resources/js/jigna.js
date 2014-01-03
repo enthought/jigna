@@ -281,7 +281,6 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
 };
 
 jigna.Client.prototype.on_object_changed = function(event){
-    // fixme: accessing private variable of client object
     var proxy = this._id_to_proxy_map[event.obj];
     
     // invalidate cache
@@ -290,7 +289,7 @@ jigna.Client.prototype.on_object_changed = function(event){
     // fixme: This smells... It is used when we have a list of instances but it
     // blows away caching advantages. Can we make it smarter by managing the
     // details of a TraitListEvent?
-    this._create_proxy(event.new_obj.type, event.new_obj.value);
+    this._create_proxy(event.data.type, event.data.value);
 
     jigna.fire(jigna, '$digest');
 

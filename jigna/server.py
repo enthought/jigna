@@ -364,7 +364,7 @@ class Server(HasTraits):
             # fixme: This smells a bit, but marhsalling the new value gives us
             # a type/value pair which we need on the client side to determine
             # what (if any) proxy we need to create.
-            new_obj        = self._marshal(new)
+            data        = self._marshal(new)
         )
 
         self.send_event(event)
