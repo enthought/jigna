@@ -11,7 +11,7 @@ EventTarget.prototype = {
 
     constructor: EventTarget,
 
-    addListener: function(obj, event_name, listener, thisArg){
+    add_listener: function(obj, event_name, listener, thisArg){
         var id = this._to_id(obj);
 
         if (this._listeners[id] === undefined){
@@ -54,7 +54,7 @@ EventTarget.prototype = {
         }
     },
 
-    removeListener: function(obj, event_name, listener){
+    remove_listener: function(obj, event_name, listener){
         var id = this._to_id(obj);
 
         if (this._listeners[id][event_name] instanceof Array){
@@ -307,11 +307,11 @@ jigna.Client.prototype.send_request_async = function(request) {
 
     var future_obj = this.bridge.send_request(jsonized_request, "async");
 
-    jigna.addListener(future_obj, 'done', function(event){
+    jigna.add_listener(future_obj, 'done', function(event){
         deferred.resolve(event.data);
     });
 
-    jigna.addListener(future_obj, 'error', function(event){
+    jigna.add_listener(future_obj, 'error', function(event){
         deferred.reject(event.data);
     });
 
@@ -645,7 +645,7 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
     descriptor = {enumerable:true, get:get, set:set};
     Object.defineProperty(proxy, attribute_name, descriptor);
 
-    jigna.addListener(
+    jigna.add_listener(
         proxy,
         attribute_name,
         this._client.on_object_changed,
@@ -666,7 +666,7 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
     descriptor = {enumerable:false, set:set};
     Object.defineProperty(proxy, event_name, descriptor);
 
-    jigna.addListener(
+    jigna.add_listener(
         proxy,
         event_name,
         this._client.on_object_changed,
@@ -782,7 +782,7 @@ module.run(function($rootScope){
     }
 
     // Listen to object change events in jigna
-    jigna.addListener(jigna, '$digest', function() {
+    jigna.add_listener(jigna, '$digest', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }

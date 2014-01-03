@@ -37,7 +37,7 @@ body_html = """
          <button ng-click="person.grow_old_async()">Grow old</button><br>
 
          <script type='text/javascript'>
-            jigna.addListener(jigna.models.person, 'status', function(event){
+            jigna.add_listener(jigna.models.person, 'status', function(event){
                 alert(event.data.value);
             })
         </script>
