@@ -145,8 +145,13 @@ class GetFromBridge(RequestHandler):
 
     def get(self):
         jsonized_request = self.get_argument("data")
-        jsonized_response = self.server.handle_request(jsonized_request)
-        self.write(jsonized_response)
+        mode = self.get_argument("mode", default="sync")
+        if mode == "async":
+            future_obj = self.server.handle_request_async(jsonized_request)
+            self.write(future_obj)
+        else:
+            jsonized_response = self.server.handle_request(jsonized_request)
+            self.write(jsonized_response)
         return
 
 ##### WebSocket handler #######################################################
@@ -158,10 +163,6 @@ class JignaSocket(WebSocketHandler):
 
     def open(self):
         self.bridge.add_socket(self)
-        return
-
-    def on_message(self, message):
-        data = json.loads(message)
         return
 
     def on_close(self):
