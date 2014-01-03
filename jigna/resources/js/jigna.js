@@ -280,6 +280,22 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
     jigna.fire(obj, event);
 };
 
+jigna.Client.prototype.on_object_changed = function(event){
+    // fixme: accessing private variable of client object
+    var proxy = this._id_to_proxy_map[event.obj];
+    
+    // invalidate cache
+    proxy.__cache__[event.name] = undefined;
+
+    // fixme: This smells... It is used when we have a list of instances but it
+    // blows away caching advantages. Can we make it smarter by managing the
+    // details of a TraitListEvent?
+    this._create_proxy(event.new_obj.type, event.new_obj.value);
+
+    jigna.fire(jigna, '$digest');
+
+};
+
 jigna.Client.prototype.send_request = function(request) {
     /* Send a request to the server and wait for (and return) the response. */
 
@@ -300,7 +316,7 @@ jigna.Client.prototype.send_request_async = function(request) {
     jsonized_request  = JSON.stringify(request);
     deferred = this.bridge.send_request_async(jsonized_request);
 
-    return deferred
+    return deferred;
 };
 
 // Convenience methods for each kind of request //////////////////////////////
@@ -318,12 +334,12 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
     console.log('request', request);
 
     if (!async) {
-        response = this.send_request(request)
+        response = this.send_request(request);
 
-        return this._unmarshal(response.result)
+        return this._unmarshal(response.result);
     }
     else {
-        return this.send_request_async(request)
+        return this.send_request_async(request);
     }
 };
 
@@ -354,7 +370,7 @@ jigna.Client.prototype.get_instance_attribute = function(id, attribute_name) {
         attribute_name : attribute_name
     };
 
-    response = this.send_request(request)
+    response = this.send_request(request);
 
     return this._unmarshal(response.result);
 };
@@ -377,7 +393,7 @@ jigna.Client.prototype.get_item = function(id, index) {
         index : index,
     };
 
-    response = this.send_request(request)
+    response = this.send_request(request);
 
     return this._unmarshal(response.result);
 };
@@ -401,7 +417,7 @@ jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, val
         value          : this._marshal(value)
     };
 
-    this.send_request(request)
+    this.send_request(request);
 };
 
 jigna.Client.prototype.set_item = function(id, index, value) {
@@ -414,7 +430,7 @@ jigna.Client.prototype.set_item = function(id, index, value) {
         value : this._marshal(value)
     };
 
-    this.send_request(request)
+    this.send_request(request);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
@@ -582,6 +598,8 @@ jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name)
         return method.call(this, false, args);
     };
 
+    // fixme: this is ugly and potentially dangerous. Ideally we should have a 
+    // jigna.async(func, args) method.
     proxy[method_name+"_async"] = function(){
         // In here, 'this' refers to the proxy!
         var args = Array.prototype.slice.call(arguments);
@@ -628,7 +646,12 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
     descriptor = {enumerable:true, get:get, set:set};
     Object.defineProperty(proxy, attribute_name, descriptor);
 
-    jigna.addListener(proxy, attribute_name, this._on_instance_attribute_change, this);
+    jigna.addListener(
+        proxy,
+        attribute_name,
+        this._client.on_object_changed,
+        this._client
+    );
 };
 
 jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
@@ -644,24 +667,12 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
     descriptor = {enumerable:false, set:set};
     Object.defineProperty(proxy, event_name, descriptor);
 
-    jigna.addListener(proxy, event_name, this._on_instance_attribute_change, this);
-};
-
-jigna.ProxyFactory.prototype._on_instance_attribute_change = function(event){
-    console.log("called _on_instance_attribute_change:", event);
-    // fixme: accessing private variable of client object
-    var proxy = this._client._id_to_proxy_map[event.obj];
-    
-    // invalidate cache
-    proxy.__cache__[event.name] = undefined;
-
-    // fixme: This smells... It is used when we have a list of instances but it
-    // blows away caching advantages. Can we make it smarter by managing the
-    // details of a TraitListEvent?
-    this._client._create_proxy(event.new_obj.type, event.new_obj.value);
-
-    jigna.fire(jigna, '$digest');
-
+    jigna.addListener(
+        proxy,
+        event_name,
+        this._client.on_object_changed,
+        this._client
+    );
 };
 
 jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
