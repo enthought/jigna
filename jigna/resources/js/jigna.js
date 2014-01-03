@@ -12,7 +12,8 @@ EventTarget.prototype = {
     constructor: EventTarget,
 
     addListener: function(obj, event_name, listener, thisArg){
-        var id = obj.__id__;
+        var id = this._to_id(obj);
+
         if (this._listeners[id] === undefined){
             this._listeners[id] = {};
         }
@@ -25,7 +26,7 @@ EventTarget.prototype = {
     },
 
     fire: function(obj, event){
-        var id = obj.__id__;
+        var id = this._to_id(obj);
 
         if (typeof event == "string"){
             event = { name: event };
@@ -54,7 +55,7 @@ EventTarget.prototype = {
     },
 
     removeListener: function(obj, event_name, listener){
-        var id = obj.__id__;
+        var id = this._to_id(obj);
 
         if (this._listeners[id][event_name] instanceof Array){
             var listeners = this._listeners[id][event_name];
@@ -64,6 +65,17 @@ EventTarget.prototype = {
                     break;
                 }
             }
+        }
+    },
+
+    //// Private protocol /////////////////////////////////////////////////////
+
+    _to_id: function(obj){
+        if (obj.__id__ !== undefined) {
+            return obj.__id__;
+        }
+        else {
+            return obj;
         }
     }
 };
@@ -184,31 +196,16 @@ jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
 
     var deferred = new $.Deferred();
 
-    var future_id = this._qt_bridge.handle_request_async(jsonized_request);
+    var future_obj = this._qt_bridge.handle_request_async(jsonized_request);
 
-    jigna.addListener(
+    jigna.addListener(future_obj, 'done', function(event){
+        console.log("resolving function done", event);
+        deferred.resolve(event.data);
+    });
 
-        '_future_updated',
-        function(event){
-            console.log("future updated", event, future_id);
-            if (event.future_id != future_id) {
-                return;
-            }
-
-            else {
-                if (event.status == 'done') {
-                    deferred.resolve(event.result);
-                }
-                else if (event.status == 'error') {
-                    console.log("error occured", event.result);
-                    deferred.reject(event.result);
-                }
-
-                // remove the event listener
-                this.removeListener('future_updated', arguments.callee);
-            }
-        }
-    );
+    jigna.addListener(future_obj, 'error', function(event){
+        deferred.reject(event.data);
+    });
 
     return deferred;
 };
@@ -276,8 +273,7 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var event = JSON.parse(jsonized_event);
 
-    var obj = this._id_to_proxy_map[event.obj];
-    jigna.fire(obj, event);
+    jigna.fire(event.obj, event);
 };
 
 jigna.Client.prototype.on_object_changed = function(event){

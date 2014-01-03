@@ -79,13 +79,13 @@ class Server(HasTraits):
 
         future = Future(self.handle_request, args=(jsonized_request,),
                         dispatch=self.trait_change_dispatch)
-        future_id = self._marshal(future)['value']
-
+        
         def _on_done(result):
-            event = dict(type='_future_updated',
-                         future_id=future_id,
-                         status='done',
-                         result=result)
+            event = dict(
+                obj  = str(id(future)),
+                name = 'done',
+                data = result
+            )
             print "done, send_event:", event
             self.send_event(event)
 
@@ -93,16 +93,17 @@ class Server(HasTraits):
             import traceback
             type, value, tb = error
             error_msg = '\n'.join(traceback.format_tb(tb))
-            event = dict(type='_future_updated',
-                         future_id=future_id,
-                         status='error',
-                         result=error_msg)
+            event = dict(
+                obj  = str(id(future)),
+                name = 'error',
+                data = error_msg
+            )
             self.send_event(event)
 
         future.on_done(_on_done)
         future.on_error(_on_error)
 
-        return future_id
+        return str(id(future))
 
 
     #### Handlers for each kind of request ####################################

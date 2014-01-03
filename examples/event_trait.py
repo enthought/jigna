@@ -25,6 +25,7 @@ class Person(HasTraits):
             print "Age increased to:", self.age
             if self.age == 60:
                 self.status = "Retired due to old age"
+        self.status = "Dead"
 
 #### UI layer ####
 
@@ -35,11 +36,9 @@ body_html = """
 
          <button ng-click="person.grow_old_async()">Grow old</button><br>
 
-         Professional status: {{person.status_message || 'Working'}}
-
          <script type='text/javascript'>
             jigna.addListener(jigna.models.person, 'status', function(event){
-                jigna.models.person['status_message'] = event.data.value;
+                alert(event.data.value);
             })
         </script>
     </div>
