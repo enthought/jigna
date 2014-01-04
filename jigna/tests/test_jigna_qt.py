@@ -194,7 +194,8 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual("jigna.models.model.name", 'Fred')
         self.assertJSEqual("jigna.models.new_model", None)
         self.person_view.update_context(new_model=new_model)
-        self.assertJSEqual("jigna.models.new_model.name", new_model.name)
+        self.assertJSEqual("jigna.models.new_model.name", 'New')
+        
         self.assertJSEqual("$(document.body).scope().new_model.name", new_model.name)
 
 if __name__ == "__main__":

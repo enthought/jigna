@@ -260,13 +260,16 @@ jigna.Client = function() {
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
     // Add all of the models being edited.
-    jigna.add_listener('jigna', 'context_updated', function(event){
-        this._add_models(event.data);
-    });
+    jigna.add_listener(
+        'jigna',
+        'context_updated',
+        function(event){ this._add_models(event.data); },
+        this
+    );
     
     jigna.fire('jigna', {
-        name : 'context_updated',
-        data : this.get_context()
+        name: 'context_updated',
+        data: this.get_context()
     });
     
 };
@@ -794,6 +797,7 @@ module.run(function($rootScope){
     add_to_scope(jigna.models);
 
     jigna.add_listener('jigna', 'context_updated', function(event){
+        console.log("event.data", event.data);
         add_to_scope(event.data);
     });
 

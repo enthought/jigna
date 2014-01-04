@@ -46,14 +46,21 @@ class Server(HasTraits):
     #: Context mapping from object name to obj.
     context = Dict
     def _context_changed(self):
-        """ Add models to the server based on the given context mapping"""
-
         self._register_objects(self.context)
+
+        return
+
+    def _context_items_changed(self, dict_event):
+        context = dict(dict_event.added)
+        context.update(dict_event.changed)
+
+        print "^^^^^^^^context^^^^^^^", context
+        self._register_objects(context)
 
         event = dict(
             obj  = 'jigna',
             name = 'context_updated',
-            data = self.get_context()
+            data = self._context_ids(context)
         )
 
         self.send_event(event)
@@ -119,17 +126,10 @@ class Server(HasTraits):
 
     #### Handlers for each kind of request ####################################
 
-    # fixme: the request parameter is not used at all but we need to pass it to 
-    # be able to call from the JS
-    def get_context(self, request=None):
-        """ Return a dictionary keyed with object ids of the objects in
-        self._context and whose values are the object ids.
-        """
-        context_ids = {}
-        for obj_name, obj in self.context.items():
-            context_ids[obj_name] = str(id(obj))
+    def get_context(self, request):
+        """ Get the current context """
 
-        return context_ids
+        return self._context_ids(self.context)
 
     #### Instances ####
 
@@ -226,6 +226,16 @@ class Server(HasTraits):
     #:
     #: { str id : instance_or_list obj }
     _id_to_object_map = Dict
+
+    def _context_ids(self, context):
+        """ Return a dictionary keyed with object ids of the objects in
+        self._context and whose values are the object ids.
+        """
+        context_ids = {}
+        for obj_name, obj in context.items():
+            context_ids[obj_name] = str(id(obj))
+
+        return context_ids
 
     def _handle_request(self, request):
         """ Handle a jsonized request from a client. """
