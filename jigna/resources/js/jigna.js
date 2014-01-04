@@ -794,7 +794,6 @@ module.run(function($rootScope, $compile){
             $rootScope[model_name] = jigna.models[model_name];
         }
 
-        $compile(document)($rootScope);
         jigna.fire(jigna, '$digest');
     };
     add_to_scope(jigna.models);
