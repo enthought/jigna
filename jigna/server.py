@@ -54,7 +54,6 @@ class Server(HasTraits):
         context = dict(dict_event.added)
         context.update(dict_event.changed)
 
-        print "^^^^^^^^context^^^^^^^", context
         self._register_objects(context)
 
         event = dict(

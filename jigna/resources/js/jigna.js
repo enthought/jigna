@@ -786,13 +786,16 @@ jigna.initialize();
 var module = angular.module('jigna', []);
 
 // Add initialization function on module run time
-module.run(function($rootScope){
+module.run(function($rootScope, $compile){
 
     // Add all jigna models as scope variables
     var add_to_scope = function(context){
         for (var model_name in context) {
-            $rootScope[model_name] = context[model_name];
+            $rootScope[model_name] = jigna.models[model_name];
         }
+
+        $compile(document)($rootScope);
+        jigna.fire(jigna, '$digest');
     };
     add_to_scope(jigna.models);
 
