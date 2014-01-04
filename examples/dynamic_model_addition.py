@@ -28,10 +28,11 @@ body_html = """
 
       <br><br>
 
-      Model 2: 
-      Name: <input ng-model="model2.name">
-      Age: <input ng-model="model2.age" type='number'>
-
+      <div ng-if="model2">
+        Model 2: 
+        Name: <input ng-model="model2.name">
+        Age: <input ng-model="model2.age" type='number'>
+      </div>
 
     </div>
 """
