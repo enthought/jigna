@@ -282,10 +282,7 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
 };
 
 jigna.Client.prototype.on_object_changed = function(event){
-    var proxy = this._id_to_proxy_map[event.obj];
-    
-    // invalidate cache
-    proxy.__cache__[event.name] = undefined;
+    this._invalidate_cached_attribute(event.obj, event.name);
 
     // fixme: This smells... It is used when we have a list of instances but it
     // blows away caching advantages. Can we make it smarter by managing the
