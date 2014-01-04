@@ -30,23 +30,15 @@ class JignaNotebook(object):
                 {body_html}
             </div>
             <script>
-            try {{
-                jigna
-            }}
-            catch(err)
-            {{
-                window.jigna_server = "{server}";
-                $.getScript("http://{server}/jigna/js/angular.min.js", function() {{
-                    $.getScript("http://{server}/jigna/js/jigna.js", function() {{
-                        angular.bootstrap(document, ['jigna']);
-                        console.log("Started jigna.");
+            $.getScript("http://{server}/jigna/js/angular.min.js", function() {{
+                $.getScript("http://{server}/jigna/js/jigna.js", function() {{
+                    var elem = $("#{div_id}");
+
+                    elem.ready(function(){{
+                        angular.bootstrap(elem, ['jigna']);
                     }})
-                }});
-            }} finally {{
-                setTimeout(function() {{
-                    $(document.body).scope().recompile($("#{div_id}"));
-                }}, 0);
-            }}
+                }})
+            }})
             </script>
               """.format(div_id=div_id, body_html=body_html, server=server))
         return src
