@@ -806,6 +806,13 @@ module.run(function($rootScope, $compile){
             $rootScope.$digest();
         }
     });
+
+    // fixme: this is very ugly. remove this asap.
+    $rootScope.recompile = function(element) {
+        $compile(element)($rootScope);
+
+        jigna.fire(jigna, '$digest');
+    };
 });
 
 // EOF ////////////////////////////////////////////////////////////////////////
