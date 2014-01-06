@@ -30,8 +30,7 @@ class QtBridge(Bridge):
         jsonized_event = json.dumps(event)
 
         if self.widget is None:
-            print "widget not available"
-            return
+            raise RuntimeError("Widget does not exist")
         
         else:
             # This looks weird but this is how we fake an event being 'received'
