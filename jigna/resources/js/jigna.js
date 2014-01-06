@@ -185,19 +185,10 @@ jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
     this._client.handle_event(jsonized_event);
 };
 
-jigna.QtBridge.prototype.send_request = function(jsonized_request, mode) {
+jigna.QtBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
-    if (mode === undefined) {
-        mode = "sync";
-    }
-
-    if (mode == "sync") {
-        return this._qt_bridge.handle_request(jsonized_request);
-    }
-    else {
-        return this._qt_bridge.handle_request_async(jsonized_request);
-    }
+    return this._qt_bridge.handle_request(jsonized_request);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -222,20 +213,16 @@ jigna.WebBridge = function(client) {
     };
 };
 
-jigna.WebBridge.prototype.send_request = function(jsonized_request, mode) {
+jigna.WebBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_response;
-
-    if (mode === undefined) {
-        mode = "sync";
-    }
 
     $.ajax(
         {
             url     : '/_jigna',
             type    : 'GET',
-            data    : {'data': jsonized_request, 'mode': mode},
+            data    : {'data': jsonized_request},
             success : function(result) {jsonized_response = result;},
             error   : function(status, error) {
                           console.warning("Error: " + error);
@@ -310,10 +297,11 @@ jigna.Client.prototype.send_request_async = function(request) {
 
     var jsonized_request, deferred;
 
+    request["async"] = true;
     jsonized_request  = JSON.stringify(request);
     deferred = new $.Deferred();
 
-    var future_obj = this.bridge.send_request(jsonized_request, "async");
+    var future_obj = this.bridge.send_request(jsonized_request);
 
     jigna.add_listener(future_obj, 'done', function(event){
         deferred.resolve(event.data);

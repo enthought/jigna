@@ -146,13 +146,9 @@ class GetFromBridge(RequestHandler):
 
     def get(self):
         jsonized_request = self.get_argument("data")
-        mode = self.get_argument("mode", default="sync")
-        if mode == "async":
-            future_obj = self.server.handle_request_async(jsonized_request)
-            self.write(future_obj)
-        else:
-            jsonized_response = self.server.handle_request(jsonized_request)
-            self.write(jsonized_response)
+        
+        jsonized_response = self.server.handle_request(jsonized_request)
+        self.write(jsonized_response)
         return
 
 ##### WebSocket handler #######################################################

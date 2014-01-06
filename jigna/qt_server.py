@@ -61,8 +61,7 @@ class QtServer(Server):
         self._bridge.widget = widget
 
         widget.trait_set(
-            callbacks = [('handle_request', self.handle_request),
-                         ('handle_request_async', self.handle_request_async)],
+            callbacks = [('handle_request', self.handle_request)],
             python_namespace = 'qt_bridge'
         )
 
