@@ -25,7 +25,7 @@ EventTarget.prototype = {
         this._listeners[id][event_name].push({thisArg: thisArg, listener: listener});
     },
 
-    fire: function(obj, event){
+    fire_event: function(obj, event){
         var id = this._to_id(obj);
 
         if (typeof event == "string"){
@@ -254,7 +254,7 @@ jigna.Client = function() {
         this
     );
     
-    jigna.fire('jigna', {
+    jigna.fire_event('jigna', {
         name: 'context_updated',
         data: this.get_context()
     });
@@ -265,7 +265,7 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var event = JSON.parse(jsonized_event);
 
-    jigna.fire(event.obj, event);
+    jigna.fire_event(event.obj, event);
 };
 
 jigna.Client.prototype.on_object_changed = function(event){
@@ -276,7 +276,7 @@ jigna.Client.prototype.on_object_changed = function(event){
     // details of a TraitListEvent?
     this._create_proxy(event.data.type, event.data.value);
 
-    jigna.fire(jigna, '$digest');
+    jigna.fire_event(jigna, '$digest');
 
 };
 
@@ -779,7 +779,7 @@ module.run(function($rootScope, $compile){
             $rootScope[model_name] = jigna.models[model_name];
         }
 
-        jigna.fire(jigna, '$digest');
+        jigna.fire_event(jigna, '$digest');
     };
     add_to_scope(jigna.models);
 
@@ -799,7 +799,7 @@ module.run(function($rootScope, $compile){
     $rootScope.recompile = function(element) {
         $compile(element)($rootScope);
 
-        jigna.fire(jigna, '$digest');
+        jigna.fire_event(jigna, '$digest');
     };
 });
 
