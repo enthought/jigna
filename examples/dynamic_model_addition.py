@@ -15,9 +15,6 @@ class Person(HasTraits):
     name = Str
     age  = Int
 
-    def update_name(self, name):
-        self.name = name 
-
 #### UI layer ####
 
 body_html = """
