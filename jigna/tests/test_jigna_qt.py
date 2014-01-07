@@ -196,6 +196,19 @@ class TestJignaQt(unittest.TestCase):
         self.person_view.update_context(new_model=new_model)
         self.assertJSEqual("jigna.models.new_model.name", new_model.name)
         self.assertJSEqual("$(document.body).scope().new_model.name", new_model.name)
+
+    def test_events_js(self):
+        # When
+        self.execute_js("""
+            jigna.add_listener(jigna.models.model, 'name', function(event){
+                jigna.models.model.new_name = event.data.value;
+            })
+        """)
+        self.fred.name = "Freddie"
+
+        # Then
+        self.assertJSEqual("jigna.models.model.new_name", self.fred.name)
+
         
 if __name__ == "__main__":
     unittest.main()
