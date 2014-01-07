@@ -1,9 +1,10 @@
-from traits.api import Dict, HasTraits, Instance, Int, Str, List
+from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
 from jigna.api import View
 from pyface.gui import GUI
 from pyface.qt import QtGui
 
 import unittest
+import time
 
 #### Test model ####
 
@@ -15,8 +16,14 @@ class Person(HasTraits):
     friends = List(Instance('Person'))
     phonebook = Dict(Str, Int)
 
+    name_updated = Event
+
     def method(self, value):
         self.called_with = value
+
+    def method_slow(self, value, sleep_for):
+        time.sleep(sleep_for)
+        self.method_slow_called_with = value
 
 #### UI for model ####
 
@@ -51,26 +58,14 @@ body_html = """
 """
 
 class TestJignaQt(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        app = QtGui.QApplication.instance() or QtGui.QApplication([])
-        person_view = View(body_html=body_html)
-        fred = Person(name='Fred', age=42)
-        person_view.show(model=fred)
-        GUI.process_events()
-        cls.person_view = person_view
-        cls.fred = fred
-        cls.app = app
 
     def setUp(self):
-        cls = self.__class__
-        self.app = cls.app
-        self.person_view = cls.person_view
+        self.app = QtGui.QApplication.instance() or QtGui.QApplication([])
+        self.person_view = View(body_html=body_html)
+        self.fred = Person(name='Fred', age=42)
+        self.person_view.show(model=self.fred)
+        GUI.process_events()
         self.bridge = self.person_view._server._bridge
-        self.fred = cls.fred
-        self.fred.spouse = None
-        self.fred.fruits = []
-        self.fred.friends = []
 
     def execute_js(self, js):
         GUI.process_events()
@@ -200,15 +195,28 @@ class TestJignaQt(unittest.TestCase):
     def test_events_js(self):
         # When
         self.execute_js("""
-            jigna.add_listener(jigna.models.model, 'name', function(event){
+            jigna.add_listener(jigna.models.model, 'name_updated', function(event){
                 jigna.models.model.new_name = event.data.value;
             })
         """)
-        self.fred.name = "Freddie"
+        self.fred.name_updated = "Freddie"
 
         # Then
-        self.assertJSEqual("jigna.models.model.new_name", self.fred.name)
+        self.assertJSEqual("jigna.models.model.new_name", "Freddie")
 
+    def test_async_call(self):
+        # When
+        self.execute_js("""
+            var deferred = jigna.models.model.method_slow_async('foo', 1);
+            deferred.done(function(){
+                jigna.models.model.method_slow_finished = 5;
+            })
+        """)
+        time.sleep(1.5)
+
+        # Then
+        self.assertEqual(self.fred.method_slow_called_with, 'foo')
+        self.assertJSEqual('jigna.models.model.method_slow_finished', 5)
         
 if __name__ == "__main__":
     unittest.main()
