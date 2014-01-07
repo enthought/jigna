@@ -1,9 +1,10 @@
-from traits.api import Dict, HasTraits, Instance, Int, Str, List
+from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
 from jigna.api import View
 from pyface.gui import GUI
 from pyface.qt import QtGui
 
 import unittest
+import time
 
 #### Test model ####
 
@@ -15,8 +16,17 @@ class Person(HasTraits):
     friends = List(Instance('Person'))
     phonebook = Dict(Str, Int)
 
+    name_updated = Event
+
     def method(self, value):
         self.called_with = value
+
+    def printme(self, val):
+        print "JS:", val
+
+    def method_slow(self, value, sleep_for):
+        time.sleep(sleep_for)
+        self.method_slow_called_with = value
 
 #### UI for model ####
 
@@ -51,6 +61,7 @@ body_html = """
 """
 
 class TestJignaQt(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         app = QtGui.QApplication.instance() or QtGui.QApplication([])
@@ -71,6 +82,8 @@ class TestJignaQt(unittest.TestCase):
         self.fred.spouse = None
         self.fred.fruits = []
         self.fred.friends = []
+        self.fred.called_with = None
+        self.fred.method_slow_called_with = None
 
     def execute_js(self, js):
         GUI.process_events()
@@ -194,9 +207,51 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual("jigna.models.model.name", 'Fred')
         self.assertJSEqual("jigna.models.new_model", None)
         self.person_view.update_context(new_model=new_model)
+        # this sleep is needed because the context is updated in an event listener
+        # so it might take a while
+        time.sleep(0.1)
         self.assertJSEqual("jigna.models.new_model.name", new_model.name)
         self.assertJSEqual("$(document.body).scope().new_model.name", new_model.name)
 
+    def test_events_js(self):
+        # When
+        self.execute_js("""
+            jigna.add_listener(jigna.models.model, 'name_updated', function(event){
+                jigna.models.model.new_name = event.data.value;
+            })
+        """)
+        self.fred.name_updated = "Freddie"
+
+        # Then
+        self.assertJSEqual("jigna.models.model.new_name", "Freddie")
+
+    def test_async_call(self):
+        # When
+        self.execute_js("""
+            var deferred = jigna.models.model.method_slow_async('foo', 1);
+            deferred.done(function(){
+                jigna.models.model.printme("slow method done");
+                jigna.models.model.method_slow_finished = true;
+            })
+        """)
+              
+        # The following is a way to test async methods.
+        # Basically, we keep on checking for a condition which becomes true when 
+        # the function is finished, and raise an error if the timeout occurs before
+        # the condition becomes true
+        timeout = 1.5
+        dt = 0.1
+        for i in range(int(timeout/dt)):
+            time.sleep(dt)
+            try:
+                self.assertJSEqual('jigna.models.model.method_slow_finished', True)
+                self.assertEqual(self.fred.method_slow_called_with, 'foo')
+                break
+            except Exception:
+                pass
+        else:
+            raise AssertionError("Async method not finished")
+        
 if __name__ == "__main__":
     unittest.main()
 

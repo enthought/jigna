@@ -11,46 +11,71 @@ EventTarget.prototype = {
 
     constructor: EventTarget,
 
-    addListener: function(type, listener, thisArg){
-        if (typeof this._listeners[type] == "undefined"){
-            this._listeners[type] = [];
+    add_listener: function(obj, event_name, listener, thisArg){
+        var id = this._to_id(obj);
+
+        if (this._listeners[id] === undefined){
+            this._listeners[id] = {};
         }
 
-        this._listeners[type].push({thisArg: thisArg || this, listener: listener});
+        if (this._listeners[id][event_name] === undefined) {
+            this._listeners[id][event_name] = [];
+        }
+
+        this._listeners[id][event_name].push({thisArg: thisArg, listener: listener});
     },
 
-    fire: function(event){
+    fire_event: function(obj, event){
+        var id = this._to_id(obj);
+
         if (typeof event == "string"){
-            event = { type: event };
+            event = { name: event };
         }
         if (!event.target){
-            event.target = this;
+            event.target = obj;
         }
 
-        if (!event.type){  //falsy
-            throw new Error("Event object missing 'type' property.");
+        if (!event.name){  //falsy
+            console.log('event:', event);
+            throw new Error("Event object missing 'name' property.");
         }
 
-        if (this._listeners[event.type] instanceof Array){
-            var listeners = this._listeners[event.type];
+        if (this._listeners[id] === undefined) {
+            return;
+        }
+
+        if (this._listeners[id][event.name] instanceof Array){
+            var listeners = this._listeners[id][event.name];
             for (var i=0, len=listeners.length; i < len; i++){
                 listener = listeners[i].listener;
                 thisArg = listeners[i].thisArg;
-                console.log('firing event, calling listener', event, thisArg);
                 listener.call(thisArg, event);
             }
         }
     },
 
-    removeListener: function(type, listener){
-        if (this._listeners[type] instanceof Array){
-            var listeners = this._listeners[type];
+    remove_listener: function(obj, event_name, listener){
+        var id = this._to_id(obj);
+
+        if (this._listeners[id][event_name] instanceof Array){
+            var listeners = this._listeners[id][event_name];
             for (var i=0, len=listeners.length; i < len; i++){
                 if (listeners[i] === listener){
                     listeners.splice(i, 1);
                     break;
                 }
             }
+        }
+    },
+
+    //// Private protocol /////////////////////////////////////////////////////
+
+    _to_id: function(obj){
+        if (obj.__id__ !== undefined) {
+            return obj.__id__;
+        }
+        else {
+            return obj;
         }
     }
 };
@@ -137,12 +162,10 @@ function SubArray() {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Namespace for all Jigna-related objects.
-var jigna = {
-    models : {},
-    event_target : new EventTarget()
-};
+var jigna = new EventTarget();
 
 jigna.initialize = function() {
+    this.models = {};
     // This is where all the work is done!
     this.client = new jigna.Client();
 };
@@ -166,39 +189,6 @@ jigna.QtBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
     return this._qt_bridge.handle_request(jsonized_request);
-};
-
-jigna.QtBridge.prototype.send_request_async = function(jsonized_request) {
-    /* Send a request to the server and wait for the reply. */
-
-    var deferred = new $.Deferred();
-
-    var future_id = this._qt_bridge.handle_request_async(jsonized_request);
-
-    jigna.event_target.addListener(
-        '_future_updated',
-        function(event){
-            console.log("future updated", event, future_id);
-            if (event.future_id != future_id) {
-                return
-            }
-
-            else {
-                if (event.status == 'done') {
-                    deferred.resolve(event.result);
-                }
-                else if (event.status == 'error') {
-                    console.log("error occured", event.result);
-                    deferred.reject(event.result);
-                }
-
-                // remove the event listener
-                this.removeListener('future_updated', arguments.callee)
-            }
-        }
-    )
-
-    return deferred
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -256,36 +246,38 @@ jigna.Client = function() {
     this._id_to_proxy_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
-    // Add event handler for '_object_changed' and '_event_fired' events
-    jigna.event_target.addListener(
-        '_object_changed',
-        this._on_object_changed,
+    // Add all of the models being edited.
+    jigna.add_listener(
+        'jigna',
+        'context_updated',
+        function(event){ this._add_models(event.data); },
         this
     );
-    jigna.event_target.addListener(
-        '_event_trait_fired',
-        this._on_event_trait_fired,
-        this
-    );
-    jigna.event_target.addListener(
-        '_context_updated',
-        this._on_context_updated,
-        this
-    );
-
-    // Fire a '_context_updated' event to setup the initial context.
-    jigna.event_target.fire({
-        type: '_context_updated',
-        data: this.get_context(),
+    
+    jigna.fire_event('jigna', {
+        name: 'context_updated',
+        data: this.get_context()
     });
-
+    
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var event = JSON.parse(jsonized_event);
 
-    jigna.event_target.fire(event);
+    jigna.fire_event(event.obj, event);
+};
+
+jigna.Client.prototype.on_object_changed = function(event){
+    this._invalidate_cached_attribute(event.obj, event.name);
+
+    // fixme: This smells... It is used when we have a list of instances but it
+    // blows away caching advantages. Can we make it smarter by managing the
+    // details of a TraitListEvent?
+    this._create_proxy(event.data.type, event.data.value);
+
+    jigna.fire_event(jigna, 'object_changed');
+
 };
 
 jigna.Client.prototype.send_request = function(request) {
@@ -305,10 +297,21 @@ jigna.Client.prototype.send_request_async = function(request) {
 
     var jsonized_request, deferred;
 
+    request["async"] = true;
     jsonized_request  = JSON.stringify(request);
-    deferred = this.bridge.send_request_async(jsonized_request);
+    deferred = new $.Deferred();
 
-    return deferred
+    var future_obj = this.bridge.send_request(jsonized_request);
+
+    jigna.add_listener(future_obj, 'done', function(event){
+        deferred.resolve(event.data);
+    });
+
+    jigna.add_listener(future_obj, 'error', function(event){
+        deferred.reject(event.data);
+    });
+
+    return deferred;
 };
 
 // Convenience methods for each kind of request //////////////////////////////
@@ -326,12 +329,12 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
     console.log('request', request);
 
     if (!async) {
-        response = this.send_request(request)
+        response = this.send_request(request);
 
-        return this._unmarshal(response.result)
+        return this._unmarshal(response.result);
     }
     else {
-        return this.send_request_async(request)
+        return this.send_request_async(request);
     }
 };
 
@@ -362,7 +365,7 @@ jigna.Client.prototype.get_instance_attribute = function(id, attribute_name) {
         attribute_name : attribute_name
     };
 
-    response = this.send_request(request)
+    response = this.send_request(request);
 
     return this._unmarshal(response.result);
 };
@@ -385,7 +388,7 @@ jigna.Client.prototype.get_item = function(id, index) {
         index : index,
     };
 
-    response = this.send_request(request)
+    response = this.send_request(request);
 
     return this._unmarshal(response.result);
 };
@@ -409,7 +412,7 @@ jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, val
         value          : this._marshal(value)
     };
 
-    this.send_request(request)
+    this.send_request(request);
 };
 
 jigna.Client.prototype.set_item = function(id, index, value) {
@@ -422,7 +425,7 @@ jigna.Client.prototype.set_item = function(id, index, value) {
         value : this._marshal(value)
     };
 
-    this.send_request(request)
+    this.send_request(request);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
@@ -535,41 +538,6 @@ jigna.Client.prototype._unmarshal_all = function(objs) {
     return objs;
 };
 
-jigna.Client.prototype._on_object_changed = function(event) {
-    this._invalidate_cached_attribute(event.obj, event.attribute_name);
-
-    // fixme: This smells... It is used when we have a list of instances but it
-    // blows away caching advantages. Can we make it smarter by managing the
-    // details of a TraitListEvent?
-    this._create_proxy(event.new_obj.type, event.new_obj.value);
-
-    jigna.event_target.fire({
-        type: 'object_changed'
-    });
-};
-
-jigna.Client.prototype._on_event_trait_fired = function(event) {
-    obj_proxy = this._id_to_proxy_map[event.obj];
-    data_proxy = this._create_proxy(event.data.type, event.data.value);
-
-    jigna.event_target.fire({
-        type: 'event_trait_fired',
-        obj: obj_proxy,
-        attribute_name: event.attribute_name,
-        data: data_proxy,
-    });
-};
-
-jigna.Client.prototype._on_context_updated = function(event) {
-    this._add_models(event.data);
-
-    jigna.event_target.fire({
-        type: 'context_updated',
-        data: event.data,
-    });
-};
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // ProxyFactory
 ///////////////////////////////////////////////////////////////////////////////
@@ -607,7 +575,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
     };
 
     descriptor = {enumerable:true, get:get, set:set};
-    console.log("defining index property for index:", index)
+    console.log("defining index property for index:", index);
     Object.defineProperty(proxy, index, descriptor);
 };
 
@@ -625,6 +593,8 @@ jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name)
         return method.call(this, false, args);
     };
 
+    // fixme: this is ugly and potentially dangerous. Ideally we should have a 
+    // jigna.async(func, args) method.
     proxy[method_name+"_async"] = function(){
         // In here, 'this' refers to the proxy!
         var args = Array.prototype.slice.call(arguments);
@@ -670,6 +640,34 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 
     descriptor = {enumerable:true, get:get, set:set};
     Object.defineProperty(proxy, attribute_name, descriptor);
+
+    jigna.add_listener(
+        proxy,
+        attribute_name,
+        this._client.on_object_changed,
+        this._client
+    );
+};
+
+jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
+    var descriptor, set;
+
+    set = function(value) {
+        this.__cache__[event_name] = value;
+        this.__client__.set_instance_attribute(
+            this.__id__, event_name, value
+        );
+    };
+
+    descriptor = {enumerable:false, set:set};
+    Object.defineProperty(proxy, event_name, descriptor);
+
+    jigna.add_listener(
+        proxy,
+        event_name,
+        this._client.on_object_changed,
+        this._client
+    );
 };
 
 jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
@@ -693,6 +691,10 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     info = this._client.get_instance_info(id);
     for (index in info.attribute_names) {
         this._add_instance_attribute(proxy, info.attribute_names[index]);
+    }
+
+    for (index in info.event_names) {
+        this._add_instance_event(proxy, info.event_names[index]);
     }
 
     for (index in info.method_names) {
@@ -752,9 +754,9 @@ jigna.ListProxy = function(type, id, client) {
     Object.defineProperty(arr, '__id__',     {value : id});
     Object.defineProperty(arr, '__client__', {value : client});
     Object.defineProperty(arr, '__cache__',  {value : {}});
-
-    return arr
-}
+    
+    return arr;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Auto-initialization
@@ -771,41 +773,34 @@ var module = angular.module('jigna', []);
 // Add initialization function on module run time
 module.run(function($rootScope, $compile){
 
-    var update_scope_with_models = function(context) {
+    // Add all jigna models as scope variables
+    var add_to_scope = function(context){
         for (var model_name in context) {
             $rootScope[model_name] = jigna.models[model_name];
         }
-    }
 
-    // Initialize the scope with the jigna models.
-    update_scope_with_models(jigna.models);
+        jigna.fire_event(jigna, 'object_changed');
+    };
+    add_to_scope(jigna.models);
+
+    jigna.add_listener('jigna', 'context_updated', function(event){
+        console.log("event.data", event.data);
+        add_to_scope(event.data);
+    });
 
     // Listen to object change events in jigna
-    jigna.event_target.addListener('object_changed', function() {
+    jigna.add_listener(jigna, 'object_changed', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }
-    }, false);
+    });
 
-    // Listen to 'context_updated' events in jigna and update the scope.
-    jigna.event_target.addListener('context_updated', function(event) {
-        update_scope_with_models(event.data);
-    }, false);
-
-    // A method that allows us to recompile a part of the document after
-    // DOM modifications.  For example one could have:
-    //
-    // var new_elem = $("<input ng-model='model.name'>");
-    // $("#some-element").append(new_elem);
-    // scope.recompile(new_elem);
-    //
+    // fixme: this is very ugly. remove this asap.
     $rootScope.recompile = function(element) {
         $compile(element)($rootScope);
-        if ($rootScope.$$phase === null){
-            $rootScope.$digest();
-        }
-    };
 
-})
+        jigna.fire_event(jigna, 'object_changed');
+    };
+});
 
 // EOF ////////////////////////////////////////////////////////////////////////

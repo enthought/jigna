@@ -37,10 +37,17 @@ class Server(HasTraits):
     #: Base url for serving content.
     base_url = Str
 
+    #: The html to serve.
+    html = Str
+
+    #: The trait change dispatch mechanism to use when traits change.
+    trait_change_dispatch = Str('ui')
+
     #: Context mapping from object name to obj.
     context = Dict
     def _context_changed(self):
         self._register_objects(self.context)
+
         return
 
     def _context_items_changed(self, dict_event):
@@ -49,16 +56,15 @@ class Server(HasTraits):
 
         self._register_objects(context)
 
-        data = self._get_context_data_for_event(context)
-        event = dict(type='_context_updated',
-                     data=data)
+        event = dict(
+            obj  = 'jigna',
+            name = 'context_updated',
+            data = self._context_ids(context)
+        )
+
         self.send_event(event)
 
-    #: The html to serve.
-    html = Str
-
-    #: The trait change dispatch mechanism to use when traits change.
-    trait_change_dispatch = Str('ui')
+        return
 
     def send_event(self, event):
         """ Send an event to the client(s). """
@@ -76,52 +82,24 @@ class Server(HasTraits):
         """ Handle a jsonized request from a client. """
 
         request = json.loads(jsonized_request)
-        response = self._handle_request(request)
+
+        if request.get("async"):
+            response = self._handle_request_async(request)
+
+        else:
+            response = self._handle_request(request)
 
         def default(obj):
             return repr(type(obj))
 
         return json.dumps(response, default=default);
 
-    def handle_request_async(self, jsonized_request):
-        """ Handle a jsonized request from a client. """
-
-        from jigna.core.concurrent import Future
-
-        future = Future(self.handle_request, args=(jsonized_request,),
-                        dispatch=self.trait_change_dispatch)
-        future_id = self._marshal(future)['value']
-
-        def _on_done(result):
-            event = dict(type='_future_updated',
-                         future_id=future_id,
-                         status='done',
-                         result=result)
-            print "done, send_event:", event
-            self.send_event(event)
-
-        def _on_error(error):
-            import traceback
-            type, value, tb = error
-            error_msg = '\n'.join(traceback.format_tb(tb))
-            event = dict(type='_future_updated',
-                         future_id=future_id,
-                         status='error',
-                         result=error_msg)
-            self.send_event(event)
-
-        future.on_done(_on_done)
-        future.on_error(_on_error)
-
-        return future_id
-
-
     #### Handlers for each kind of request ####################################
 
     def get_context(self, request):
-        """ Get the models and model names in the context. """
+        """ Get the current context """
 
-        return self._get_context_data_for_event(self.context)
+        return self._context_ids(self.context)
 
     #### Instances ####
 
@@ -155,6 +133,7 @@ class Server(HasTraits):
         info = dict(
             type_name        = type(obj).__module__ + '.' + type(obj).__name__,
             attribute_names  = self._get_attribute_names(obj),
+            event_names      = self._get_event_names(obj),
             method_names     = self._get_public_method_names(type(obj))
         )
 
@@ -218,6 +197,16 @@ class Server(HasTraits):
     #: { str id : instance_or_list obj }
     _id_to_object_map = Dict
 
+    def _context_ids(self, context):
+        """ Return a dictionary keyed with object ids of the objects in
+        self._context and whose values are the object ids.
+        """
+        context_ids = {}
+        for obj_name, obj in context.items():
+            context_ids[obj_name] = str(id(obj))
+
+        return context_ids
+
     def _handle_request(self, request):
         """ Handle a jsonized request from a client. """
         # To dispatch the request we have a method named after each one!
@@ -226,6 +215,39 @@ class Server(HasTraits):
         exception = None
 
         return dict(exception=exception, result=result)
+
+    def _handle_request_async(self, request):
+        """ Handle a jsonized request from a client. """
+
+        from jigna.core.concurrent import Future
+
+        future = Future(self._handle_request, args=(request, ),
+                        dispatch=self.trait_change_dispatch)
+        
+        def _on_done(result):
+            event = dict(
+                obj  = str(id(future)),
+                name = 'done',
+                data = result
+            )
+            print "done, send_event:", event
+            self.send_event(event)
+
+        def _on_error(error):
+            import traceback
+            type, value, tb = error
+            error_msg = '\n'.join(traceback.format_tb(tb))
+            event = dict(
+                obj  = str(id(future)),
+                name = 'error',
+                data = error_msg
+            )
+            self.send_event(event)
+
+        future.on_done(_on_done)
+        future.on_error(_on_error)
+
+        return id(future)
 
     def _get_attribute_names(self, obj):
         """ Get the names of all the attributes on an object.
@@ -247,15 +269,21 @@ class Server(HasTraits):
 
         return attribute_names
 
-    def _get_context_data_for_event(self, context):
-        """Given a context dictionary, return data for the event.
+    def _get_event_names(self, obj):
+        """ Get the names of all the attributes on an object.
+
+        Return a list of strings.
+
         """
 
-        context_ids = {}
-        for obj_name, obj in context.items():
-            context_ids[obj_name] = str(id(obj))
+        event_names = []
 
-        return context_ids
+        if isinstance(obj, HasTraits):
+            for trait_name in obj.class_trait_names():
+                if obj.trait(trait_name).is_trait_type(Event):
+                    event_names.append(trait_name)
+        
+        return event_names
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
@@ -357,25 +385,15 @@ class Server(HasTraits):
             # fixme: intent is non-scalar or maybe container?
             if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
                 self._register_object(new)
-
-        if obj.trait(trait_name).is_trait_type(Event):
-            event = dict(
-                type           = '_event_trait_fired',
-                obj            = str(id(obj)),
-                attribute_name = trait_name,
-                data           = self._marshal(new)
-            )
-
-        else:
-            event = dict(
-                type           = '_object_changed',
-                obj            = str(id(obj)),
-                attribute_name = trait_name,
-                # fixme: This smells a bit, but marhsalling the new value gives us
-                # a type/value pair which we need on the client side to determine
-                # what (if any) proxy we need to create.
-                new_obj        = self._marshal(new)
-            )
+        
+        event = dict(
+            obj            = str(id(obj)),
+            name           = trait_name,
+            # fixme: This smells a bit, but marhsalling the new value gives us
+            # a type/value pair which we need on the client side to determine
+            # what (if any) proxy we need to create.
+            data        = self._marshal(new)
+        )
 
         self.send_event(event)
 

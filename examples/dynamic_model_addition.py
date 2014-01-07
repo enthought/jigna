@@ -1,7 +1,5 @@
 """
-This example is the most basic example which shows two-way data binding
-in Jigna. Some traits change automatically after some time on the model
-so you should see the corresponding change in the HTML DOM.
+This example shows how a model can be added dynamically to the scope.
 """
 
 #### Imports ####
@@ -17,15 +15,22 @@ class Person(HasTraits):
     name = Str
     age  = Int
 
-    def update_name(self, name):
-        self.name = name 
-
 #### UI layer ####
 
 body_html = """
     <div>
-      Name: <input ng-model="model.name">
-      Age: <input ng-model="model.age" type='number'>
+      Model 1:  
+      Name: <input ng-model="model1.name">
+      Age: <input ng-model="model1.age" type='number'>
+
+      <br><br>
+
+      <div ng-if="model2">
+        Model 2: 
+        Name: <input ng-model="model2.name">
+        Age: <input ng-model="model2.age" type='number'>
+      </div>
+
     </div>
 """
 
@@ -33,12 +38,16 @@ person_view = View(body_html=body_html)
 
 #### Entry point ####
 
+def add_model():
+    wilma = Person(name='Wilma', age=25)
+    person_view.update_context(model2=wilma)
+
 def main():
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
     
-    fred  = Person(name='Fred', age=42)
-    person_view.show(model=fred)
-    do_after(2000, fred.update_name, "Freddie")
+    fred = Person(name='Fred', age=42)
+    person_view.show(model1=fred)
+    do_after(2000, add_model)
 
     app.exec_()
 
