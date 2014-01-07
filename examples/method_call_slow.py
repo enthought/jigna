@@ -35,7 +35,9 @@ class Person(HasTraits):
         time.sleep(1)
         
         import urllib2
-        response = urllib2.urlopen('http://someboguswebsite.com')
+        urllib2.urlopen('http://someboguswebsite.com')
+
+        print "error!"
 
 #### UI layer ####
 

@@ -29,11 +29,15 @@ class QtBridge(Bridge):
 
         jsonized_event = json.dumps(event)
 
-        # This looks weird but this is how we fake an event being 'received'
-        # on the client side when using the Qt bridge!
-        self.widget.execute_js(
-            'jigna.client.bridge.handle_event(%r);' % jsonized_event
-        )
+        if self.widget is None:
+            raise RuntimeError("Widget does not exist")
+        
+        else:
+            # This looks weird but this is how we fake an event being 'received'
+            # on the client side when using the Qt bridge!
+            self.widget.execute_js(
+                'jigna.client.bridge.handle_event(%r);' % jsonized_event
+            )
 
         return
 
@@ -54,11 +58,10 @@ class QtServer(Server):
         callbacks and loading the html in it.
         """
 
-        self._bridge = QtBridge(widget=widget)
+        self._bridge.widget = widget
 
         widget.trait_set(
-            callbacks = [('handle_request', self.handle_request),
-                         ('handle_request_async', self.handle_request_async)],
+            callbacks = [('handle_request', self.handle_request)],
             python_namespace = 'qt_bridge'
         )
 
@@ -70,6 +73,10 @@ class QtServer(Server):
 
     #### Private protocol #####################################################
     
+    _bridge = Instance(QtBridge)
+    def __bridge_default(self):
+        return QtBridge()
+
     _factory = Instance('QtWebPluginFactory')
 
     def _enable_qwidget_embedding(self, widget):

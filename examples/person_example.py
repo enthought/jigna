@@ -4,7 +4,7 @@ in Jigna. Some traits change automatically after some time on the model
 so you should see the corresponding change in the HTML DOM.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Int, Str
 from pyface.qt import QtGui
@@ -34,6 +34,8 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
+    app = QtGui.QApplication.instance() or QtGui.QApplication([])
+    
     fred  = Person(name='Fred', age=42)
     def on_trait_change(obj, trait, old, new):
         print trait, old, new
@@ -41,9 +43,9 @@ def main():
     person_view.show(model=fred)
     do_after(2000, fred.update_name, "Freddie")
 
-if __name__ == "__main__":
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    main()
     app.exec_()
+
+if __name__ == "__main__":
+    main()
 
 #### EOF ######################################################################

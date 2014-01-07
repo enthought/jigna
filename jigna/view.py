@@ -136,7 +136,7 @@ class View(HasTraits):
         return
 
     def update_context(self, **context):
-        """Update the server's context.
+        """Adds the given models to the context available to the view.
         """
         self._server.context.update(context)
 

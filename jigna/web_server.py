@@ -20,7 +20,7 @@ from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
 
 # Enthought library.
-from traits.api import List, Str, Int
+from traits.api import List, Str, Int, Instance
 
 # Jigna library.
 from jigna.server import Bridge, Server
@@ -94,10 +94,7 @@ class WebServer(Server):
         This is a *blocking* call.
 
         """
-
-        self._bridge = WebBridge()
-
-        application = self._create_application(self._bridge)
+        application = self._create_application()
         application.listen(self.port, address=self.address)
 
         ioloop = IOLoop.instance()
@@ -110,7 +107,11 @@ class WebServer(Server):
 
     #### Private protocol #####################################################
 
-    def _create_application(self, bridge):
+    _bridge = Instance(WebBridge)
+    def __bridge_default(self):
+        return WebBridge()
+
+    def _create_application(self):
         """ Create the Web Application. """
 
         settings = {
@@ -120,7 +121,7 @@ class WebServer(Server):
 
         application = Application(
             [
-                (r"/_jigna_ws", JignaSocket,   dict(bridge=bridge, server=self)),
+                (r"/_jigna_ws", JignaSocket,   dict(bridge=self._bridge, server=self)),
                 (r"/_jigna",    GetFromBridge, dict(server=self)),
                 (r".*",         MainHandler,   dict(server=self)),
             ],
@@ -153,6 +154,7 @@ class GetFromBridge(RequestHandler):
 
     def get(self):
         jsonized_request = self.get_argument("data")
+        
         jsonized_response = self.server.handle_request(jsonized_request)
         self.write(jsonized_response)
         return
