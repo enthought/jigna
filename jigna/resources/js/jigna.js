@@ -190,11 +190,11 @@ jigna.get_attribute = function (args) {
 
     if (arguments.length === 1) {
         timeout = 2;
-        deferred = $.Deferred();
+        deferred = new $.Deferred();
     }
     else if (arguments.length === 2) {
         timeout = Array.prototype.slice.call(arguments, 1, 2)[0];
-        deferred = $.Deferred();
+        deferred = new $.Deferred();
     }
     else {
         timeout = Array.prototype.slice.call(arguments, 1, 2)[0];
@@ -270,7 +270,7 @@ jigna.WebBridge = function(client) {
     this._message_count = 0;
 
     this._web_socket = new WebSocket(url);
-    this._ws_opened = new $.Deferred;
+    this._ws_opened = new $.Deferred();
     var bridge = this;
     this._web_socket.onopen = function() {
         bridge._ws_opened.resolve();
@@ -366,7 +366,7 @@ jigna.Client = function() {
         function(event){ this._add_models(event.data); },
         this
     );
-    
+
     // Fire a '_context_updated' event to setup the initial context.
     var fire_context_updated = function(result) {
         jigna.fire_event('jigna', {
@@ -374,7 +374,7 @@ jigna.Client = function() {
             data: result,
         });
     };
-    this.get_context(fire_context_updated);    
+    this.get_context(fire_context_updated);
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -395,7 +395,7 @@ jigna.Client.prototype.on_object_changed = function(event){
     var on_new_proxy = function(new_proxy) {
         jigna.fire_event(jigna, 'object_changed');
     };
-    this._create_proxy(event.new_obj.type, event.new_obj.value, on_new_proxy);
+    this._create_proxy(event.data.type, event.data.value, on_new_proxy);
 };
 
 jigna.Client.prototype.send_request = function(request, on_done) {
@@ -452,7 +452,7 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
     if (!async) {
         client = this;
         if (jigna.async) {
-            var deferred = $.Deferred();
+            var deferred = new $.Deferred();
             var on_return = function(response) {
                 client._unmarshal(response.result, deferred.resolve);
             }
@@ -508,12 +508,7 @@ jigna.Client.prototype.get_instance_attribute = function(id, attribute_name, on_
         client._unmarshal(response.result, function(result) {
                 on_result(result);
                 if (jigna.async) {
-                    jigna.event_target.fire({
-                        type           : 'object_changed',
-                        obj            : id,
-                        attribute_name : attribute_name,
-                        new_obj        : result,
-                    });
+                    jigna.fire_event(jigna, 'object_changed');
                 }
             }
         );
@@ -544,12 +539,7 @@ jigna.Client.prototype.get_item = function(id, index, on_result) {
         client._unmarshal(response.result, function(result) {
                 on_result(result);
                 if (jigna.async) {
-                    jigna.event_target.fire({
-                        type           : 'object_changed',
-                        obj            : id,
-                        attribute_name : index,
-                        new_obj        : result,
-                    });
+                    jigna.fire_event(jigna, 'object_changed');
                 }
             }
         );
@@ -792,7 +782,7 @@ jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name)
         return method.call(this, false, args);
     };
 
-    // fixme: this is ugly and potentially dangerous. Ideally we should have a 
+    // fixme: this is ugly and potentially dangerous. Ideally we should have a
     // jigna.async(func, args) method.
     proxy[method_name+"_async"] = function(){
         // In here, 'this' refers to the proxy!
@@ -980,7 +970,7 @@ jigna.ListProxy = function(type, id, client) {
     Object.defineProperty(arr, '__id__',     {value : id});
     Object.defineProperty(arr, '__client__', {value : client});
     Object.defineProperty(arr, '__cache__',  {value : []});
-    
+
     return arr;
 };
 
