@@ -276,7 +276,7 @@ jigna.Client.prototype.on_object_changed = function(event){
     // details of a TraitListEvent?
     this._create_proxy(event.data.type, event.data.value);
 
-    jigna.fire_event(jigna, '$digest');
+    jigna.fire_event(jigna, 'object_changed');
 
 };
 
@@ -779,7 +779,7 @@ module.run(function($rootScope, $compile){
             $rootScope[model_name] = jigna.models[model_name];
         }
 
-        jigna.fire_event(jigna, '$digest');
+        jigna.fire_event(jigna, 'object_changed');
     };
     add_to_scope(jigna.models);
 
@@ -789,7 +789,7 @@ module.run(function($rootScope, $compile){
     });
 
     // Listen to object change events in jigna
-    jigna.add_listener(jigna, '$digest', function() {
+    jigna.add_listener(jigna, 'object_changed', function() {
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }
@@ -799,7 +799,7 @@ module.run(function($rootScope, $compile){
     $rootScope.recompile = function(element) {
         $compile(element)($rootScope);
 
-        jigna.fire_event(jigna, '$digest');
+        jigna.fire_event(jigna, 'object_changed');
     };
 });
 
