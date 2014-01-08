@@ -183,22 +183,12 @@ jigna.initialize = function() {
 // Arguments:
 //   - expr a javascript expression to evaluate,
 //   - timeout (optional) in seconds; defaults to 2 seconds,
-jigna.get_attribute = function (args) {
-    var expr, timeout, deferred;
-
-    expr = Array.prototype.slice.call(arguments, 0)[0];
-
-    if (arguments.length === 1) {
+jigna.get_attribute = function (expr, timeout, deferred) {
+    if (timeout === undefined) {
         timeout = 2;
-        deferred = new $.Deferred();
     }
-    else if (arguments.length === 2) {
-        timeout = Array.prototype.slice.call(arguments, 1, 2)[0];
+    if (deferred === undefined) {
         deferred = new $.Deferred();
-    }
-    else {
-        timeout = Array.prototype.slice.call(arguments, 1, 2)[0];
-        deferred = Array.prototype.slice.call(arguments, 2, 3)[0];
     }
 
     var wait = 100;
