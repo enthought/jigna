@@ -37,17 +37,15 @@ class WebBridge(Bridge):
         try:
             jsonized_event = json.dumps(event)
             message_id = -1
-            self.send_data(json.dumps([message_id, jsonized_event]))
+            data = json.dumps([message_id, jsonized_event])
+            for socket in self._active_sockets:
+                socket.write_message(data)
         except:
             traceback.print_exc()
 
         return
 
     #### 'WebBridge' protocol #################################################
-
-    def send_data(self, data):
-        for socket in self._active_sockets:
-            socket.write_message(data)
 
     def add_socket(self, socket):
         """ Add a client socket. """
@@ -154,7 +152,7 @@ class GetFromBridge(RequestHandler):
 
     def get(self):
         jsonized_request = self.get_argument("data")
-        
+
         jsonized_response = self.server.handle_request(jsonized_request)
         self.write(jsonized_response)
         return
@@ -174,12 +172,11 @@ class JignaSocket(WebSocketHandler):
     def on_message(self, message):
         try:
             msg_id, jsonized_request = json.loads(message)
-            #print "server got message", msg_id, jsonized_request
             jsonized_response = self.server.handle_request(jsonized_request)
-            self.bridge.send_data(json.dumps([msg_id, jsonized_response]))
+            self.write_message(json.dumps([msg_id, jsonized_response]))
         except:
             traceback.print_exc()
-            self.bridge.send_data(json.dumps([msg_id, '{}']))
+            self.write_message(json.dumps([msg_id, '{}']))
         return
 
     def on_close(self):
