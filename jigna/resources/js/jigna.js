@@ -416,7 +416,7 @@ jigna.Client.prototype.send_request = function(request, on_done) {
 };
 
 jigna.Client.prototype.send_request_async = function(request) {
-    /* Send a request to the server and wait for (and return) the response. */
+    /* Send a request to the server and return a deferred object. */
 
     var jsonized_request, deferred;
 
@@ -424,17 +424,19 @@ jigna.Client.prototype.send_request_async = function(request) {
     jsonized_request  = JSON.stringify(request);
     deferred = new $.Deferred();
 
-    var future_obj = this.bridge.send_request(jsonized_request);
+    var callback = function(future_obj) {
+        jigna.add_listener(future_obj, 'done', function(event){
+            deferred.resolve(event.data);
+        });
 
-    jigna.add_listener(future_obj, 'done', function(event){
-        deferred.resolve(event.data);
-    });
+        jigna.add_listener(future_obj, 'error', function(event){
+            deferred.reject(event.data);
+        });
+    };
 
-    jigna.add_listener(future_obj, 'error', function(event){
-        deferred.reject(event.data);
-    });
+    this.bridge.send_request(jsonized_request, callback);
 
-    return deferred;
+    return deferred.promise();
 };
 
 // Convenience methods for each kind of request //////////////////////////////
@@ -991,11 +993,19 @@ module.run(function($rootScope, $compile){
 
     // Add all jigna models as scope variables
     var add_to_scope = function(context){
+        var total = Object.keys(context).length;
+        var count = 0;
         for (var model_name in context) {
-            $rootScope[model_name] = jigna.models[model_name];
+            var expr = "jigna.models['" + model_name +"']";
+            var on_model_added = jigna.get_attribute(expr);
+            on_model_added.done(function(result) {
+                $rootScope[model_name] = result;
+                count += 1;
+                if (count === total) {
+                    jigna.fire_event(jigna, 'object_changed');
+                }
+            });
         }
-
-        jigna.fire_event(jigna, 'object_changed');
     };
     add_to_scope(jigna.models);
 
