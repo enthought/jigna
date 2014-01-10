@@ -416,17 +416,17 @@ jigna.Client.prototype.send_request_async = function(request) {
     jsonized_request  = JSON.stringify(request);
     deferred = new $.Deferred();
 
-    var callback = function(future_obj) {
-        jigna.add_listener(future_obj, 'done', function(event){
-            deferred.resolve(event.data);
-        });
+    this.bridge.send_request(jsonized_request).done(
+        function(future_obj) {
+            jigna.add_listener(future_obj, 'done', function(event){
+                deferred.resolve(event.data);
+            });
 
-        jigna.add_listener(future_obj, 'error', function(event){
-            deferred.reject(event.data);
-        });
-    };
-
-    this.bridge.send_request(jsonized_request).done(callback);
+            jigna.add_listener(future_obj, 'error', function(event){
+                deferred.reject(event.data);
+            });
+        }
+    );
 
     return deferred.promise();
 };
@@ -447,22 +447,24 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
         client = this;
         if (jigna.async) {
             var deferred = new $.Deferred();
-            var on_return = function(response) {
-                client._unmarshal(response).done(deferred.resolve);
-            }
-            this.send_request(request).done(on_return);
+            this.send_request(request).done(
+                function(response) {
+                    client._unmarshal(response).done(deferred.resolve);
+                }
+            );
             return deferred.promise();
         }
         else {
             // Synchronous case: we return the value.
             var _result;
-            var on_return = function(response) {
-                client._unmarshal(response, function(result) {
-                        _result = result;
-                    }
-                );
-            }
-            this.send_request(request).done(on_return);
+            this.send_request(request).done(
+                function(response) {
+                    client._unmarshal(response, function(result) {
+                            _result = result;
+                        }
+                    );
+                }
+            );
             return _result;
         }
     }
@@ -491,7 +493,6 @@ jigna.Client.prototype.get_instance_attribute = function(id, attribute_name) {
     };
 
     var client = this;
-
     var deferred = new $.Deferred();
 
     this.send_request(request).done(
@@ -863,75 +864,79 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
-    var index, info, proxy;
     var deferred = new $.Deferred();
     var proxy_factory = this;
-    var on_dict_info = function(info) {
-        var index, proxy;
 
-        proxy = new jigna.Proxy('dict', id, proxy_factory._client);
+    this._client.get_dict_info(id).done(
+        function(info) {
+            var index, proxy;
 
-        for (index in info.keys) {
-            proxy_factory._add_item_attribute(proxy, info.keys[index]);
+            proxy = new jigna.Proxy('dict', id, proxy_factory._client);
+
+            for (index in info.keys) {
+                proxy_factory._add_item_attribute(proxy, info.keys[index]);
+            }
+            deferred.resolve(proxy);
         }
-        deferred.resolve(proxy);
-    };
+    );
 
-    this._client.get_dict_info(id).done(on_dict_info);
     return deferred.promise();
 };
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
     var proxy_factory = this;
     var deferred = new $.Deferred();
-    var on_get_instance_info = function(info) {
-        var index, proxy;
+    this._client.get_instance_info(id).done(
+        function(info) {
+            var index, proxy;
 
-        proxy = new jigna.Proxy('instance', id, proxy_factory._client);
+            proxy = new jigna.Proxy('instance', id, proxy_factory._client);
 
-        for (index in info.attribute_names) {
-            proxy_factory._add_instance_attribute(proxy, info.attribute_names[index]);
+            for (index in info.attribute_names) {
+                proxy_factory._add_instance_attribute(proxy, info.attribute_names[index]);
+            }
+
+            for (index in info.event_names) {
+                proxy_factory._add_instance_event(proxy, info.event_names[index]);
+            }
+
+            for (index in info.method_names) {
+                proxy_factory._add_instance_method(proxy, info.method_names[index]);
+            }
+
+            // This property is not actually used by jigna itself. It is only there to
+            // make it easy to see what the type of the server-side object is when
+            // debugging the JS code in the web inspector.
+            Object.defineProperty(proxy, '__type_name__', {value : info.type_name});
+
+            deferred.resolve(proxy);
         }
+    );
 
-        for (index in info.event_names) {
-            proxy_factory._add_instance_event(proxy, info.event_names[index]);
-        }
-
-        for (index in info.method_names) {
-            proxy_factory._add_instance_method(proxy, info.method_names[index]);
-        }
-
-        // This property is not actually used by jigna itself. It is only there to
-        // make it easy to see what the type of the server-side object is when
-        // debugging the JS code in the web inspector.
-        Object.defineProperty(proxy, '__type_name__', {value : info.type_name});
-
-        deferred.resolve(proxy);
-    };
-
-    this._client.get_instance_info(id).done(on_get_instance_info);
     return deferred.promise();
 };
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
     var proxy_factory = this;
     var deferred = new $.Deferred();
-    var on_get_list_info = function(info) {
-        var index, proxy;
 
-        proxy = new jigna.ListProxy('list', id, proxy_factory._client);
+    this._client.get_list_info(id).done(
+        function(info) {
+            var index, proxy;
 
-        console.log("list proxy:", proxy);
+            proxy = new jigna.ListProxy('list', id, proxy_factory._client);
 
-        for (index=0; index < info.length; index++) {
-            proxy_factory._add_item_attribute(proxy, index);
+            console.log("list proxy:", proxy);
+
+            for (index=0; index < info.length; index++) {
+                proxy_factory._add_item_attribute(proxy, index);
+            }
+
+            console.log("list proxy after property addition:", proxy);
+            deferred.resolve(proxy);
         }
+    );
 
-        console.log("list proxy after property addition:", proxy);
-        deferred.resolve(proxy);
-    }
-
-    this._client.get_list_info(id).done(on_get_list_info);
     return deferred.promise();
 };
 
