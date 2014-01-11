@@ -259,7 +259,10 @@ jigna.WebBridge = function(client) {
     var url = 'ws://' + jigna_server + '/_jigna_ws';
 
     this._messages = {};
-    this._message_count = 0;
+    this._message_ids = [];
+    for (var index=1023; index >= 0; index--) {
+        this._message_ids.push(index);
+    }
 
     this._web_socket = new WebSocket(url);
     this._ws_opened = new $.Deferred();
@@ -281,19 +284,22 @@ jigna.WebBridge.prototype.handle_event = function(jsonized_event) {
         this._client.handle_event(jsonized_response);
     }
     else {
-        var deferred = this._messages[message_id];
+        var deferred = this._get_message(message_id);
         deferred.resolve(jsonized_response);
-        delete this._messages[message_id];
     }
 };
 
-jigna.WebBridge.prototype._get_message_id = function() {
-    var id = this._message_count;
-    if (id > 1048576) {
-        this._message_count = 0;
-    }
-    this._message_count += 1;
+jigna.WebBridge.prototype._get_message_id = function(message) {
+    var id = this._message_ids.pop();
+    this._messages[id] = message;
     return id;
+};
+
+jigna.WebBridge.prototype._get_message = function(message_id) {
+    var message = this._messages[message_id];
+    delete this._messages[message_id];
+    this._message_ids[message_id] = message_id;
+    return message;
 };
 
 jigna.WebBridge.prototype.send_request = function(jsonized_request) {
@@ -310,9 +316,8 @@ jigna.WebBridge.prototype._send_request_async = function(jsonized_request) {
        which is resolved upon completion of the request.
     */
 
-    var message_id = this._get_message_id();
     var deferred = new $.Deferred();
-    this._messages[message_id] = deferred;
+    var message_id = this._get_message_id(deferred);
     var bridge = this;
     this._ws_opened.done(function() {
         bridge._web_socket.send(JSON.stringify([message_id, jsonized_request]));
