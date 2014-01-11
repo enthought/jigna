@@ -260,7 +260,7 @@ jigna.WebBridge = function(client) {
 
     this._messages = {};
     this._message_ids = [];
-    for (var index=1023; index >= 0; index--) {
+    for (var index=0; index < 1024; index++) {
         this._message_ids.push(index);
     }
 
