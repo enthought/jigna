@@ -386,11 +386,9 @@ jigna.Client.prototype.on_object_changed = function(event){
     // instances but it blows away caching advantages. Can we make it smarter
     // by managing the details of a TraitListEvent?
 
-    this._create_proxy(event.data.type, event.data.value).done(
-        function(new_proxy) {
-            jigna.fire_event(jigna, 'object_changed');
-        }
-    );
+    var data = event.data;
+    this._create_proxy(data.type, data.value, data.info);
+    jigna.fire_event(jigna, 'object_changed');
 };
 
 jigna.Client.prototype.send_request = function(request) {
@@ -449,7 +447,7 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
             var deferred = new $.Deferred();
             this.send_request(request).done(
                 function(response) {
-                    client._unmarshal(response).done(deferred.resolve);
+                    deferred.resolve(client._unmarshal(response));
                 }
             );
             return deferred.promise();
@@ -459,10 +457,7 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
             var _result;
             this.send_request(request).done(
                 function(response) {
-                    client._unmarshal(response, function(result) {
-                            _result = result;
-                        }
-                    );
+                    _result = client._unmarshal(response);
                 }
             );
             return _result;
@@ -479,12 +474,6 @@ jigna.Client.prototype.get_context = function() {
     return this.send_request(request);
 };
 
-jigna.Client.prototype.get_dict_info = function(id) {
-    var request = {kind : 'get_dict_info', id : id};
-
-    return this.send_request(request);
-};
-
 jigna.Client.prototype.get_instance_attribute = function(id, attribute_name) {
     var request = {
         kind           : 'get_instance_attribute',
@@ -497,24 +486,10 @@ jigna.Client.prototype.get_instance_attribute = function(id, attribute_name) {
 
     this.send_request(request).done(
         function(result) {
-            client._unmarshal(result).done(
-                function(value) {
-                    deferred.resolve(value);
-                    if (jigna.async) {
-                        jigna.fire_event(jigna, 'object_changed');
-                    }
-                }
-            );
+            deferred.resolve(client._unmarshal(result));
         }
     );
     return deferred.promise();
-};
-
-jigna.Client.prototype.get_instance_info = function(id) {
-
-    var request = {kind : 'get_instance_info', id : id};
-
-    return this.send_request(request);
 };
 
 jigna.Client.prototype.get_item = function(id, index) {
@@ -529,23 +504,10 @@ jigna.Client.prototype.get_item = function(id, index) {
 
     this.send_request(request).done(
         function(result) {
-            client._unmarshal(result).done(
-                function(value) {
-                    deferred.resolve(value);
-                    if (jigna.async) {
-                        jigna.fire_event(jigna, 'object_changed');
-                    }
-                }
-            );
+            deferred.resolve(client._unmarshal(result));
         }
     );
     return deferred.promise();
-};
-
-jigna.Client.prototype.get_list_info = function(id) {
-    var request = {kind : 'get_list_info', id : id};
-
-    return this.send_request(request);
 };
 
 jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
@@ -572,55 +534,33 @@ jigna.Client.prototype.set_item = function(id, index, value) {
 
 // Private protocol //////////////////////////////////////////////////////////
 
-jigna.Client.prototype._add_model = function(model_name, id) {
-    var deferred = new $.Deferred();
-
+jigna.Client.prototype._add_model = function(model_name, id, info) {
     // Create a proxy for the object identified by the Id...
-    this._create_proxy('instance', id).done(
+    var proxy = this._create_proxy('instance', id, info);
     // Expose created proxy with the name 'model_name' to the JS framework.
-        function(proxy) {
-            jigna.models[model_name] = proxy;
-            deferred.resolve(proxy);
-        }
-    );
-    return deferred.promise();
+    jigna.models[model_name] = proxy;
+    return proxy;
 };
 
 jigna.Client.prototype._add_models = function(context) {
-    var total = Object.keys(context).length;
     var new_proxies = [];
-    var deferred = new $.Deferred();
 
     var client = this;
     $.each(context, function(model_name, model) {
-        client._add_model(model_name, model).done(
-            function(proxy) {
-                new_proxies.push(proxy);
-                if (new_proxies.length == total) {
-                    deferred.resolve(new_proxies);
-                }
-            }
-        );
+        new_proxies.push(client._add_model(model_name, model.value, model.info))
     });
-    return deferred.promise();
+    return new_proxies;
 };
 
-jigna.Client.prototype._create_proxy = function(type, obj) {
-    var deferred = new $.Deferred();
-
+jigna.Client.prototype._create_proxy = function(type, obj, info) {
     if (type === 'primitive') {
-        deferred.resolve(obj);
+        return obj;
     }
     else {
-        var client = this;
-        client._proxy_factory.create_proxy(type, obj).done(
-            function(proxy) {
-                client._id_to_proxy_map[obj] = proxy;
-                deferred.resolve(proxy);
-            }
-        );
+        var proxy = this._proxy_factory.create_proxy(type, obj, info);
+        this._id_to_proxy_map[obj] = proxy;
+        return proxy;
     }
-    return deferred.promise();
 };
 
 jigna.Client.prototype._get_bridge = function() {
@@ -671,25 +611,17 @@ jigna.Client.prototype._marshal_all = function(objs) {
 
 jigna.Client.prototype._unmarshal = function(obj) {
 
-    var deferred = new $.Deferred();
-
     if (obj.type === 'primitive') {
-        deferred.resolve(obj.value);
+        return obj.value;
     } else {
         value = this._id_to_proxy_map[obj.value];
         if (value === undefined) {
-            this._create_proxy(obj.type, obj.value).done(
-                function(proxy) {
-                    deferred.resolve(proxy);
-                }
-            );
+            return this._create_proxy(obj.type, obj.value, obj.info);
         }
         else {
-            deferred.resolve(value);
+            return value;
         }
     }
-
-    return deferred.promise();
 };
 
 
@@ -702,14 +634,14 @@ jigna.ProxyFactory = function(client) {
     this._client = client;
 };
 
-jigna.ProxyFactory.prototype.create_proxy = function(type, obj) {
+jigna.ProxyFactory.prototype.create_proxy = function(type, obj, info) {
     /* Create a proxy for the given type and value. */
 
     var factory_method = this['_create_' + type + '_proxy'];
     if (factory_method === undefined) {
         throw 'cannot create proxy for: ' + type;
     }
-    return factory_method.apply(this, [obj]);
+    return factory_method.apply(this, [obj, info]);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
@@ -735,6 +667,9 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
             this.__client__.get_item(this.__id__, index).done(
                 function(result) {
                     p.__cache__[index] = result;
+                    if (jigna.async) {
+                        jigna.fire_event(jigna, 'object_changed');
+                    }
                 }
             );
             value = this.__cache__[index];
@@ -804,6 +739,9 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
             ).done(
                 function(result) {
                     p.__cache__[attribute_name] = result;
+                    if (jigna.async) {
+                        jigna.fire_event(jigna, 'object_changed');
+                    }
                 }
             );
             // In the async case, this will be up-to-date.
@@ -863,81 +801,55 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
     );
 };
 
-jigna.ProxyFactory.prototype._create_dict_proxy = function(id) {
-    var deferred = new $.Deferred();
-    var proxy_factory = this;
+jigna.ProxyFactory.prototype._create_dict_proxy = function(id, info) {
+    var index;
 
-    this._client.get_dict_info(id).done(
-        function(info) {
-            var index, proxy;
+    var proxy = new jigna.Proxy('dict', id, this._client);
 
-            proxy = new jigna.Proxy('dict', id, proxy_factory._client);
-
-            for (index in info.keys) {
-                proxy_factory._add_item_attribute(proxy, info.keys[index]);
-            }
-            deferred.resolve(proxy);
-        }
-    );
-
-    return deferred.promise();
+    for (index in info.keys) {
+        this._add_item_attribute(proxy, info.keys[index]);
+    }
+    return proxy;
 };
 
-jigna.ProxyFactory.prototype._create_instance_proxy = function(id) {
-    var proxy_factory = this;
-    var deferred = new $.Deferred();
-    this._client.get_instance_info(id).done(
-        function(info) {
-            var index, proxy;
+jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
+    var index, proxy;
 
-            proxy = new jigna.Proxy('instance', id, proxy_factory._client);
+    proxy = new jigna.Proxy('instance', id, this._client);
 
-            for (index in info.attribute_names) {
-                proxy_factory._add_instance_attribute(proxy, info.attribute_names[index]);
-            }
+    for (index in info.attribute_names) {
+        this._add_instance_attribute(proxy, info.attribute_names[index]);
+    }
 
-            for (index in info.event_names) {
-                proxy_factory._add_instance_event(proxy, info.event_names[index]);
-            }
+    for (index in info.event_names) {
+        this._add_instance_event(proxy, info.event_names[index]);
+    }
 
-            for (index in info.method_names) {
-                proxy_factory._add_instance_method(proxy, info.method_names[index]);
-            }
+    for (index in info.method_names) {
+        this._add_instance_method(proxy, info.method_names[index]);
+    }
 
-            // This property is not actually used by jigna itself. It is only there to
-            // make it easy to see what the type of the server-side object is when
-            // debugging the JS code in the web inspector.
-            Object.defineProperty(proxy, '__type_name__', {value : info.type_name});
+    // This property is not actually used by jigna itself. It is only there to
+    // make it easy to see what the type of the server-side object is when
+    // debugging the JS code in the web inspector.
+    Object.defineProperty(proxy, '__type_name__', {value : info.type_name});
 
-            deferred.resolve(proxy);
-        }
-    );
-
-    return deferred.promise();
+    return proxy;
 };
 
-jigna.ProxyFactory.prototype._create_list_proxy = function(id) {
-    var proxy_factory = this;
-    var deferred = new $.Deferred();
+jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
+    var index, proxy;
 
-    this._client.get_list_info(id).done(
-        function(info) {
-            var index, proxy;
+    proxy = new jigna.ListProxy('list', id, this._client);
 
-            proxy = new jigna.ListProxy('list', id, proxy_factory._client);
+    console.log("list proxy:", proxy);
 
-            console.log("list proxy:", proxy);
+    for (index=0; index < info.length; index++) {
+        this._add_item_attribute(proxy, index);
+    }
 
-            for (index=0; index < info.length; index++) {
-                proxy_factory._add_item_attribute(proxy, index);
-            }
-
-            console.log("list proxy after property addition:", proxy);
-            deferred.resolve(proxy);
-        }
-    );
-
-    return deferred.promise();
+    console.log("list proxy after property addition:", proxy);
+    return proxy;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -988,22 +900,11 @@ var module = angular.module('jigna', []);
 module.run(function($rootScope, $compile){
 
     // Add all jigna models as scope variables
-    var add_to_scope = function(context){
-        var total = Object.keys(context).length;
-        var count = 0;
-        $.each(context,
-            function(model_name, model) {
-                var expr = "jigna.models['" + model_name +"']";
-                var on_model_added = jigna.get_attribute(expr);
-                on_model_added.done(function(result) {
-                    $rootScope[model_name] = result;
-                    count += 1;
-                    if (count === total) {
-                        jigna.fire_event(jigna, 'object_changed');
-                    }
-                });
-            }
-        );
+    var add_to_scope = function(context) {
+        for (var model_name in context) {
+            $rootScope[model_name] = jigna.models[model_name];
+        }
+        jigna.fire_event(jigna, 'object_changed');
     };
 
     add_to_scope(jigna.models);

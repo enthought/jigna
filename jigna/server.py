@@ -122,24 +122,6 @@ class Server(HasTraits):
 
         return self._marshal(getattr(obj, attribute_name))
 
-    def get_instance_info(self, request):
-        """ Get a description of an instance. """
-
-        obj = self._id_to_object_map[request['id']]
-
-        if isinstance(obj, HasTraits):
-            obj.on_trait_change(self._send_object_changed_event,
-                                dispatch=self.trait_change_dispatch)
-
-        info = dict(
-            type_name        = type(obj).__module__ + '.' + type(obj).__name__,
-            attribute_names  = self._get_attribute_names(obj),
-            event_names      = self._get_event_names(obj),
-            method_names     = self._get_public_method_names(type(obj))
-        )
-
-        return info
-
     def set_instance_attribute(self, request):
         """ Set an attribute on an instance. """
 
@@ -152,22 +134,6 @@ class Server(HasTraits):
         return
 
     #### Lists/Dicts ####
-
-    def get_dict_info(self, request):
-        """ Get a description of a dict. """
-
-        obj  = self._id_to_object_map[request['id']]
-        info = dict(keys=obj.keys())
-
-        return info
-
-    def get_list_info(self, request):
-        """ Get a description of a list. """
-
-        obj  = self._id_to_object_map[request['id']]
-        info = dict(length=len(obj))
-
-        return info
 
     def get_item(self, request):
         """ Get the value of an item in a list or dict. """
@@ -204,7 +170,7 @@ class Server(HasTraits):
         """
         context_ids = {}
         for obj_name, obj in context.items():
-            context_ids[obj_name] = str(id(obj))
+            context_ids[obj_name] = self._marshal(obj)
 
         return context_ids
 
@@ -228,7 +194,7 @@ class Server(HasTraits):
 
         future = Future(self._handle_request, args=(request, ),
                         dispatch=self.trait_change_dispatch)
-        
+
         def _on_done(result):
             event = dict(
                 obj  = str(id(future)),
@@ -274,6 +240,13 @@ class Server(HasTraits):
 
         return attribute_names
 
+    def _get_dict_info(self, obj):
+        """ Get a description of a dict. """
+
+        info = dict(keys=obj.keys())
+
+        return info
+
     def _get_event_names(self, obj):
         """ Get the names of all the attributes on an object.
 
@@ -287,8 +260,32 @@ class Server(HasTraits):
             for trait_name in obj.class_trait_names():
                 if obj.trait(trait_name).is_trait_type(Event):
                     event_names.append(trait_name)
-        
+
         return event_names
+
+    def _get_instance_info(self, obj):
+        """ Get a description of an instance. """
+
+        if isinstance(obj, HasTraits):
+            obj.on_trait_change(self._send_object_changed_event,
+                                dispatch=self.trait_change_dispatch)
+
+        info = dict(
+            type_name        = type(obj).__module__ + '.' + type(obj).__name__,
+            attribute_names  = self._get_attribute_names(obj),
+            event_names      = self._get_event_names(obj),
+            method_names     = self._get_public_method_names(type(obj))
+        )
+
+        return info
+
+    def _get_list_info(self, obj):
+        """ Get a description of a list. """
+
+        info = dict(length=len(obj))
+
+        return info
+
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
@@ -319,6 +316,7 @@ class Server(HasTraits):
 
             type  = 'list'
             value = obj_id
+            info  = self._get_list_info(obj)
 
         elif isinstance(obj, dict):
             obj_id = str(id(obj))
@@ -326,6 +324,7 @@ class Server(HasTraits):
 
             type  = 'dict'
             value = obj_id
+            info  = self._get_dict_info(obj)
 
         # fixme: Not quite right as this will be True for classes too ;^)
         # The intent is to get objects that are non-scalar eg. int, float
@@ -336,12 +335,14 @@ class Server(HasTraits):
 
             type  = 'instance'
             value = obj_id
+            info  = self._get_instance_info(obj)
 
         else:
             type  = 'primitive'
             value = obj
+            info  = None
 
-        return dict(type=type, value=value)
+        return dict(type=type, value=value, info=info)
 
     def _marshal_all(self, iter):
         """ Marshal all of the values in an iterable. """
@@ -390,7 +391,7 @@ class Server(HasTraits):
             # fixme: intent is non-scalar or maybe container?
             if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
                 self._register_object(new)
-        
+
         event = dict(
             obj            = str(id(obj)),
             name           = trait_name,
