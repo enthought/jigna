@@ -479,40 +479,75 @@ jigna.Client.prototype.get_context = function() {
     return this.send_request(request);
 };
 
-jigna.Client.prototype.get_instance_attribute = function(id, attribute_name) {
+jigna.Client.prototype.get_instance_attribute = function(proxy, attribute_name) {
     var request = {
         kind           : 'get_instance_attribute',
-        id             : id,
+        id             : proxy.__id__,
         attribute_name : attribute_name
     };
 
     var client = this;
-    var deferred = new $.Deferred();
 
     this.send_request(request).done(
         function(result) {
-            deferred.resolve(client._unmarshal(result));
+            proxy.__cache__[attribute_name] = client._unmarshal(result);
+            if (jigna.async) {
+                jigna.fire_event(jigna, 'object_changed');
+            }
         }
     );
-    return deferred.promise();
+
+    if (jigna.async) {
+        // Set this to a sentinel value so angular does not call us a
+        // million times before our real value is set.
+        proxy.__cache__[attribute_name] = null;
+    }
+
+    // In the async case, this will be up-to-date.
+    var value = proxy.__cache__[attribute_name];
+
+    if (value === null) {
+        return undefined;
+    }
+    else {
+        return value;
+    }
+
 };
 
-jigna.Client.prototype.get_item = function(id, index) {
+jigna.Client.prototype.get_item = function(proxy, index) {
     var request = {
         kind  : 'get_item',
-        id    : id,
+        id    : proxy.__id__,
         index : index,
     };
 
     var client = this;
-    var deferred = new $.Deferred();
 
     this.send_request(request).done(
         function(result) {
-            deferred.resolve(client._unmarshal(result));
+            proxy.__cache__[index] = client._unmarshal(result);
+            if (jigna.async) {
+                jigna.fire_event(jigna, 'object_changed');
+            }
         }
     );
-    return deferred.promise();
+
+    if (jigna.async) {
+        // Set this to a sentinel value so angular does not call us a
+        // million times before our real value is set.
+        proxy.__cache__[index] = null;
+    }
+
+    var value = proxy.__cache__[index];
+
+    if (value === null) {
+        return undefined;
+    }
+    else {
+        return value;
+    }
+
 };
 
 jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
@@ -660,28 +695,9 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
         else {
             // In here, 'this' refers to the proxy!
             console.log("getter for index:", index);
-            if (jigna.async) {
-                // Set this to a sentinel value so angular does not call us a
-                // million times before our real value is set.
-                this.__cache__[index] = null;
-            }
-            var p = this;
-            this.__client__.get_item(this.__id__, index).done(
-                function(result) {
-                    p.__cache__[index] = result;
-                    if (jigna.async) {
-                        jigna.fire_event(jigna, 'object_changed');
-                    }
-                }
-            );
-            value = this.__cache__[index];
+            value = this.__client__.get_item(this, index);
         }
-        if (value === null) {
-            return undefined;
-        }
-        else {
-            return value;
-        }
+        return value;
     };
 
     set = function(value) {
@@ -730,31 +746,11 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
             value = cached_value;
 
         } else {
-            if (jigna.async) {
-                // Set this to a sentinel value so angular does not call us a
-                // million times before our real value is set.
-                this.__cache__[attribute_name] = null;
-            }
-            var p = this;
-            this.__client__.get_instance_attribute(
-                this.__id__, attribute_name
-            ).done(
-                function(result) {
-                    p.__cache__[attribute_name] = result;
-                    if (jigna.async) {
-                        jigna.fire_event(jigna, 'object_changed');
-                    }
-                }
+            value = this.__client__.get_instance_attribute(
+                this, attribute_name
             );
-            // In the async case, this will be up-to-date.
-            value = this.__cache__[attribute_name];
         }
-        if (value === null) {
-            return undefined;
-        }
-        else {
-            return value;
-        }
+        return value;
     };
 
     set = function(value) {
