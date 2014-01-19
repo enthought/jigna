@@ -926,10 +926,6 @@ module.run(function($rootScope, $compile){
         jigna.fire_event(jigna, 'object_changed');
     };
 
-    if (jigna.async) {
-        // fixme: digesting on document.ready doesn't work and this smells.
-        setTimeout(function() {jigna.fire_event(jigna, 'object_changed');}, 200);
-    }
 });
 
 // EOF ////////////////////////////////////////////////////////////////////////
