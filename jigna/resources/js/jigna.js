@@ -258,10 +258,10 @@ jigna.WebBridge = function(client) {
 
     var url = 'ws://' + jigna_server + '/_jigna_ws';
 
-    this._messages = {};
-    this._message_ids = [];
+    this._deferred_requests = {};
+    this._request_ids = [];
     for (var index=0; index < 1024; index++) {
-        this._message_ids.push(index);
+        this._request_ids.push(index);
     }
 
     this._web_socket = new WebSocket(url);
@@ -278,28 +278,28 @@ jigna.WebBridge = function(client) {
 jigna.WebBridge.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var response = JSON.parse(jsonized_event);
-    var message_id = response[0];
+    var request_id = response[0];
     var jsonized_response = response[1];
-    if (message_id === -1) {
+    if (request_id === -1) {
         this._client.handle_event(jsonized_response);
     }
     else {
-        var deferred = this._get_message(message_id);
+        var deferred = this._pop_deferred_request(request_id);
         deferred.resolve(jsonized_response);
     }
 };
 
-jigna.WebBridge.prototype._get_message_id = function(message) {
-    var id = this._message_ids.pop();
-    this._messages[id] = message;
-    return id;
+jigna.WebBridge.prototype._pop_deferred_request = function(request_id) {
+    var deferred = this._deferred_requests[request_id];
+    delete this._deferred_requests[request_id];
+    this._request_ids[request_id] = request_id;
+    return deferred;
 };
 
-jigna.WebBridge.prototype._get_message = function(message_id) {
-    var message = this._messages[message_id];
-    delete this._messages[message_id];
-    this._message_ids[message_id] = message_id;
-    return message;
+jigna.WebBridge.prototype._push_deferred_request = function(deferred) {
+    var id = this._request_ids.pop();
+    this._deferred_requests[id] = deferred;
+    return id;
 };
 
 jigna.WebBridge.prototype.send_request = function(jsonized_request) {
@@ -317,10 +317,10 @@ jigna.WebBridge.prototype._send_request_async = function(jsonized_request) {
     */
 
     var deferred = new $.Deferred();
-    var message_id = this._get_message_id(deferred);
+    var request_id = this._push_deferred_request(deferred);
     var bridge = this;
     this._ws_opened.done(function() {
-        bridge._web_socket.send(JSON.stringify([message_id, jsonized_request]));
+        bridge._web_socket.send(JSON.stringify([request_id, jsonized_request]));
     });
     return deferred.promise();
 };

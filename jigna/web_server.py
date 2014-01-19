@@ -171,12 +171,12 @@ class JignaSocket(WebSocketHandler):
 
     def on_message(self, message):
         try:
-            msg_id, jsonized_request = json.loads(message)
+            request_id, jsonized_request = json.loads(message)
             jsonized_response = self.server.handle_request(jsonized_request)
-            self.write_message(json.dumps([msg_id, jsonized_response]))
+            self.write_message(json.dumps([request_id, jsonized_response]))
         except:
             traceback.print_exc()
-            self.write_message(json.dumps([msg_id, '{}']))
+            self.write_message(json.dumps([request_id, '{}']))
         return
 
     def on_close(self):
