@@ -548,13 +548,10 @@ jigna.Client.prototype._add_model = function(model_name, id, info) {
 };
 
 jigna.Client.prototype._add_models = function(context) {
-    var new_proxies = [];
-
     var client = this;
     $.each(context, function(model_name, model) {
-        new_proxies.push(client._add_model(model_name, model.value, model.info))
+        client._add_model(model_name, model.value, model.info);
     });
-    return new_proxies;
 };
 
 jigna.Client.prototype._create_proxy = function(type, obj, info) {
