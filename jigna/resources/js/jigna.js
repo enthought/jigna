@@ -473,81 +473,62 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
     }
 };
 
+jigna.Client.prototype.get_attribute_from_server = function(proxy, attribute) {
+    var request;
+    if (proxy.__type__ === 'instance') {
+        request = {
+            kind           : 'get_instance_attribute',
+            id             : proxy.__id__,
+            attribute_name : attribute
+        };
+    }
+    else if ((proxy.__type__ === 'list') || (proxy.__type__ === 'dict')) {
+        request = {
+            kind  : 'get_item',
+            id    : proxy.__id__,
+            index : attribute
+        };
+    }
+
+    var state = proxy.__state__[attribute];
+    var client = this;
+    if (state === undefined) {
+        proxy.__state__[attribute] = 'busy';
+        this.send_request(request).done(
+            function(result) {
+                proxy.__cache__[attribute] = client._unmarshal(result);
+                delete proxy.__state__[attribute];
+
+                if (jigna.async) {
+                    jigna.fire_event(jigna, 'object_changed');
+                }
+            }
+        );
+    }
+
+    // In the sync case, this will be up-to-date, otherwise undefined.
+    return proxy.__cache__[attribute];
+}
+
+jigna.Client.prototype.get_attribute_or_item = function(proxy, attribute) {
+    var value;
+    var cached_value = proxy.__cache__[attribute];
+
+    if (cached_value === undefined) {
+        // Get it from the server.
+        value = this.get_attribute_from_server(proxy, attribute);
+    }
+    else {
+        value = cached_value;
+    }
+
+    return value;
+}
+
 jigna.Client.prototype.get_context = function() {
     var request  = {kind : 'get_context'};
 
     return this.send_request(request);
-};
-
-jigna.Client.prototype.get_instance_attribute = function(proxy, attribute_name) {
-    var request = {
-        kind           : 'get_instance_attribute',
-        id             : proxy.__id__,
-        attribute_name : attribute_name
-    };
-
-    var client = this;
-
-    this.send_request(request).done(
-        function(result) {
-            proxy.__cache__[attribute_name] = client._unmarshal(result);
-            if (jigna.async) {
-                jigna.fire_event(jigna, 'object_changed');
-            }
-        }
-    );
-
-    if (jigna.async) {
-        // Set this to a sentinel value so angular does not call us a
-        // million times before our real value is set.
-        proxy.__cache__[attribute_name] = null;
-    }
-
-    // In the async case, this will be up-to-date.
-    var value = proxy.__cache__[attribute_name];
-
-    if (value === null) {
-        return undefined;
-    }
-    else {
-        return value;
-    }
-
-};
-
-jigna.Client.prototype.get_item = function(proxy, index) {
-    var request = {
-        kind  : 'get_item',
-        id    : proxy.__id__,
-        index : index,
-    };
-
-    var client = this;
-
-    this.send_request(request).done(
-        function(result) {
-            proxy.__cache__[index] = client._unmarshal(result);
-            if (jigna.async) {
-                jigna.fire_event(jigna, 'object_changed');
-            }
-        }
-    );
-
-    if (jigna.async) {
-        // Set this to a sentinel value so angular does not call us a
-        // million times before our real value is set.
-        proxy.__cache__[index] = null;
-    }
-
-    var value = proxy.__cache__[index];
-
-    if (value === null) {
-        return undefined;
-    }
-    else {
-        return value;
-    }
-
 };
 
 jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
@@ -687,17 +668,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
     var descriptor, get, set;
 
     get = function() {
-        var value;
-        var cached_value = this.__cache__[index];
-        if (cached_value !== undefined) {
-            value = cached_value;
-        }
-        else {
-            // In here, 'this' refers to the proxy!
-            console.log("getter for index:", index);
-            value = this.__client__.get_item(this, index);
-        }
-        return value;
+        return this.__client__.get_attribute_or_item(this, index);
     };
 
     set = function(value) {
@@ -739,18 +710,7 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var cached_value, value;
-
-        cached_value = this.__cache__[attribute_name];
-        if (cached_value !== undefined) {
-            value = cached_value;
-
-        } else {
-            value = this.__client__.get_instance_attribute(
-                this, attribute_name
-            );
-        }
-        return value;
+        return this.__client__.get_attribute_or_item(this, attribute_name);
     };
 
     set = function(value) {
@@ -862,6 +822,10 @@ jigna.Proxy = function(type, id, client) {
     Object.defineProperty(this, '__id__',     {value : id});
     Object.defineProperty(this, '__client__', {value : client});
     Object.defineProperty(this, '__cache__',  {value : {}});
+
+    // The state for each attribute can be 'busy' or undefined, if 'busy' it
+    // implies that the server is waiting to receive the value.
+    Object.defineProperty(this, '__state__',  {value : {}});
 };
 
 // ListProxy is handled separately because it has to do special handling
@@ -878,6 +842,9 @@ jigna.ListProxy = function(type, id, client) {
     Object.defineProperty(arr, '__id__',     {value : id});
     Object.defineProperty(arr, '__client__', {value : client});
     Object.defineProperty(arr, '__cache__',  {value : []});
+    // The state for each attribute can be 'busy' or undefined, if 'busy' it
+    // implies that the server is waiting to receive the value.
+    Object.defineProperty(arr, '__state__',  {value : {}});
 
     return arr;
 };

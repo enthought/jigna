@@ -1,6 +1,7 @@
 from jigna.api import View
 from threading import Thread
 import unittest
+import time
 
 from selenium import webdriver
 
@@ -43,8 +44,24 @@ class TestJignaWebSync(TestJignaQt):
     def execute_js(self, js):
         return self.browser.execute_script(js)
 
+    def reset_user_var(self):
+        self.execute_js("jigna.user = undefined;")
+
     def get_attribute(self, js, expect):
-        return self.execute_js("return " + js + ";")
+        self.reset_user_var()
+        get_js = """jigna.get_attribute(\'%s\').done(function(result)
+                                {jigna.user = result;})"""%js
+        self.execute_js(get_js)
+
+        check_js = "return jigna.user;"
+        result = self.execute_js(check_js)
+        count = 0
+        while result is None and expect is not None and count < 10:
+            time.sleep(0.1)
+            result = self.execute_js(check_js)
+            count += 1
+        self.reset_user_var()
+        return result
 
     def assertJSEqual(self, js, value):
         result = self.get_attribute(js, value)

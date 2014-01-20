@@ -1,5 +1,4 @@
 
-import time
 import unittest
 
 from test_jigna_web import TestJignaWebSync, Person
@@ -9,25 +8,6 @@ class TestJignaWebAsync(TestJignaWebSync):
     def setUpClass(cls):
         super(TestJignaWebAsync, cls).setUpClass(port=8889)
         cls.browser.execute_script('jigna.async = true;')
-
-    def reset_user_var(self):
-        self.execute_js("jigna.user = undefined;")
-
-    def get_attribute(self, js, expect):
-        self.reset_user_var()
-        get_js = """jigna.get_attribute(\'%s\').done(function(result)
-                                {jigna.user = result;})"""%js
-        self.execute_js(get_js)
-
-        check_js = "return jigna.user;"
-        result = self.execute_js(check_js)
-        count = 0
-        while result is None and expect is not None and count < 10:
-            time.sleep(0.1)
-            result = self.execute_js(check_js)
-            count += 1
-        self.reset_user_var()
-        return result
 
     def test_callable(self):
         fred = self.fred

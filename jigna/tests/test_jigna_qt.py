@@ -121,7 +121,6 @@ class TestJignaQt(unittest.TestCase):
         fred = self.fred
         fred.fruits = ["banana", "mango"]
         self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
-
         # Now set the value in the JS side.
         self.execute_js("jigna.models.model.fruits[0] = 'peach'")
         self.assertEqual(fred.fruits, ["peach", "mango"])
@@ -145,7 +144,7 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.phonebook, {'alan' : 987})
 
     def test_instance_trait(self):
-        self.assertJSEqual("jigna.models.model.spouse", None)
+        self.assertJSEqual("jigna.models.model.spouse", '')
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
         self.assertJSEqual("jigna.models.model.spouse.name", 'Wilma')
@@ -240,9 +239,9 @@ class TestJignaQt(unittest.TestCase):
                 jigna.models.model.method_slow_finished = true;
             })
         """)
-              
+
         # The following is a way to test async methods.
-        # Basically, we keep on checking for a condition which becomes true when 
+        # Basically, we keep on checking for a condition which becomes true when
         # the function is finished, and raise an error if the timeout occurs before
         # the condition becomes true
         timeout = 1.5
@@ -257,7 +256,7 @@ class TestJignaQt(unittest.TestCase):
                 pass
         else:
             raise AssertionError("Async method not finished")
-        
+
 if __name__ == "__main__":
     unittest.main()
 
