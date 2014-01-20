@@ -230,10 +230,10 @@ class TestJignaQt(unittest.TestCase):
         # Then
         self.assertJSEqual("jigna.models.model.new_name", "Freddie")
 
-    def test_async_call(self):
+    def test_threaded_call(self):
         # When
         self.execute_js("""
-            var deferred = jigna.models.model.method_slow_async('foo', 1);
+            var deferred = jigna.models.model.method_slow_thread('foo', 1);
             deferred.done(function(){
                 jigna.models.model.printme("slow method done");
                 jigna.models.model.method_slow_finished = true;

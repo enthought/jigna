@@ -84,8 +84,8 @@ class Server(HasTraits):
 
         request = json.loads(jsonized_request)
 
-        if request.get("async"):
-            response = self._handle_request_async(request)
+        if request.get("thread"):
+            response = self._handle_request_thread(request)
 
         else:
             response = self._handle_request(request)
@@ -187,8 +187,10 @@ class Server(HasTraits):
 
         return dict(exception=exception, result=result)
 
-    def _handle_request_async(self, request):
-        """ Handle a jsonized request from a client. """
+    def _handle_request_thread(self, request):
+        """ Handle a jsonized request from a client and fire the method
+        in a thread.
+        """
 
         from jigna.core.concurrent import Future
 

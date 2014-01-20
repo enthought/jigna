@@ -410,12 +410,14 @@ jigna.Client.prototype.send_request = function(request) {
     return deferred.promise();
 };
 
-jigna.Client.prototype.send_request_async = function(request) {
-    /* Send a request to the server and return a deferred object. */
+jigna.Client.prototype.call_method_in_thread = function(request) {
+    /* Send a request to the server to call a method in a thread and return a
+       deferred object.
+    */
 
     var jsonized_request, deferred;
 
-    request["async"] = true;
+    request["thread"] = true;
     jsonized_request  = JSON.stringify(request);
     deferred = new $.Deferred();
 
@@ -436,7 +438,7 @@ jigna.Client.prototype.send_request_async = function(request) {
 
 // Convenience methods for each kind of request //////////////////////////////
 
-jigna.Client.prototype.call_instance_method = function(id, method_name, async, args) {
+jigna.Client.prototype.call_instance_method = function(id, method_name, thread, args) {
     var request = {
         kind        : 'call_instance_method',
         id          : id,
@@ -446,7 +448,7 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
 
     console.log('request', request);
 
-    if (!async) {
+    if (!thread) {
         client = this;
         if (jigna.async) {
             var deferred = new $.Deferred();
@@ -469,7 +471,7 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, async, a
         }
     }
     else {
-        return this.send_request_async(request);
+        return this.call_method_in_thread(request);
     }
 };
 
@@ -683,9 +685,9 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 };
 
 jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
-    var method = function (async, args) {
+    var method = function (thread, args) {
         return this.__client__.call_instance_method(
-            this.__id__, method_name, async, args
+            this.__id__, method_name, thread, args
         );
     };
 
@@ -696,8 +698,8 @@ jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name)
     };
 
     // fixme: this is ugly and potentially dangerous. Ideally we should have a
-    // jigna.async(func, args) method.
-    proxy[method_name+"_async"] = function(){
+    // jigna.thread(func, args) method.
+    proxy[method_name+"_thread"] = function(){
         // In here, 'this' refers to the proxy!
         var args = Array.prototype.slice.call(arguments);
 
