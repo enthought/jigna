@@ -13,7 +13,7 @@ import os
 from os.path import abspath, dirname, join
 
 # Enthought library.
-from traits.api import HasTraits, Instance, Str, Property
+from traits.api import Bool, HasTraits, Instance, Str, Property
 
 # Jigna libary.
 from jigna.server import Server
@@ -27,6 +27,9 @@ DOCUMENT_HTML_TEMPLATE = """
     <script type="text/javascript" src="/jigna/js/jquery.min.js"></script>
     <script type="text/javascript" src="/jigna/js/angular.min.js"></script>
     <script type="text/javascript" src="/jigna/js/jigna.js"></script>
+    <script type="text/javascript">
+        jigna.initialize({async});
+    </script>
 
     {head_html}
 
@@ -43,6 +46,9 @@ class View(HasTraits):
     """ A factory for HTML/AngularJS based user interfaces. """
 
     #### 'View' protocol ######################################################
+
+    #: Should the web backend use an asynchronous bridge.
+    async = Bool(False)
 
     #: The base url for all resources (relative urls are resolved corresponding
     #: to the current working directory).
@@ -81,9 +87,12 @@ class View(HasTraits):
 
         # ...otherwise, create the template out of body and head htmls
         else:
+            async = 'true' if self.async else 'false'
             html = DOCUMENT_HTML_TEMPLATE.format(
                 body_html = self.body_html,
-                head_html = self.head_html
+                head_html = self.head_html,
+                async     = async,
+
             )
 
         return html

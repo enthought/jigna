@@ -164,23 +164,20 @@ function SubArray() {
 // Namespace for all Jigna-related objects.
 var jigna = new EventTarget();
 
-jigna.initialize = function() {
-    // Determine if jigna is to run async or sync.  This can be set
-    // by setting window.jigna_async to true or false.  The jigna.async
-    // option can also be changed at runtime.  Async is meaningful only with
-    // the web bridge.
-    this.async = false;
-    if (window.jigna_async !== undefined) {
-        this.async = window.jigna_async;
-    }
+jigna.initialize = function(async) {
+
     this.models = {};
-    // This is where all the work is done!
-    if (this.async) {
-        this.client = new jigna.AsyncClient();
-    }
-    else {
+
+    async = async || false;
+    this.async = async;
+
+    if (async === false) {
         this.client = new jigna.Client();
     }
+    else {
+        this.client = new jigna.AsyncClient();
+    }
+
     this.client.initialize();
 };
 
@@ -454,8 +451,6 @@ jigna.Client.prototype.call_instance_method = function(id, method_name, thread, 
         method_name : method_name,
         args        : this._marshal_all(args)
     };
-
-    console.log('request', request);
 
     if (!thread) {
         client = this;
@@ -808,7 +803,6 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
         this._add_item_attribute(proxy, index);
     }
 
-    console.log("list proxy after property addition:", proxy);
     return proxy;
 };
 
@@ -868,9 +862,6 @@ jigna.AsyncClient.prototype.call_instance_method = function(id, method_name, thr
         method_name : method_name,
         args        : this._marshal_all(args)
     };
-    console.log("AsyncClient.call_instance_method");
-
-    console.log('request', request);
 
     if (!thread) {
         client = this;
@@ -891,7 +882,6 @@ jigna.AsyncClient.prototype.get_attribute_from_server = function(proxy, attribut
     var request;
     var state = proxy.__state__[attribute];
     var client = this;
-    console.log("AsyncClient.get_attribute_from_server");
 
     if (state === undefined) {
         proxy.__state__[attribute] = 'busy';
@@ -909,12 +899,6 @@ jigna.AsyncClient.prototype.get_attribute_from_server = function(proxy, attribut
     // This will be undefined initially.
     return proxy.__cache__[attribute];
 };
-
-///////////////////////////////////////////////////////////////////////////////
-// Auto-initialization
-///////////////////////////////////////////////////////////////////////////////
-
-jigna.initialize();
 
 ///////////////////////////////////////////////////////////////////////////////
 // AngularJS
@@ -936,7 +920,6 @@ module.run(function($rootScope, $compile){
     add_to_scope(jigna.models);
 
     jigna.add_listener('jigna', 'context_updated', function(event){
-        console.log("event.data", event.data);
         add_to_scope(event.data);
     });
 

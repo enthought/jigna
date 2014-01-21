@@ -39,9 +39,9 @@ class JignaNotebook(object):
             catch(err)
             {{
                 window.jigna_server = "{server}";
-                window.jigna_async = true;
                 $.getScript("http://{server}/jigna/js/angular.min.js", function() {{
                     $.getScript("http://{server}/jigna/js/jigna.js", function() {{
+                        jigna.initialize(true);
                         angular.bootstrap(document, ['jigna']);
                         console.log("Started jigna.");
                         setTimeout(function() {{

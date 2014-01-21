@@ -11,8 +11,8 @@ from test_jigna_qt import TestJignaQt, Person, body_html
 
 class TestJignaWebSync(TestJignaQt):
     @classmethod
-    def setUpClass(cls, port=8888):
-        person_view = View(body_html=body_html)
+    def setUpClass(cls, port=8888, async=False):
+        person_view = View(body_html=body_html, async=async)
         fred = Person(name='Fred', age=42)
         t = Thread(target=person_view.serve, kwargs=dict(port=port, model=fred))
         t.setDaemon(True)

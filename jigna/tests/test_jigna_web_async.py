@@ -6,13 +6,7 @@ from test_jigna_web import TestJignaWebSync, Person
 class TestJignaWebAsync(TestJignaWebSync):
     @classmethod
     def setUpClass(cls):
-        super(TestJignaWebAsync, cls).setUpClass(port=8889)
-        # fixme: there should be a cleaner way to specify to use async.
-        cls.browser.execute_script('''
-            window.jigna_async = true;
-            jigna.initialize();
-            setTimeout(function(){jigna.fire_event(jigna, "object_changed");}, 200);
-        ''')
+        super(TestJignaWebAsync, cls).setUpClass(port=8889, async=True)
 
     def test_callable(self):
         fred = self.fred
