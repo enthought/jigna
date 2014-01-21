@@ -31,9 +31,9 @@ class Person(HasTraits):
 
     def download_new_power(self):
         print "Downloading new power...."
-        
+
         time.sleep(1)
-        
+
         import urllib2
         urllib2.urlopen('http://someboguswebsite.com')
 
@@ -46,11 +46,11 @@ body_html = """
       Name: <input ng-model="model.name">
       Age: <input ng-model="model.age" type='number'>
       Power: {{model.power}}
-      <button id="install_btn" ng-click="install_new_power_async($event)">
+      <button id="install_btn" ng-click="install_new_power_thread($event)">
         Install new power!
       </button>
 
-      <button id="download_btn" ng-click="download_new_power_async($event)">
+      <button id="download_btn" ng-click="download_new_power_thread($event)">
         Download new power!
       </button>
 
@@ -63,15 +63,15 @@ body_html = """
         var app = angular.module('MyApp', ['jigna']);
 
         app.controller('MainCtrl', function($scope){
-            $scope.install_new_power_async = function(event) {
-                $scope.model.install_new_power_async()
+            $scope.install_new_power_thread = function(event) {
+                $scope.model.install_new_power_thread()
                 .done(function(){
                     $(event.target).html("Installed")
                 })
             }
 
-            $scope.download_new_power_async = function(event) {
-                $scope.model.download_new_power_async()
+            $scope.download_new_power_thread = function(event) {
+                $scope.model.download_new_power_thread()
                 .fail(function(error){
                     $(event.target).html("Error!")
                 })
@@ -102,7 +102,7 @@ person_view = View(body_html=body_html)
 def main():
     bruce = Person(name='Bruce', age=30)
     person_view.show(model=bruce)
-    
+
 if __name__ == '__main__':
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
     main()

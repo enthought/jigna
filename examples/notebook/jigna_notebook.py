@@ -1,4 +1,4 @@
-from IPython.display import HTML
+from IPython.display import display_html
 from textwrap import dedent
 
 
@@ -32,20 +32,23 @@ class JignaNotebook(object):
             <script>
             try {{
                 jigna
+                setTimeout(function() {{
+                    $(document.body).scope().recompile($("#{div_id}"));
+                }}, 50);
             }}
             catch(err)
             {{
                 window.jigna_server = "{server}";
                 $.getScript("http://{server}/jigna/js/angular.min.js", function() {{
                     $.getScript("http://{server}/jigna/js/jigna.js", function() {{
+                        jigna.initialize(true);
                         angular.bootstrap(document, ['jigna']);
                         console.log("Started jigna.");
+                        setTimeout(function() {{
+                            $(document.body).scope().recompile($("#{div_id}"));
+                        }}, 50);
                     }})
                 }});
-            }} finally {{
-                setTimeout(function() {{
-                    $(document.body).scope().recompile($("#{div_id}"));
-                }}, 0);
             }}
             </script>
               """.format(div_id=div_id, body_html=body_html, server=server))
@@ -54,13 +57,15 @@ class JignaNotebook(object):
     def show(self, body_html, **context):
         if len(context) > 0:
             self.add_models(**context)
-        return HTML(self.get_ipython_html(body_html))
+        return display_html(self.get_ipython_html(body_html), raw=True)
 
 
 
 def main():
-    import _jigna_notebook_app
-    _jigna_notebook_app.main()
+    from IPython.frontend.html.notebook.notebookapp import NotebookApp
+    app = NotebookApp()
+    app.initialize()
+    app.start()
 
 if __name__ == '__main__':
     main()

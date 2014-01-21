@@ -91,8 +91,11 @@ class TestJignaQt(unittest.TestCase):
         GUI.process_events()
         return result
 
+    def get_attribute(self, js, expect):
+        return self.execute_js(js)
+
     def assertJSEqual(self, js, value):
-        result = self.execute_js(js)
+        result = self.get_attribute(js, value)
         if isinstance(value, (list, tuple)):
             msg = "Lengths different: expected %d, got %d" % \
                 (len(value), len(result))
@@ -118,7 +121,6 @@ class TestJignaQt(unittest.TestCase):
         fred = self.fred
         fred.fruits = ["banana", "mango"]
         self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
-
         # Now set the value in the JS side.
         self.execute_js("jigna.models.model.fruits[0] = 'peach'")
         self.assertEqual(fred.fruits, ["peach", "mango"])
@@ -130,6 +132,8 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual("jigna.models.model.phonebook", {})
         fred = self.fred
         fred.phonebook = {'joe' : 123, 'joan' : 345}
+        self.get_attribute("jigna.models.model.phonebook.joe", 123)
+        self.get_attribute("jigna.models.model.phonebook.joan", 123)
         self.assertJSEqual("jigna.models.model.phonebook", fred.phonebook)
 
         # Now set the value in the JS side.
@@ -164,6 +168,7 @@ class TestJignaQt(unittest.TestCase):
         fred.friends.append(dino)
         self.assertJSEqual("jigna.models.model.friends[1].name", "Dino")
         self.assertJSEqual("jigna.models.model.friends[1].age", 10)
+        self.assertJSEqual("jigna.models.model.friends[0].name", "Barney")
         self.execute_js("jigna.models.model.friends[0].name = 'Barneyji'")
         self.assertEqual(barney.name, "Barneyji")
 
@@ -196,8 +201,9 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.called_with, 1)
         self.execute_js("jigna.models.model.method(10.0)")
         self.assertEqual(fred.called_with, 10.0)
-        self.execute_js("jigna.models.model.method([1, 2])")
+        self.execute_js("jigna.models.model.method([1,2])")
         self.assertEqual(fred.called_with, [1,2])
+        self.get_attribute("jigna.models.model.spouse", wilma)
         self.execute_js("jigna.models.model.method(jigna.models.model.spouse)")
         self.assertEqual(fred.called_with, wilma)
 
@@ -225,18 +231,18 @@ class TestJignaQt(unittest.TestCase):
         # Then
         self.assertJSEqual("jigna.models.model.new_name", "Freddie")
 
-    def test_async_call(self):
+    def test_threaded_call(self):
         # When
         self.execute_js("""
-            var deferred = jigna.models.model.method_slow_async('foo', 1);
+            var deferred = jigna.models.model.method_slow_thread('foo', 1);
             deferred.done(function(){
                 jigna.models.model.printme("slow method done");
                 jigna.models.model.method_slow_finished = true;
             })
         """)
-              
+
         # The following is a way to test async methods.
-        # Basically, we keep on checking for a condition which becomes true when 
+        # Basically, we keep on checking for a condition which becomes true when
         # the function is finished, and raise an error if the timeout occurs before
         # the condition becomes true
         timeout = 1.5
@@ -251,7 +257,7 @@ class TestJignaQt(unittest.TestCase):
                 pass
         else:
             raise AssertionError("Async method not finished")
-        
+
 if __name__ == "__main__":
     unittest.main()
 

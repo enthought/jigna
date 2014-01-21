@@ -12,8 +12,9 @@
 # Standard library.
 import json
 from os.path import join, dirname
+import traceback
 
-# 3rd part library.
+# 3rd party library.
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
@@ -33,9 +34,14 @@ class WebBridge(Bridge):
     def send_event(self, event):
         """ Send an event. """
 
-        jsonized_event = json.dumps(event)
-        for socket in self._active_sockets:
-            socket.write_message(jsonized_event)
+        try:
+            jsonized_event = json.dumps(event)
+            message_id = -1
+            data = json.dumps([message_id, jsonized_event])
+            for socket in self._active_sockets:
+                socket.write_message(data)
+        except:
+            traceback.print_exc()
 
         return
 
@@ -113,7 +119,7 @@ class WebServer(Server):
 
         application = Application(
             [
-                (r"/_jigna_ws", JignaSocket,   dict(bridge=self._bridge)),
+                (r"/_jigna_ws", JignaSocket,   dict(bridge=self._bridge, server=self)),
                 (r"/_jigna",    GetFromBridge, dict(server=self)),
                 (r".*",         MainHandler,   dict(server=self)),
             ],
@@ -146,7 +152,7 @@ class GetFromBridge(RequestHandler):
 
     def get(self):
         jsonized_request = self.get_argument("data")
-        
+
         jsonized_response = self.server.handle_request(jsonized_request)
         self.write(jsonized_response)
         return
@@ -154,12 +160,23 @@ class GetFromBridge(RequestHandler):
 ##### WebSocket handler #######################################################
 
 class JignaSocket(WebSocketHandler):
-    def initialize(self, bridge):
+    def initialize(self, bridge, server):
         self.bridge = bridge
+        self.server = server
         return
 
     def open(self):
         self.bridge.add_socket(self)
+        return
+
+    def on_message(self, message):
+        try:
+            request_id, jsonized_request = json.loads(message)
+            jsonized_response = self.server.handle_request(jsonized_request)
+            self.write_message(json.dumps([request_id, jsonized_response]))
+        except:
+            traceback.print_exc()
+            self.write_message(json.dumps([request_id, '{}']))
         return
 
     def on_close(self):

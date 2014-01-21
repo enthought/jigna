@@ -92,7 +92,7 @@ class MeshData(HasTraits):
 
 class Model3D(HasTraits):
     expression = Str("x*x*0.5 + y*y + z*z*2.0")
-    plot_output = Instance(MeshData)
+    plot_output = Instance(MeshData, ())
     n_contour = Int(4)
 
     plot = Instance(PipelineBase)
@@ -125,8 +125,12 @@ class Model3D(HasTraits):
             self._setup_plot_output()
 
     def _setup_plot_output(self):
-        self.plot_output = MeshData.from_file(self.plot.contour.outputs[0],
-                                              self.plot.module_manager)
+        self.plot_output.copy_traits(
+            MeshData.from_file(
+                self.plot.contour.outputs[0],
+                self.plot.module_manager
+            )
+        )
 
 
 body_html = """
@@ -183,10 +187,13 @@ window.onload = function() {
     r.add(mesh);
     r.render();
 
-    window.on_data_changed(jigna.models.model.plot_output);
+    setTimeout(function() {
+            window.on_data_changed(jigna.models.model.plot_output);
+        }, 1000
+    );
 
     $(document.body).scope().$watchCollection(
-        "[model.expression, model.n_contour]",
+        "[model.plot_output.filedata, model.plot_output.colors]",
         function (new_data) {
             console.log("Updating plot.");
             window.on_data_changed(jigna.models.model.plot_output);
