@@ -72,6 +72,8 @@ class TestJignaWebSync(TestJignaQt):
             for index in range(len(value)):
                 expect = value[index]
                 got = result[index]
+                if got != expect:
+                    got = self.get_attribute(js+"[%d]"%index, expect)
                 msg = "%s[%s] != %s, got %s"%(js, index, expect, got)
                 self.assertEqual(expect, got, msg)
         else:

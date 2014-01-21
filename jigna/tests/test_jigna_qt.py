@@ -168,6 +168,7 @@ class TestJignaQt(unittest.TestCase):
         fred.friends.append(dino)
         self.assertJSEqual("jigna.models.model.friends[1].name", "Dino")
         self.assertJSEqual("jigna.models.model.friends[1].age", 10)
+        self.assertJSEqual("jigna.models.model.friends[0].name", "Barney")
         self.execute_js("jigna.models.model.friends[0].name = 'Barneyji'")
         self.assertEqual(barney.name, "Barneyji")
 
