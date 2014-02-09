@@ -1,0 +1,8 @@
+{%- if prev %}
+  <li><a class='btn' href="{{ prev.link|e }}"
+         title="{{ _('Previous chapter') }}">Previous: {{ "&laquo;"|safe }} {{ prev.title }}</a></li>
+{%- endif %}
+{%- if next %}
+  <li><a class='btn' href="{{ next.link|e }}"
+         title="{{ _('Next chapter') }}">Next: {{ next.title }} {{ "&raquo;"|safe }}</a></li>
+{%- endif %}

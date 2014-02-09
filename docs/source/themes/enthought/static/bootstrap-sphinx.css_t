@@ -1,0 +1,78 @@
+/*
+* bootstrap-sphinx.css
+* ~~~~~~~~~~~~~~~~~~~~
+*
+* Sphinx stylesheet -- Twitter Bootstrap theme.
+*/
+
+.navbar-inverse .brand {
+  color: #FFF;
+}
+
+{% if theme_navbar_fixed_top == 'true' %}
+body {
+  padding-top: 40px;
+}
+.navbar-inner {
+  padding-left:  12px !important;
+  padding-right: 12px !important;
+}
+{% endif %}
+
+{%- block sidebarlogo %}
+  {%- if logo %}
+@media (min-width: 980px) {
+  .navbar h3 a, .navbar .brand {
+    background: transparent url("{{ logo }}") no-repeat 22px 3px;
+    padding-left: 62px;
+  }
+}
+  {%- endif %}
+{%- endblock %}
+
+.navbar .brand {
+  padding-left:0;
+}
+
+.navbar div.nav-collapse {
+  margin-top: 30px;
+}
+
+.nav-collapse .nav > li > a, .nav-collapse .dropdown-menu a {
+  font-weight: lighter !important;
+}
+
+table {
+  border: 0;
+}
+
+div.linksrel {
+  border:1px solid #f2f2f2;
+  border-width: 1px 0 1px 0;
+}
+
+ul.linksrel {
+  list-style:none;
+  list-style-type:none;
+  padding:0;
+  margin:0;
+  overflow:hidden;
+}
+
+ul.linksrel li {
+  float:left;
+  padding:6px;
+  list-style-type:none;
+}
+
+ul.linksrel li.source-link {
+  float:right;
+  border-left:1px solid #ccc;
+  padding:12px;
+}
+
+.source-link-decoration {
+  display:block;
+  line-height:1;
+  text-align:center;
+}
