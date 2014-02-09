@@ -35,3 +35,20 @@ Installation itself is standard and can be done from source via either::
 
     $ python setup.py install # or
     $ python setup.py develop
+
+
+Examples
+---------
+
+There are several examples to get started, look in the ``examples/`` directory
+and run them.
+
+Tests
+------
+
+Running the tests requires selenium_ and nose_.  The tests are in
+``jigna/tests/``.  You may run them from the root directory of the sources
+using ``nosetests``.
+
+.. _selenium: https://pypi.python.org/pypi/selenium
+.. _nose: https://pypi.python.org/pypi/nose
