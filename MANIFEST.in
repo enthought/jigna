@@ -1,1 +1,2 @@
-recursive-include jigna/resources *.png *.css *.js
+recursive-include examples *.py *.ipynb *.js *.css *.html *.png
+recursive-include docs *

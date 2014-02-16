@@ -7,11 +7,15 @@
 # This file is confidential and NOT open source.  Do not distribute.
 #
 
+import os.path
 from setuptools import setup, find_packages
+
+data = {}
+execfile(os.path.join('jigna', '__init__.py'), data)
 
 setup(
     name='jigna',
-    version='0.0.1',
+    version=data['__version__'],
     author='Enthought, Inc',
     author_email='info@enthought.com',
     url='https://github.com/enthought/jigna',
@@ -22,11 +26,6 @@ setup(
     packages=find_packages(),
     package_dir={'jigna':'jigna'},
     include_package_data=True,
-    package_data={'jigna': ['*.css', '*.png', '*.js',
-                            'resources/bootstrap/css/*.css',
-                            'resources/bootstrap/img/*.png',
-                            'resources/bootstrap/js/*.js',
-                            'resources/js/*.js']},
+    package_data={'jigna': ['resources/js/*.js']},
     zip_safe=False
 )
-
