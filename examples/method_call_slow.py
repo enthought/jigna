@@ -41,61 +41,81 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-body_html = """
-    <div ng-controller='MainCtrl'>
-      Name: <input ng-model="model.name">
-      Age: <input ng-model="model.age" type='number'>
-      Power: {{model.power}}
-      <button id="install_btn" ng-click="install_new_power_thread($event)">
-        Install new power!
-      </button>
+html = """
+<html>
 
-      <button id="download_btn" ng-click="download_new_power_thread($event)">
-        Download new power!
-      </button>
+    <head>
+        <script src='/jigna/js/jquery.min.js'></script>
+        <script src='/jigna/js/angular.min.js'></script>
+        <script src='/jigna/js/jigna.js'></script>
+        <script>
+            jigna.initialize();
+        </script>
 
-      <div class='progress-bar-container'>
-        <div class='completed-progress' ng-style="{ width: model.power + '%' }"></div>
-      </div>
-    </div>
+        <script>
+            $(document).ready(function(){
+                var app = angular.module('MyApp', ['jigna']);
 
-    <script type="text/javascript">
-        var app = angular.module('MyApp', ['jigna']);
+                app.controller('MainCtrl', function($scope){
+                    $scope.install_new_power_thread = function(event) {
+                        $scope.model.install_new_power_thread()
+                        .done(function(){
+                            $(event.target).html("Installed")
+                        })
+                    }
 
-        app.controller('MainCtrl', function($scope){
-            $scope.install_new_power_thread = function(event) {
-                $scope.model.install_new_power_thread()
-                .done(function(){
-                    $(event.target).html("Installed")
+                    $scope.download_new_power_thread = function(event) {
+                        $scope.model.download_new_power_thread()
+                        .fail(function(error){
+                            $(event.target).html("Error!")
+                        })
+                    }
                 })
+
+                angular.bootstrap(document, ['MyApp']);
+            });
+        </script>
+
+        <style type="text/css">
+            .progress-bar-container {
+                height: 10px;
+                border: solid 1px #999;
+                background-color: white;
+                margin-top: 10px;
             }
-
-            $scope.download_new_power_thread = function(event) {
-                $scope.model.download_new_power_thread()
-                .fail(function(error){
-                    $(event.target).html("Error!")
-                })
+            .completed-progress {
+                background-color: blue;
+                height: 100%;
             }
-        })
+        </style>    
 
-        angular.bootstrap(document, ['MyApp']);
-    </script>
+    </head>
 
-    <style type="text/css">
-        .progress-bar-container {
-            height: 10px;
-            border: solid 1px #999;
-            background-color: white;
-            margin-top: 10px;
-        }
-        .completed-progress {
-            background-color: blue;
-            height: 100%;
-        }
-    </style>
+    <body>
+        <div ng-controller='MainCtrl'>
+            Name: <input ng-model="model.name">
+            Age: <input ng-model="model.age" type='number'>
+            Power: {{model.power}}
+            <button id="install_btn" ng-click="install_new_power_thread($event)">
+                Install new power!
+            </button>
+
+            <button id="download_btn" ng-click="download_new_power_thread($event)">
+                Download new power!
+            </button>
+
+            <div class='progress-bar-container'>
+                <div class='completed-progress' 
+                     ng-style="{ width: model.power + '%' }">
+                </div>
+            </div>
+        </div>    
+    </body>
+
+</html>
 """
 
-person_view = View(body_html=body_html)
+person_view = View(html=html)
 
 #### Entry point ####
 
