@@ -194,7 +194,8 @@ class Server(HasTraits):
 
         from jigna.core.concurrent import Future
 
-        future = Future(self._handle_request, args=(request, ),
+        method = getattr(self, request['kind'])
+        future = Future(method, args=(request, ),
                         dispatch=self.trait_change_dispatch)
 
         def _on_done(result):
@@ -215,6 +216,7 @@ class Server(HasTraits):
                 name = 'error',
                 data = error_msg
             )
+            print "error, send_event:", event
             self.send_event(event)
 
         future.on_done(_on_done)
