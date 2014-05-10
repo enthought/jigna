@@ -22,14 +22,9 @@ from jigna.server import Server
 #### HTML templates ###########################################################
 
 DOCUMENT_HTML_TEMPLATE = """
-<html ng-app='jigna'>
+<html>
   <head>
-    <script type="text/javascript" src="/jigna/js/jquery.min.js"></script>
-    <script type="text/javascript" src="/jigna/js/angular.min.js"></script>
-    <script type="text/javascript" src="/jigna/js/jigna.js"></script>
-    <script type="text/javascript">
-        jigna.initialize({async});
-    </script>
+    <script data-main="/jigna/main" src="/jigna/require.js"></script>
 
     {head_html}
 
@@ -109,7 +104,7 @@ class View(HasTraits):
         widget = HTMLWidget(
             root_paths = {
                 'jigna': FileLoader(
-                    root = join(abspath(dirname(__file__)), 'resources')
+                    root = join(abspath(dirname(__file__)), 'js')
                 )
             },
             open_externally = True,
