@@ -903,6 +903,8 @@ define(['jquery'], function($){
 
     // EOF ////////////////////////////////////////////////////////////////////////
 
+    window.jigna = jigna;
+
     return jigna;
 
 });
