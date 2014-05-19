@@ -30,7 +30,6 @@ require(['jquery', 'angular', 'jigna'], function($, angular, jigna){
     // AngularJS App for jigna
     ///////////////////////////////////////////////////////////////////////////////
 
-    console.log("angular::", angular);
     var module = angular.module('jigna', []);
 
     // Add initialization function on module run time
@@ -67,4 +66,8 @@ require(['jquery', 'angular', 'jigna'], function($, angular, jigna){
     });
 
     jigna.initialize();
+
+    $(document).ready(function(){
+        angular.bootstrap(document, ['jigna']);
+    });
 });
