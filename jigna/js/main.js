@@ -65,9 +65,9 @@ require(['jquery', 'angular', 'jigna'], function($, angular, jigna){
 
     });
 
-    jigna.initialize();
-
     $(document).ready(function(){
+        jigna.initialize();
+
         angular.bootstrap(document, ['jigna']);
     });
 });
