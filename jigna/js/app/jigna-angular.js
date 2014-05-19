@@ -2,13 +2,10 @@
 
 define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
 
-    var module = angular.module('jigna', []);
+    var jigna_app = angular.module('jigna', []);
 
     // Add initialization function on module run time
-    module.run(['$rootScope', '$compile', function($rootScope, $compile){
-
-        // First initialize jigna
-        jigna.initialize();
+    jigna_app.run(['$rootScope', '$compile', function($rootScope, $compile){
 
         // Add all jigna models as scope variables
         var add_to_scope = function(context) {
@@ -18,8 +15,8 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
             jigna.fire_event(jigna, 'object_changed');
         };
 
-        add_to_scope(jigna.models);
-
+        // Listen to context change event in jigna. A context change event is
+        // fired whenever new toplevel models are added to the jigna scope.
         jigna.add_listener('jigna', 'context_updated', function(event){
             add_to_scope(event.data);
         });
@@ -31,14 +28,10 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
             }
         });
 
-        // fixme: this is very ugly. remove this asap.
-        $rootScope.recompile = function(element) {
-            $compile(element)($rootScope);
-
-            jigna.fire_event(jigna, 'object_changed');
-        };
+        // Initialize jigna when all event handlers are attached.
+        jigna.initialize();
 
     }]);
 
-    return module;
+    return jigna_app;
 });
