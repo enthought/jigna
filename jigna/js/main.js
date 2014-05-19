@@ -4,7 +4,8 @@ require.config({
     paths: {
         'jquery': 'external/jquery.min',
         'angular': 'external/angular.min',
-        'jigna': 'app/jigna'
+        'jigna': 'app/jigna',
+        'jigna-angular': 'app/jigna-angular'
     },
 
     shim: {
@@ -24,50 +25,4 @@ require.config({
     }
 });
 
-require(['jquery', 'angular', 'jigna'], function($, angular, jigna){
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // AngularJS App for jigna
-    ///////////////////////////////////////////////////////////////////////////////
-
-    var module = angular.module('jigna', []);
-
-    // Add initialization function on module run time
-    module.run(function($rootScope, $compile){
-
-        // Add all jigna models as scope variables
-        var add_to_scope = function(context) {
-            for (var model_name in context) {
-                $rootScope[model_name] = jigna.models[model_name];
-            }
-            jigna.fire_event(jigna, 'object_changed');
-        };
-
-        add_to_scope(jigna.models);
-
-        jigna.add_listener('jigna', 'context_updated', function(event){
-            add_to_scope(event.data);
-        });
-
-        // Listen to object change events in jigna
-        jigna.add_listener(jigna, 'object_changed', function() {
-            if ($rootScope.$$phase === null){
-                $rootScope.$digest();
-            }
-        });
-
-        // fixme: this is very ugly. remove this asap.
-        $rootScope.recompile = function(element) {
-            $compile(element)($rootScope);
-
-            jigna.fire_event(jigna, 'object_changed');
-        };
-
-    });
-
-    $(document).ready(function(){
-        jigna.initialize();
-
-        angular.bootstrap(document, ['jigna']);
-    });
-});
+require(['jigna-angular'], function(){});
