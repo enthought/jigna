@@ -1,10 +1,14 @@
 // An AngularJS app running the jigna app
 
-require(['jquery', 'angular', 'jigna'], function($, angular, jigna){
+define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
 
     var module = angular.module('jigna', []);
 
-    var run = function($rootScope, $compile){
+    // Add initialization function on module run time
+    module.run(['$rootScope', '$compile', function($rootScope, $compile){
+
+        // First initialize jigna
+        jigna.initialize();
 
         // Add all jigna models as scope variables
         var add_to_scope = function(context) {
@@ -34,16 +38,7 @@ require(['jquery', 'angular', 'jigna'], function($, angular, jigna){
             jigna.fire_event(jigna, 'object_changed');
         };
 
-    };
+    }]);
 
-    // Add initialization function on module run time
-    module.run(['$rootScope', '$compile', run]);
-
-
-    // Bootstrap the jigna-angular application when the document is ready
-    $(document).ready(function(){
-        jigna.initialize();
-
-        angular.bootstrap(document, ['jigna']);
-    });
+    return module;
 });
