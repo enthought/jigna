@@ -5,3 +5,5 @@ jigna.egg-info/
 *.DS_Store
 
 .idea/
+
+jigna/js/node_modules/
