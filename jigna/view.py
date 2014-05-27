@@ -25,6 +25,7 @@ DOCUMENT_HTML_TEMPLATE = """
 <html>
   <head>
     <script src="/jigna/require.js"></script>
+    <script src="/jigna/require-config.js"></script>
     <script src="/jigna/main.js"></script>
 
     {head_html}

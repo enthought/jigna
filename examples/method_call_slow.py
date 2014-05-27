@@ -46,7 +46,7 @@ html = """
 
     <head>
         <script src="/jigna/require.js"></script>
-        <script src="/jigna/main.js"></script>
+        <script src="/jigna/require-config.js"></script>
 
         <style type="text/css">
             .progress-bar-container {
@@ -84,9 +84,9 @@ html = """
         </div>
 
         <script>
-            require(['angular', 'jigna-angular', function(angular){
+            require(['angular', 'jigna-angular'], function(angular, jigna_app){
                 angular.element(document).ready(function(){
-                    var app = angular.module('MyApp', ['jigna']);
+                    var app = angular.module('MyApp', [jigna_app.name]);
 
                     app.controller('MainCtrl', function($scope){
                         $scope.install_new_power_thread = function(event) {
@@ -106,7 +106,7 @@ html = """
 
                     angular.bootstrap(document, ['MyApp']);
                 });
-            }]);
+            });
 
         </script>
     </body>
