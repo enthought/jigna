@@ -901,8 +901,6 @@ define(['jquery'], function($){
         return proxy.__cache__[attribute];
     };
 
-    // EOF ////////////////////////////////////////////////////////////////////////
-
     window.jigna = jigna;
 
     return jigna;

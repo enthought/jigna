@@ -24,7 +24,8 @@ from jigna.server import Server
 DOCUMENT_HTML_TEMPLATE = """
 <html>
   <head>
-    <script data-main="/jigna/main" src="/jigna/require.js"></script>
+    <script src="/jigna/require.js"></script>
+    <script src="/jigna/main.js"></script>
 
     {head_html}
 
