@@ -8,11 +8,8 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
     jigna_app.run(['$rootScope', '$compile', function($rootScope, $compile){
 
         var add_to_scope = function(models){
-            // models is a dict of model_name vs model mapping
-            var models = event.data;
-
             for (var model_name in models) {
-                $rootScope[model_name] = models[model_name]
+                $rootScope[model_name] = models[model_name];
             }
 
             jigna.fire_event(jigna, 'object_changed');
@@ -20,18 +17,18 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
 
         // add the existing models to the angular scope
         add_to_scope(jigna.models);
-        
+
         // Whenever a new model is added to jigna, add it to the angular
         // scope as well
         jigna.add_listener('jigna', 'model_added', function(event){
             add_to_scope(event.data);
         });
 
-        // Start the $digest cycle on rootScope whenever anything in the 
+        // Start the $digest cycle on rootScope whenever anything in the
         // model object is changed.
         //
-        // Since the $digest cycle essentially involves dirty checking of 
-        // all the watchers, this operation means that it will trigger off 
+        // Since the $digest cycle essentially involves dirty checking of
+        // all the watchers, this operation means that it will trigger off
         // new GET requests for each model attribute that is being used in
         // the registered watchers.
         jigna.add_listener(jigna, 'object_changed', function() {
