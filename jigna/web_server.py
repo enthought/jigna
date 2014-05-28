@@ -113,7 +113,7 @@ class WebServer(Server):
         """ Create the Web Application. """
 
         settings = {
-            'static_path'       : join(dirname(__file__), 'js'),
+            'static_path'       : join(dirname(__file__), 'js', 'dist'),
             'static_url_prefix' : '/jigna/'
         }
 

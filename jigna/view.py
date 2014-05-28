@@ -24,9 +24,7 @@ from jigna.server import Server
 DOCUMENT_HTML_TEMPLATE = """
 <html>
   <head>
-    <script src="/jigna/require.js"></script>
-    <script src="/jigna/require-config.js"></script>
-    <script src="/jigna/main.js"></script>
+    <script src="/jigna/jigna.js"></script>
 
     {head_html}
 
@@ -106,7 +104,7 @@ class View(HasTraits):
         widget = HTMLWidget(
             root_paths = {
                 'jigna': FileLoader(
-                    root = join(abspath(dirname(__file__)), 'js')
+                    root = join(abspath(dirname(__file__)), 'js', 'dist')
                 )
             },
             open_externally = True,
