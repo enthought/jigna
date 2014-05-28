@@ -1001,15 +1001,6 @@ define('jigna',['jquery'], function($){
         // Private protocol
         this._id_to_proxy_map = {};
         this._proxy_factory   = new jigna.ProxyFactory(this);
-
-        // Add all of the models being edited.
-        jigna.add_listener(
-            'jigna',
-            'context_updated',
-            function(event){ this._add_models(event.data); },
-            this
-        );
-
     };
 
     jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -1020,11 +1011,19 @@ define('jigna',['jquery'], function($){
     };
 
     jigna.Client.prototype.initialize = function() {
-        // Fire a '_context_updated' event to setup the initial context.
-        this.get_context().done(function(result) {
+        var client = this;
+
+        // Fire a 'context_updated' event to setup the initial context.
+        this.get_context().done(function(new_context) {
+            // add proxies for the newly added context models
+            new_models = client._add_models(new_context);
+
+            // Note that 'context_updated' event should be fired when 
+            // the 'Javascript' context updates, which is why we provide
+            // the model proxies as the event data
             jigna.fire_event('jigna', {
                 name: 'context_updated',
-                data: result,
+                data: new_models,
             });
         });
     };
@@ -1178,14 +1177,19 @@ define('jigna',['jquery'], function($){
         var proxy = this._create_proxy('instance', id, info);
         // Expose created proxy with the name 'model_name' to the JS framework.
         jigna.models[model_name] = proxy;
+
         return proxy;
     };
 
     jigna.Client.prototype._add_models = function(context) {
         var client = this;
+        var models = {}
         $.each(context, function(model_name, model) {
-            client._add_model(model_name, model.value, model.info);
+            proxy = client._add_model(model_name, model.value, model.info);
+            models[model_name] = proxy;
         });
+
+        return models;
     };
 
     jigna.Client.prototype._create_proxy = function(type, obj, info) {
@@ -1555,7 +1559,7 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
         // Add all jigna models as scope variables
         var add_to_scope = function(context) {
             for (var model_name in context) {
-                $rootScope[model_name] = jigna.models[model_name];
+                $rootScope[model_name] = context[model_name];
             }
             jigna.fire_event(jigna, 'object_changed');
         };
@@ -1574,8 +1578,10 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
         });
 
         // Create a fake event so that initial context is updated on scope
-        //jigna.fire_event(jigna, 'context_updated', jigna.models);
-        add_to_scope(jigna.models);
+        jigna.fire_event('jigna', {
+            name: 'context_updated',
+            data: jigna.models
+        });
 
     }]);
 
