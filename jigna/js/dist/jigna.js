@@ -1001,6 +1001,14 @@ define('jigna',['jquery'], function($){
         // Private protocol
         this._id_to_proxy_map = {};
         this._proxy_factory   = new jigna.ProxyFactory(this);
+
+        // Add all of the models being edited
+        jigna.add_listener(
+            'jigna', 
+            'context_updated',
+            function(event){this._add_models(event.data);},
+            this
+        );
     };
 
     jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -1013,18 +1021,15 @@ define('jigna',['jquery'], function($){
     jigna.Client.prototype.initialize = function() {
         var client = this;
 
-        // Fire a 'context_updated' event to setup the initial context.
-        this.get_context().done(function(new_context) {
-            // add proxies for the newly added context models
-            new_models = client._add_models(new_context);
+        // Obtain the context from the server and add the obtained context
+        // as a jigna model
+        this.get_context().done(function(context) {
+            console.log("context:", context);
 
-            // Note that 'context_updated' event should be fired when 
-            // the 'Javascript' context updates, which is why we provide
-            // the model proxies as the event data
             jigna.fire_event('jigna', {
                 name: 'context_updated',
-                data: new_models,
-            });
+                data: context
+            })
         });
     };
 
@@ -1177,6 +1182,12 @@ define('jigna',['jquery'], function($){
         var proxy = this._create_proxy('instance', id, info);
         // Expose created proxy with the name 'model_name' to the JS framework.
         jigna.models[model_name] = proxy;
+
+        // fire the event to let the UI toolkit know that a new model was added
+        jigna.fire_event('jigna', {
+            name: 'model_added',
+            data: {name: model_name, model: proxy},
+        });
 
         return proxy;
     };
@@ -1556,31 +1567,37 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
     // Add initialization function on module run time
     jigna_app.run(['$rootScope', '$compile', function($rootScope, $compile){
 
-        // Add all jigna models as scope variables
-        var add_to_scope = function(context) {
-            for (var model_name in context) {
-                $rootScope[model_name] = context[model_name];
+        var add_to_scope = function(models){
+            // models is a dict of model_name vs model mapping
+            var models = event.data;
+
+            for (var model_name in models) {
+                $rootScope[model_name] = models[model_name]
             }
+
             jigna.fire_event(jigna, 'object_changed');
         };
 
-        // Listen to context change event in jigna. A context change event is
-        // fired whenever new toplevel models are added to the jigna scope.
-        jigna.add_listener('jigna', 'context_updated', function(event){
+        // add the existing models to the angular scope
+        add_to_scope(jigna.models);
+        
+        // Whenever a new model is added to jigna, add it to the angular
+        // scope as well
+        jigna.add_listener('jigna', 'model_added', function(event){
             add_to_scope(event.data);
         });
 
-        // Listen to object change events in jigna
+        // Start the $digest cycle on rootScope whenever anything in the 
+        // model object is changed.
+        //
+        // Since the $digest cycle essentially involves dirty checking of 
+        // all the watchers, this operation means that it will trigger off 
+        // new GET requests for each model attribute that is being used in
+        // the registered watchers.
         jigna.add_listener(jigna, 'object_changed', function() {
             if ($rootScope.$$phase === null){
                 $rootScope.$digest();
             }
-        });
-
-        // Create a fake event so that initial context is updated on scope
-        jigna.fire_event('jigna', {
-            name: 'context_updated',
-            data: jigna.models
         });
 
     }]);

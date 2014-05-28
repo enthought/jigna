@@ -363,6 +363,14 @@ define(['jquery'], function($){
         // Private protocol
         this._id_to_proxy_map = {};
         this._proxy_factory   = new jigna.ProxyFactory(this);
+
+        // Add all of the models being edited
+        jigna.add_listener(
+            'jigna', 
+            'context_updated',
+            function(event){this._add_models(event.data);},
+            this
+        );
     };
 
     jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -375,18 +383,15 @@ define(['jquery'], function($){
     jigna.Client.prototype.initialize = function() {
         var client = this;
 
-        // Fire a 'context_updated' event to setup the initial context.
-        this.get_context().done(function(new_context) {
-            // add proxies for the newly added context models
-            new_models = client._add_models(new_context);
+        // Obtain the context from the server and add the obtained context
+        // as a jigna model
+        this.get_context().done(function(context) {
+            console.log("context:", context);
 
-            // Note that 'context_updated' event should be fired when 
-            // the 'Javascript' context updates, which is why we provide
-            // the model proxies as the event data
             jigna.fire_event('jigna', {
                 name: 'context_updated',
-                data: new_models,
-            });
+                data: context
+            })
         });
     };
 
@@ -539,6 +544,12 @@ define(['jquery'], function($){
         var proxy = this._create_proxy('instance', id, info);
         // Expose created proxy with the name 'model_name' to the JS framework.
         jigna.models[model_name] = proxy;
+
+        // fire the event to let the UI toolkit know that a new model was added
+        jigna.fire_event('jigna', {
+            name: 'model_added',
+            data: {name: model_name, model: proxy},
+        });
 
         return proxy;
     };

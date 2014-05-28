@@ -25,7 +25,7 @@ DOCUMENT_HTML_TEMPLATE = """
 <html ng-app='jigna'>
   <head>
     <script src="/jigna/jigna.js"></script>
-    
+
     {head_html}
 
   </head>
