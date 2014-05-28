@@ -1,4 +1,25 @@
-(function () {/**
+// NOTE: This is a fragment file which will be appended with
+// more code during the build process. Don't change.
+
+// This is done to support the synchronous public API as 
+// described here: https://github.com/jrburke/almond 
+
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        //Allow using this built library as an AMD module
+        //in another project. That other project will only
+        //see this AMD call, not the internal modules in
+        //the closure below.
+        define([], factory);
+    } else {
+        //Browser globals case. Just assign the
+        //result to a property on the global.
+        root.libGlobalName = factory();
+    }
+}(this, function () {
+    //almond, and your modules will be inlined here
+
+/**
  * @license almond 0.2.9 Copyright (c) 2011-2014, The Dojo Foundation All Rights Reserved.
  * Available via the MIT or new BSD license.
  * see: http://github.com/jrburke/almond for details
@@ -1555,6 +1576,7 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
         });
 
         // Initialize jigna when all event handlers are attached.
+        console.log("jigna initialised");
         jigna.initialize();
 
     }]);
@@ -1589,8 +1611,20 @@ require.config({
     }
 });
 
-require(['jigna-angular']);
+define('main',['angular', 'jigna-angular'], function(angular){
+    window.angular = angular;
+    console.log("angular defined");
+});
 
-define("main", function(){});
+// NOTE: This is a fragment file which will be appended with
+// more code during the build process. Don't change.
 
-}());
+// This is done to support the synchronous public API as 
+// described here: https://github.com/jrburke/almond
+
+	//The modules for your project will be inlined above
+    //this snippet. Ask almond to synchronously require the
+    //module value for 'main' here and return it as the
+    //value to use for the public API for the built file.
+    return require('main');
+}));

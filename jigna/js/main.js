@@ -25,4 +25,7 @@ require.config({
     }
 });
 
-require(['jigna-angular']);
+define(['angular', 'jigna-angular'], function(angular){
+    window.angular = angular;
+    console.log("angular defined");
+});

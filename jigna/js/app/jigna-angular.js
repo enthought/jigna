@@ -29,6 +29,7 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
         });
 
         // Initialize jigna when all event handlers are attached.
+        console.log("jigna initialised");
         jigna.initialize();
 
     }]);

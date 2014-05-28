@@ -25,6 +25,10 @@ DOCUMENT_HTML_TEMPLATE = """
 <html>
   <head>
     <script src="/jigna/jigna.js"></script>
+    <script>
+        console.log('angular required');
+        angular.bootstrap(document, ['jigna'])
+    </script>
 
     {head_html}
 

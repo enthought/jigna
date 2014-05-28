@@ -4,5 +4,8 @@
     "include": ["main"],
     "mainConfigFile": "main.js",
     "out": "dist/jigna.js",
-    "wrap": true
+    "wrap": {
+    	startFile: "start_frag.js",
+    	endFile: "end_frag.js"
+    }
 }
