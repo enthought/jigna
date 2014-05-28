@@ -901,8 +901,6 @@ define(['jquery'], function($){
         return proxy.__cache__[attribute];
     };
 
-    window.jigna = jigna;
-
     return jigna;
 
 });

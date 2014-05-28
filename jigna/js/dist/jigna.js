@@ -1539,8 +1539,6 @@ define('jigna',['jquery'], function($){
         return proxy.__cache__[attribute];
     };
 
-    window.jigna = jigna;
-
     return jigna;
 
 });
@@ -1611,9 +1609,10 @@ require.config({
     }
 });
 
-define('main',['angular', 'jigna-angular'], function(angular){
+define('main',['angular', 'jigna', 'jigna-angular'], function(angular, jigna){
+    // exporting some parts of the API to the global scope.
     window.angular = angular;
-    console.log("angular defined");
+    window.jigna = jigna;
 });
 
 // NOTE: This is a fragment file which will be appended with

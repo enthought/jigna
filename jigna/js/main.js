@@ -25,7 +25,8 @@ require.config({
     }
 });
 
-define(['angular', 'jigna-angular'], function(angular){
+define(['angular', 'jigna', 'jigna-angular'], function(angular, jigna){
+    // exporting the following namespaces to the global scope.
     window.angular = angular;
-    console.log("angular defined");
+    window.jigna = jigna;
 });
