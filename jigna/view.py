@@ -22,15 +22,10 @@ from jigna.server import Server
 #### HTML templates ###########################################################
 
 DOCUMENT_HTML_TEMPLATE = """
-<html>
+<html ng-app='jigna'>
   <head>
     <script src="/jigna/jigna.js"></script>
-    <script>
-        angular.element(document).ready(function(){{
-            angular.bootstrap(document, ['jigna']);
-        }});
-    </script>
-
+    
     {head_html}
 
   </head>
