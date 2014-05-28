@@ -45,8 +45,7 @@ html = """
 <html>
 
     <head>
-        <script src="/jigna/require.js"></script>
-        <script src="/jigna/require-config.js"></script>
+        <script src="/jigna/jigna.js"></script>
 
         <style type="text/css">
             .progress-bar-container {
@@ -84,28 +83,26 @@ html = """
         </div>
 
         <script>
-            require(['angular', 'jigna-angular'], function(angular, jigna_app){
-                angular.element(document).ready(function(){
-                    var app = angular.module('MyApp', [jigna_app.name]);
+            angular.element(document).ready(function(){
+                var app = angular.module('MyApp', ['jigna']);
 
-                    app.controller('MainCtrl', function($scope){
-                        $scope.install_new_power_thread = function(event) {
-                            $scope.model.install_new_power_thread()
-                            .done(function(){
-                                $(event.target).html("Installed")
-                            })
-                        }
+                app.controller('MainCtrl', function($scope){
+                    $scope.install_new_power_thread = function(event) {
+                        $scope.model.install_new_power_thread()
+                        .done(function(){
+                            $(event.target).html("Installed")
+                        })
+                    }
 
-                        $scope.download_new_power_thread = function(event) {
-                            $scope.model.download_new_power_thread()
-                            .fail(function(error){
-                                $(event.target).html("Error!")
-                            })
-                        }
-                    })
+                    $scope.download_new_power_thread = function(event) {
+                        $scope.model.download_new_power_thread()
+                        .fail(function(error){
+                            $(event.target).html("Error!")
+                        })
+                    }
+                })
 
-                    angular.bootstrap(document, ['MyApp']);
-                });
+                angular.bootstrap(document, ['MyApp']);
             });
 
         </script>
