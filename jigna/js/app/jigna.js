@@ -366,7 +366,7 @@ define(['jquery'], function($){
 
         // Add all of the models being edited
         jigna.add_listener(
-            'jigna', 
+            'jigna',
             'context_updated',
             function(event){this._add_models(event.data);},
             this
@@ -546,9 +546,12 @@ define(['jquery'], function($){
         jigna.models[model_name] = proxy;
 
         // fire the event to let the UI toolkit know that a new model was added
+        var data = {};
+        data[model_name] = proxy;
+
         jigna.fire_event('jigna', {
             name: 'model_added',
-            data: {name: model_name, model: proxy},
+            data: data,
         });
 
         return proxy;
