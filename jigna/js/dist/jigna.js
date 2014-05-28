@@ -1565,7 +1565,6 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
         jigna.add_listener('jigna', 'context_updated', function(event){
             add_to_scope(event.data);
         });
-        add_to_scope(jigna.models);
 
         // Listen to object change events in jigna
         jigna.add_listener(jigna, 'object_changed', function() {
@@ -1573,6 +1572,10 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
                 $rootScope.$digest();
             }
         });
+
+        // Create a fake event so that initial context is updated on scope
+        //jigna.fire_event(jigna, 'context_updated', jigna.models);
+        add_to_scope(jigna.models);
 
     }]);
 
