@@ -1565,6 +1565,7 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
         jigna.add_listener('jigna', 'context_updated', function(event){
             add_to_scope(event.data);
         });
+        add_to_scope(jigna.models);
 
         // Listen to object change events in jigna
         jigna.add_listener(jigna, 'object_changed', function() {
@@ -1572,10 +1573,6 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
                 $rootScope.$digest();
             }
         });
-
-        // Initialize jigna when all event handlers are attached.
-        console.log("jigna initialised");
-        jigna.initialize();
 
     }]);
 
@@ -1610,7 +1607,10 @@ require.config({
 });
 
 define('main',['angular', 'jigna', 'jigna-angular'], function(angular, jigna){
-    // exporting some parts of the API to the global scope.
+    // Initialize jigna
+    jigna.initialize();
+
+    // Export the following namespaces to the global scope.
     window.angular = angular;
     window.jigna = jigna;
 });

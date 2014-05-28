@@ -10,7 +10,7 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
         // Add all jigna models as scope variables
         var add_to_scope = function(context) {
             for (var model_name in context) {
-                $rootScope[model_name] = jigna.models[model_name];
+                $rootScope[model_name] = context[model_name];
             }
             jigna.fire_event(jigna, 'object_changed');
         };
@@ -28,8 +28,8 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
             }
         });
 
-        // Initialize jigna when all event handlers are attached.
-        jigna.initialize();
+        // Create a fake event so that initial context is updated on scope
+        jigna.fire_event(jigna, 'context_updated', jigna.models);
 
     }]);
 
