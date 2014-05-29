@@ -1001,14 +1001,6 @@ define('jigna',['jquery'], function($){
         // Private protocol
         this._id_to_proxy_map = {};
         this._proxy_factory   = new jigna.ProxyFactory(this);
-
-        // Add all of the models being edited
-        jigna.add_listener(
-            'jigna',
-            'context_updated',
-            function(event){this._add_models(event.data);},
-            this
-        );
     };
 
     jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -1019,11 +1011,16 @@ define('jigna',['jquery'], function($){
     };
 
     jigna.Client.prototype.initialize = function() {
-        var client = this;
+        // Add all of the models being edited
+        jigna.add_listener(
+            'jigna',
+            'context_updated',
+            function(event){this._add_models(event.data);},
+            this
+        );
 
-        // Obtain the context from the server and add the obtained context
-        // as a jigna model
-        this.get_context();
+        // Update the context so that initial models are added to jigna scope
+        this.update_context();
     };
 
     jigna.Client.prototype.on_object_changed = function(event){
@@ -1140,8 +1137,8 @@ define('jigna',['jquery'], function($){
         return value;
     }
 
-    jigna.Client.prototype.get_context = function() {
-        var request  = {kind : 'get_context'};
+    jigna.Client.prototype.update_context = function() {
+        var request  = {kind : 'update_context'};
 
         return this.send_request(request);
     };

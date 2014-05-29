@@ -91,10 +91,10 @@ class Server(HasTraits):
 
     #### Handlers for each kind of request ####################################
 
-    def get_context(self, request):
-        """ Get the current context """
+    def update_context(self, request):
+        """ Update the context on the JS side """
 
-        return self._context_ids(self.context)
+        return self._send_context_updated_event(self.context)
 
     #### Instances ####
 
