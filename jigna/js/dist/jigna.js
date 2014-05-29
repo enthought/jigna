@@ -636,11 +636,12 @@ define("angular", ["jquery"], (function (global) {
     };
 }(this)));
 
-define('jigna',['jquery'], function($){
-    ///// EventTarget /////////////////////////////////////////////////////////////
-    // Copyright (c) 2010 Nicholas C. Zakas. All rights reserved.
-    // MIT License
-    ///////////////////////////////////////////////////////////////////////////////
+///// EventTarget /////////////////////////////////////////////////////////////
+// Copyright (c) 2010 Nicholas C. Zakas. All rights reserved.
+// MIT License
+///////////////////////////////////////////////////////////////////////////////
+
+define('event_target',[], function(){
 
     function EventTarget(){
         this._listeners = {};
@@ -718,6 +719,11 @@ define('jigna',['jquery'], function($){
             }
         }
     };
+
+    return EventTarget;
+
+});
+define('jigna',['jquery', 'event_target'], function($, EventTarget){
 
     // SubArray.js ////////////////////////////////////////////////////////////////
     // (C) Copyright Juriy Zaytsev
@@ -1600,7 +1606,8 @@ require.config({
         'jquery': 'external/jquery.min',
         'angular': 'external/angular.min',
         'jigna': 'app/jigna',
-        'jigna-angular': 'app/jigna-angular'
+        'jigna-angular': 'app/jigna-angular',
+        'event_target': 'app/event_target'
     },
 
     shim: {
