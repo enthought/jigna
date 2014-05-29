@@ -1023,14 +1023,7 @@ define('jigna',['jquery'], function($){
 
         // Obtain the context from the server and add the obtained context
         // as a jigna model
-        this.get_context().done(function(context) {
-            console.log("context:", context);
-
-            jigna.fire_event('jigna', {
-                name: 'context_updated',
-                data: context
-            });
-        });
+        this.get_context();
     };
 
     jigna.Client.prototype.on_object_changed = function(event){
@@ -1633,12 +1626,13 @@ require.config({
 });
 
 define('main',['angular', 'jigna', 'jigna-angular'], function(angular, jigna){
-    // Initialize jigna
-    jigna.initialize();
-
     // Export the following namespaces to the global scope.
     window.angular = angular;
     window.jigna = jigna;
+
+    // Initialize jigna
+    jigna.initialize();
+
 });
 
 // NOTE: This is a fragment file which will be appended with

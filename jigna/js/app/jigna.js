@@ -385,14 +385,7 @@ define(['jquery'], function($){
 
         // Obtain the context from the server and add the obtained context
         // as a jigna model
-        this.get_context().done(function(context) {
-            console.log("context:", context);
-
-            jigna.fire_event('jigna', {
-                name: 'context_updated',
-                data: context
-            });
-        });
+        this.get_context();
     };
 
     jigna.Client.prototype.on_object_changed = function(event){
