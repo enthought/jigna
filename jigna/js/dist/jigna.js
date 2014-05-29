@@ -1029,7 +1029,7 @@ define('jigna',['jquery'], function($){
             jigna.fire_event('jigna', {
                 name: 'context_updated',
                 data: context
-            })
+            });
         });
     };
 

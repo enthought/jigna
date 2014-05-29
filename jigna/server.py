@@ -57,13 +57,7 @@ class Server(HasTraits):
 
         self._register_objects(context)
 
-        event = dict(
-            obj  = 'jigna',
-            name = 'context_updated',
-            data = self._context_ids(context)
-        )
-
-        self.send_event(event)
+        self._send_context_updated_event(context)
 
         return
 
@@ -403,6 +397,19 @@ class Server(HasTraits):
             # a type/value pair which we need on the client side to determine
             # what (if any) proxy we need to create.
             data        = self._marshal(new)
+        )
+
+        self.send_event(event)
+
+        return
+
+    def _send_context_updated_event(self, context):
+        """ Send a context_updated event. """
+
+        event = dict(
+            obj  = 'jigna',
+            name = 'context_updated',
+            data = self._context_ids(context)
         )
 
         self.send_event(event)
