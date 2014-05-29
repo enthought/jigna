@@ -1596,8 +1596,6 @@ define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jign
 });
 
 require.config({
-    baseUrl: '/jigna/',
-
     paths: {
         'jquery': 'external/jquery.min',
         'angular': 'external/angular.min',

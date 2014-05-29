@@ -1,6 +1,4 @@
 require.config({
-    baseUrl: '/jigna/',
-
     paths: {
         'jquery': 'external/jquery.min',
         'angular': 'external/angular.min',
