@@ -723,15 +723,14 @@ define('event_target',[], function(){
     return EventTarget;
 
 });
-define('jigna',['jquery', 'event_target'], function($, EventTarget){
+// SubArray.js ////////////////////////////////////////////////////////////////
+// (C) Copyright Juriy Zaytsev
+// Source: 1. https://github.com/kangax/array_subclassing
+//         2. http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-
+//            to-subclass-an-array/
+///////////////////////////////////////////////////////////////////////////////
 
-    // SubArray.js ////////////////////////////////////////////////////////////////
-    // (C) Copyright Juriy Zaytsev
-    // Source: 1. https://github.com/kangax/array_subclassing
-    //         2. http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-
-    //            to-subclass-an-array/
-    ///////////////////////////////////////////////////////////////////////////////
-
+define('subarray',[], function(){
 
     var makeSubArray = (function(){
 
@@ -797,14 +796,18 @@ define('jigna',['jquery', 'event_target'], function($, EventTarget){
       return arr;
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
-    // Enthought product code
-    //
-    // (C) Copyright 2013 Enthought, Inc., Austin, TX
-    // All right reserved.
-    //
-    // This file is confidential and NOT open source.  Do not distribute.
-    ///////////////////////////////////////////////////////////////////////////////
+    return SubArray;
+});
+///////////////////////////////////////////////////////////////////////////////
+// Enthought product code
+//
+// (C) Copyright 2013 Enthought, Inc., Austin, TX
+// All right reserved.
+//
+// This file is confidential and NOT open source.  Do not distribute.
+///////////////////////////////////////////////////////////////////////////////
+
+define('jigna',['jquery', 'event_target', 'subarray'], function($, EventTarget, SubArray){
 
     // Namespace for all Jigna-related objects.
     var jigna = new EventTarget();
@@ -1607,7 +1610,8 @@ require.config({
         'angular': 'external/angular.min',
         'jigna': 'app/jigna',
         'jigna-angular': 'app/jigna-angular',
-        'event_target': 'app/event_target'
+        'event_target': 'app/event_target',
+        'subarray': 'app/subarray'
     },
 
     shim: {

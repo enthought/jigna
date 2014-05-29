@@ -4,7 +4,8 @@ require.config({
         'angular': 'external/angular.min',
         'jigna': 'app/jigna',
         'jigna-angular': 'app/jigna-angular',
-        'event_target': 'app/event_target'
+        'event_target': 'app/event_target',
+        'subarray': 'app/subarray'
     },
 
     shim: {
