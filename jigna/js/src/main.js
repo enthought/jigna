@@ -5,7 +5,8 @@ require.config({
         'jigna': 'app/jigna',
         'jigna-angular': 'app/jigna-angular',
         'event_target': 'app/event_target',
-        'subarray': 'app/subarray'
+        'subarray': 'app/subarray',
+        'qt_bridge': 'app/qt_bridge'
     },
 
     shim: {

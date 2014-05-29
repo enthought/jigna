@@ -7,7 +7,7 @@
 // This file is confidential and NOT open source.  Do not distribute.
 ///////////////////////////////////////////////////////////////////////////////
 
-define(['jquery', 'event_target', 'subarray'], function($, EventTarget, SubArray){
+define(['jquery', 'event_target', 'subarray', 'qt_bridge'], function($, EventTarget, SubArray, QtBridge){
 
     // Namespace for all Jigna-related objects.
     var jigna = new EventTarget();
@@ -68,29 +68,7 @@ define(['jquery', 'event_target', 'subarray'], function($, EventTarget, SubArray
         return deferred.promise();
     };
 
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // QtBridge (intra-process)
-    ///////////////////////////////////////////////////////////////////////////////
-
-    jigna.QtBridge = function(client, qt_bridge) {
-        // Private protocol
-        this._client    = client;
-        this._qt_bridge = qt_bridge;
-    };
-
-    jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
-        /* Handle an event from the server. */
-        this._client.handle_event(jsonized_event);
-    };
-
-    jigna.QtBridge.prototype.send_request = function(jsonized_request) {
-        /* Send a request to the server and wait for the reply. */
-
-        var deferred = new $.Deferred();
-        deferred.resolve(this._qt_bridge.handle_request(jsonized_request));
-        return deferred.promise();
-    };
+    jigna.QtBridge = QtBridge;
 
     ///////////////////////////////////////////////////////////////////////////////
     // WebBridge

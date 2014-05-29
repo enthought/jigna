@@ -799,6 +799,33 @@ define('subarray',[], function(){
     return SubArray;
 });
 ///////////////////////////////////////////////////////////////////////////////
+// QtBridge (intra-process)
+///////////////////////////////////////////////////////////////////////////////
+
+define('qt_bridge',[], function(){
+	
+	QtBridge = function(client, qt_bridge) {
+        // Private protocol
+        this._client    = client;
+        this._qt_bridge = qt_bridge;
+    };
+
+    QtBridge.prototype.handle_event = function(jsonized_event) {
+        /* Handle an event from the server. */
+        this._client.handle_event(jsonized_event);
+    };
+
+    QtBridge.prototype.send_request = function(jsonized_request) {
+        /* Send a request to the server and wait for the reply. */
+
+        var deferred = new $.Deferred();
+        deferred.resolve(this._qt_bridge.handle_request(jsonized_request));
+        return deferred.promise();
+    };
+
+    return QtBridge;
+});
+///////////////////////////////////////////////////////////////////////////////
 // Enthought product code
 //
 // (C) Copyright 2013 Enthought, Inc., Austin, TX
@@ -807,7 +834,7 @@ define('subarray',[], function(){
 // This file is confidential and NOT open source.  Do not distribute.
 ///////////////////////////////////////////////////////////////////////////////
 
-define('jigna',['jquery', 'event_target', 'subarray'], function($, EventTarget, SubArray){
+define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge'], function($, EventTarget, SubArray, QtBridge){
 
     // Namespace for all Jigna-related objects.
     var jigna = new EventTarget();
@@ -868,29 +895,7 @@ define('jigna',['jquery', 'event_target', 'subarray'], function($, EventTarget, 
         return deferred.promise();
     };
 
-
-    ///////////////////////////////////////////////////////////////////////////////
-    // QtBridge (intra-process)
-    ///////////////////////////////////////////////////////////////////////////////
-
-    jigna.QtBridge = function(client, qt_bridge) {
-        // Private protocol
-        this._client    = client;
-        this._qt_bridge = qt_bridge;
-    };
-
-    jigna.QtBridge.prototype.handle_event = function(jsonized_event) {
-        /* Handle an event from the server. */
-        this._client.handle_event(jsonized_event);
-    };
-
-    jigna.QtBridge.prototype.send_request = function(jsonized_request) {
-        /* Send a request to the server and wait for the reply. */
-
-        var deferred = new $.Deferred();
-        deferred.resolve(this._qt_bridge.handle_request(jsonized_request));
-        return deferred.promise();
-    };
+    jigna.QtBridge = QtBridge;
 
     ///////////////////////////////////////////////////////////////////////////////
     // WebBridge
@@ -1611,7 +1616,8 @@ require.config({
         'jigna': 'app/jigna',
         'jigna-angular': 'app/jigna-angular',
         'event_target': 'app/event_target',
-        'subarray': 'app/subarray'
+        'subarray': 'app/subarray',
+        'qt_bridge': 'app/qt_bridge'
     },
 
     shim: {
