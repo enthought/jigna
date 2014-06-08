@@ -1497,57 +1497,6 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         return arr;
     };
 
-    ///////////////////////////////////////////////////////////////////////////////
-    // AsyncClient
-    ///////////////////////////////////////////////////////////////////////////////
-    jigna.AsyncClient = function() {};
-    jigna.AsyncClient.prototype = jigna.Client;
-
-    jigna.AsyncClient.prototype.call_instance_method = function(id, method_name, thread, args) {
-        var request = {
-            kind        : 'call_instance_method',
-            id          : id,
-            method_name : method_name,
-            args        : this._marshal_all(args)
-        };
-
-        if (!thread) {
-            client = this;
-            var deferred = new $.Deferred();
-            this.send_request(request).done(
-                function(response) {
-                    deferred.resolve(client._unmarshal(response));
-                }
-            );
-            return deferred.promise();
-        }
-        else {
-            return this.call_method_in_thread(request);
-        }
-    };
-
-    jigna.AsyncClient.prototype.get_attribute_from_server = function(proxy, attribute) {
-        var request;
-        var state = proxy.__state__[attribute];
-        var client = this;
-
-        if (state === undefined) {
-            proxy.__state__[attribute] = 'busy';
-
-            request = this._create_request(proxy, attribute);
-            this.send_request(request).done(
-                function(result) {
-                    proxy.__cache__[attribute] = client._unmarshal(result);
-                    delete proxy.__state__[attribute];
-                    jigna.fire_event(jigna, 'object_changed');
-                }
-            );
-        }
-
-        // This will be undefined initially.
-        return proxy.__cache__[attribute];
-    };
-
     return jigna;
 
 });
