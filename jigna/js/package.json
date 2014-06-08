@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "requirejs": "^2.1.14",
+    "watchr": "^2.4.11"
+  }
+}
