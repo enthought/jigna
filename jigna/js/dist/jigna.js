@@ -802,12 +802,16 @@ define('subarray',[], function(){
 // QtBridge (intra-process)
 ///////////////////////////////////////////////////////////////////////////////
 
-define('qt_bridge',[], function(){
-	
+define('qt_bridge',['jquery'], function($){
+
 	QtBridge = function(client, qt_bridge) {
+        this.ready = new $.Deferred();
+
         // Private protocol
         this._client    = client;
         this._qt_bridge = qt_bridge;
+
+        this.ready.resolve();
     };
 
     QtBridge.prototype.handle_event = function(jsonized_event) {
@@ -825,6 +829,7 @@ define('qt_bridge',[], function(){
 
     return QtBridge;
 });
+
 ///////////////////////////////////////////////////////////////////////////////
 // WebBridge
 ///////////////////////////////////////////////////////////////////////////////
@@ -851,14 +856,13 @@ define('web_bridge',['jquery'], function($){
         }
 
         this._web_socket = new WebSocket(url);
-        this._ws_opened = new $.Deferred();
+        this.ready = new $.Deferred();
         var bridge = this;
         this._web_socket.onopen = function() {
-            bridge._ws_opened.resolve();
+            bridge.ready.resolve();
         }
         console.log("specifying _web_socket:", this._web_socket);
         this._web_socket.onmessage = function(event) {
-            console.log("handle event:", event);
             bridge.handle_event(event.data);
         };
     };
@@ -909,7 +913,7 @@ define('web_bridge',['jquery'], function($){
         var deferred = new $.Deferred();
         var request_id = this._push_deferred_request(deferred);
         var bridge = this;
-        this._ws_opened.done(function() {
+        this.ready.done(function() {
             bridge._web_socket.send(JSON.stringify([request_id, jsonized_request]));
         });
         return deferred.promise();
@@ -1043,10 +1047,12 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
             this
         );
 
-        // Update the context so that initial models are added to jigna scope
-        this.update_context();
-
-        console.log("initialized models:", jigna.models);
+        // Wait for the bridge to be ready, and when it is ready, update the
+        // context so that initial models are added to jigna scope
+        var client = this;
+        this.bridge.ready.done(function(){
+            client.update_context();
+        });
     };
 
     jigna.Client.prototype.on_object_changed = function(event){

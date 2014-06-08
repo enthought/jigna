@@ -100,10 +100,12 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
             this
         );
 
-        // Update the context so that initial models are added to jigna scope
-        this.update_context();
-
-        console.log("initialized models:", jigna.models);
+        // Wait for the bridge to be ready, and when it is ready, update the
+        // context so that initial models are added to jigna scope
+        var client = this;
+        this.bridge.ready.done(function(){
+            client.update_context();
+        });
     };
 
     jigna.Client.prototype.on_object_changed = function(event){

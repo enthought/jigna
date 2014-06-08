@@ -2,12 +2,16 @@
 // QtBridge (intra-process)
 ///////////////////////////////////////////////////////////////////////////////
 
-define([], function(){
-	
+define(['jquery'], function($){
+
 	QtBridge = function(client, qt_bridge) {
+        this.ready = new $.Deferred();
+
         // Private protocol
         this._client    = client;
         this._qt_bridge = qt_bridge;
+
+        this.ready.resolve();
     };
 
     QtBridge.prototype.handle_event = function(jsonized_event) {
@@ -24,4 +28,4 @@ define([], function(){
     };
 
     return QtBridge;
-})
+});

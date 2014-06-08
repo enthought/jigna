@@ -24,14 +24,13 @@ define(['jquery'], function($){
         }
 
         this._web_socket = new WebSocket(url);
-        this._ws_opened = new $.Deferred();
+        this.ready = new $.Deferred();
         var bridge = this;
         this._web_socket.onopen = function() {
-            bridge._ws_opened.resolve();
+            bridge.ready.resolve();
         }
         console.log("specifying _web_socket:", this._web_socket);
         this._web_socket.onmessage = function(event) {
-            console.log("handle event:", event);
             bridge.handle_event(event.data);
         };
     };
@@ -82,7 +81,7 @@ define(['jquery'], function($){
         var deferred = new $.Deferred();
         var request_id = this._push_deferred_request(deferred);
         var bridge = this;
-        this._ws_opened.done(function() {
+        this.ready.done(function() {
             bridge._web_socket.send(JSON.stringify([request_id, jsonized_request]));
         });
         return deferred.promise();
