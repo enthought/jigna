@@ -166,8 +166,9 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
     };
 
     jigna.Client.prototype.get_attribute_from_server = function(proxy, attribute) {
+        /* Get the specified attribute of the proxy from the server. */
 
-        var request = this._get_request_for_attribute(proxy, attribute);
+        var request = this._create_request(proxy, attribute);
 
         var response = this.send_request(request);
         var result = this._unmarshal(response);
@@ -175,7 +176,9 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         return result;
     };
 
-    jigna.Client.prototype.get_attribute_or_item = function(proxy, attribute) {
+    jigna.Client.prototype.get_attribute = function(proxy, attribute) {
+        /* Get the specified attribute of the proxy. If a cached value is
+        available, return that; otherwise get it from the server. */
         var value;
         var cached_value = proxy.__cache__[attribute];
 
@@ -276,7 +279,9 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         return bridge;
     };
 
-    jigna.Client.prototype._get_request_for_attribute = function(proxy, attribute) {
+    jigna.Client.prototype._create_request = function(proxy, attribute) {
+        /* Create the request object for getting the given attribute of the proxy. */
+
         var request;
         if (proxy.__type__ === 'instance') {
             request = {
@@ -366,7 +371,7 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         var descriptor, get, set;
 
         get = function() {
-            return this.__client__.get_attribute_or_item(this, index);
+            return this.__client__.get_attribute(this, index);
         };
 
         set = function(value) {
@@ -408,7 +413,7 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
 
         get = function() {
             // In here, 'this' refers to the proxy!
-            return this.__client__.get_attribute_or_item(this, attribute_name);
+            return this.__client__.get_attribute(this, attribute_name);
         };
 
         set = function(value) {
@@ -583,7 +588,7 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         if (state === undefined) {
             proxy.__state__[attribute] = 'busy';
 
-            request = this._get_request_for_attribute(proxy, attribute);
+            request = this._create_request(proxy, attribute);
             this.send_request(request).done(
                 function(result) {
                     proxy.__cache__[attribute] = client._unmarshal(result);
