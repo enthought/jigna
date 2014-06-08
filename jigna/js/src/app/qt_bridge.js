@@ -22,9 +22,9 @@ define(['jquery'], function($){
     QtBridge.prototype.send_request = function(jsonized_request) {
         /* Send a request to the server and wait for the reply. */
 
-        var deferred = new $.Deferred();
-        deferred.resolve(this._qt_bridge.handle_request(jsonized_request));
-        return deferred.promise();
+        result = this._qt_bridge.handle_request(jsonized_request);
+
+        return result;
     };
 
     return QtBridge;

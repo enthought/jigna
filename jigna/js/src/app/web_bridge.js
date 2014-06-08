@@ -106,8 +106,7 @@ define(['jquery'], function($){
             }
         );
 
-        deferred.resolve(jsonized_response);
-        return deferred.promise();
+        return jsonized_response;
     };
 
     return WebBridge;

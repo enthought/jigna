@@ -12,19 +12,10 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
     // Namespace for all Jigna-related objects.
     var jigna = new EventTarget();
 
-    jigna.initialize = function(async) {
+    jigna.initialize = function() {
 
         this.models = {};
-
-        async = async || false;
-        this.async = async;
-
-        if (async === false) {
-            this.client = new jigna.Client();
-        }
-        else {
-            this.client = new jigna.AsyncClient();
-        }
+        this.client = new jigna.Client();
 
         this.client.initialize();
     };
@@ -122,14 +113,9 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         /* Send a request to the server and wait for (and return) the response. */
 
         var jsonized_request  = JSON.stringify(request);
+        var jsonized_response = this.bridge.send_request(jsonized_request);
 
-        var deferred = new $.Deferred();
-        this.bridge.send_request(jsonized_request).done(
-            function(jsonized_response) {
-                deferred.resolve(JSON.parse(jsonized_response).result);
-            }
-        );
-        return deferred.promise();
+        return JSON.parse(jsonized_response).result;
     };
 
     jigna.Client.prototype.call_method_in_thread = function(request) {
@@ -169,15 +155,10 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         };
 
         if (!thread) {
-            client = this;
-            // Synchronous case: we return the value.
-            var _result;
-            this.send_request(request).done(
-                function(response) {
-                    _result = client._unmarshal(response);
-                }
-            );
-            return _result;
+            var response = this.send_request(request);
+            var result = this._unmarshal(response);
+
+            return result;
         }
         else {
             return this.call_method_in_thread(request);
@@ -193,17 +174,18 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
             proxy.__state__[attribute] = 'busy';
 
             request = this._get_request_for_attribute(proxy, attribute);
-            this.send_request(request).done(
-                function(result) {
-                    proxy.__cache__[attribute] = client._unmarshal(result);
-                    delete proxy.__state__[attribute];
-                }
-            );
+
+            var response = this.send_request(request);
+            var result = this._unmarshal(response);
+
+            // update the cache
+            proxy.__cache__[attribute] = result;
+            delete proxy.__state__[attribute];
         }
 
         // In the sync case, this will be up-to-date, otherwise undefined.
         return proxy.__cache__[attribute];
-    }
+    };
 
     jigna.Client.prototype.get_attribute_or_item = function(proxy, attribute) {
         var value;
