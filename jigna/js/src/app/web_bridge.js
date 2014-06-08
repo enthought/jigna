@@ -31,6 +31,7 @@ define(['jquery'], function($){
         }
         console.log("specifying _web_socket:", this._web_socket);
         this._web_socket.onmessage = function(event) {
+            console.log("handle event:", event);
             bridge.handle_event(event.data);
         };
     };

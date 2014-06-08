@@ -858,6 +858,7 @@ define('web_bridge',['jquery'], function($){
         }
         console.log("specifying _web_socket:", this._web_socket);
         this._web_socket.onmessage = function(event) {
+            console.log("handle event:", event);
             bridge.handle_event(event.data);
         };
     };
@@ -938,7 +939,8 @@ define('web_bridge',['jquery'], function($){
     };
 
     return WebBridge;
-});
+})
+;
 ///////////////////////////////////////////////////////////////////////////////
 // Enthought product code
 //
@@ -963,9 +965,11 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         if (async === false) {
             this.client = new jigna.Client();
         }
-        else {
-            this.client = new jigna.AsyncClient();
-        }
+        // fixme: disable the AsyncClient for now because it wasn't inheriting
+        // properly which caused jigna.Client to be initialized twice.
+        // else {
+        //     this.client = new jigna.AsyncClient();
+        // }
 
         this.client.initialize();
     };
@@ -1014,6 +1018,7 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
     ///////////////////////////////////////////////////////////////////////////////
 
     jigna.Client = function() {
+        console.log('Client');
         // Client protocol.
         this.bridge       = this._get_bridge();
 
@@ -1040,6 +1045,8 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
 
         // Update the context so that initial models are added to jigna scope
         this.update_context();
+
+        console.log("initialized models:", jigna.models);
     };
 
     jigna.Client.prototype.on_object_changed = function(event){
@@ -1154,12 +1161,6 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         }
 
         return value;
-    }
-
-    jigna.Client.prototype.update_context = function() {
-        var request  = {kind : 'update_context'};
-
-        return this.send_request(request);
     };
 
     jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
@@ -1182,6 +1183,12 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         };
 
         this.send_request(request);
+    };
+
+    jigna.Client.prototype.update_context = function() {
+        var request  = {kind : 'update_context'};
+
+        return this.send_request(request);
     };
 
     // Private protocol //////////////////////////////////////////////////////////
@@ -1514,57 +1521,57 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
     ///////////////////////////////////////////////////////////////////////////////
     // AsyncClient
     ///////////////////////////////////////////////////////////////////////////////
-    jigna.AsyncClient = function() {
-        jigna.Client.call(this);
-    };
+    // jigna.AsyncClient = function() {
+    //     jigna.Client.call(this);
+    // };
 
-    jigna.AsyncClient.prototype = new jigna.Client;
-    jigna.AsyncClient.prototype.constructor = jigna.AsyncClient;
+    // jigna.AsyncClient.prototype = new jigna.Client;
+    // jigna.AsyncClient.prototype.constructor = jigna.AsyncClient;
 
-    jigna.AsyncClient.prototype.call_instance_method = function(id, method_name, thread, args) {
-        var request = {
-            kind        : 'call_instance_method',
-            id          : id,
-            method_name : method_name,
-            args        : this._marshal_all(args)
-        };
+    // jigna.AsyncClient.prototype.call_instance_method = function(id, method_name, thread, args) {
+    //     var request = {
+    //         kind        : 'call_instance_method',
+    //         id          : id,
+    //         method_name : method_name,
+    //         args        : this._marshal_all(args)
+    //     };
 
-        if (!thread) {
-            client = this;
-            var deferred = new $.Deferred();
-            this.send_request(request).done(
-                function(response) {
-                    deferred.resolve(client._unmarshal(response));
-                }
-            );
-            return deferred.promise();
-        }
-        else {
-            return this.call_method_in_thread(request);
-        }
-    };
+    //     if (!thread) {
+    //         client = this;
+    //         var deferred = new $.Deferred();
+    //         this.send_request(request).done(
+    //             function(response) {
+    //                 deferred.resolve(client._unmarshal(response));
+    //             }
+    //         );
+    //         return deferred.promise();
+    //     }
+    //     else {
+    //         return this.call_method_in_thread(request);
+    //     }
+    // };
 
-    jigna.AsyncClient.prototype.get_attribute_from_server = function(proxy, attribute) {
-        var request;
-        var state = proxy.__state__[attribute];
-        var client = this;
+    // jigna.AsyncClient.prototype.get_attribute_from_server = function(proxy, attribute) {
+    //     var request;
+    //     var state = proxy.__state__[attribute];
+    //     var client = this;
 
-        if (state === undefined) {
-            proxy.__state__[attribute] = 'busy';
+    //     if (state === undefined) {
+    //         proxy.__state__[attribute] = 'busy';
 
-            request = this._get_request_for_attribute(proxy, attribute);
-            this.send_request(request).done(
-                function(result) {
-                    proxy.__cache__[attribute] = client._unmarshal(result);
-                    delete proxy.__state__[attribute];
-                    jigna.fire_event(jigna, 'object_changed');
-                }
-            );
-        }
+    //         request = this._get_request_for_attribute(proxy, attribute);
+    //         this.send_request(request).done(
+    //             function(result) {
+    //                 proxy.__cache__[attribute] = client._unmarshal(result);
+    //                 delete proxy.__state__[attribute];
+    //                 jigna.fire_event(jigna, 'object_changed');
+    //             }
+    //         );
+    //     }
 
-        // This will be undefined initially.
-        return proxy.__cache__[attribute];
-    };
+    //     // This will be undefined initially.
+    //     return proxy.__cache__[attribute];
+    // };
 
     return jigna;
 
