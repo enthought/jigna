@@ -1073,6 +1073,7 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
 
     jigna.Client.prototype.call_instance_method = function(id, method_name, args) {
         /* Call an instance method */
+
         var request = {
             kind        : 'call_instance_method',
             id          : id,
@@ -1089,6 +1090,7 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
     jigna.Client.prototype.call_instance_method_thread = function(id, method_name, args) {
         /* Call an instance method in a thread. Useful if the method takes long to
         execute and you don't want to block the UI during that time.*/
+
         var request = {
             kind        : 'call_instance_method',
             id          : id,
@@ -1101,9 +1103,7 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         // future object. We attach 'done' and 'error' handlers on that object to
         // resolve/reject our own deferred.
         var future_obj = this.send_request(request);
-        console.log('obtained future obj', future_obj);
-
-        deferred = new $.Deferred();
+        var deferred = new $.Deferred();
 
         jigna.add_listener(future_obj, 'done', function(event){
             deferred.resolve(event.data);

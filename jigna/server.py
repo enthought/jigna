@@ -216,7 +216,7 @@ class Server(HasTraits):
         future.on_done(_on_done)
         future.on_error(_on_error)
 
-        return id(future)
+        return dict(exception=None, result=id(future))
 
     def _get_attribute_names(self, obj):
         """ Get the names of all the attributes on an object.
