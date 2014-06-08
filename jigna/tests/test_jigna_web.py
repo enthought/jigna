@@ -85,7 +85,6 @@ class TestJignaWebSync(TestJignaQt):
         self.assertJSEqual("jigna.models.model.spouse", None)
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
-        self.get_attribute("jigna.models.model.spouse.name", "")
         self.assertJSEqual("jigna.models.model.spouse.name", 'Wilma')
         self.assertJSEqual("jigna.models.model.spouse.age", 40)
 

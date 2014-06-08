@@ -165,17 +165,6 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         }
     };
 
-    jigna.Client.prototype.get_attribute_from_server = function(proxy, attribute) {
-        /* Get the specified attribute of the proxy from the server. */
-
-        var request = this._create_request(proxy, attribute);
-
-        var response = this.send_request(request);
-        var result = this._unmarshal(response);
-
-        return result;
-    };
-
     jigna.Client.prototype.get_attribute = function(proxy, attribute) {
         /* Get the specified attribute of the proxy. If a cached value is
         available, return that; otherwise get it from the server. */
@@ -192,6 +181,17 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         }
 
         return value;
+    };
+
+    jigna.Client.prototype.get_attribute_from_server = function(proxy, attribute) {
+        /* Get the specified attribute of the proxy from the server. */
+
+        var request = this._create_request(proxy, attribute);
+
+        var response = this.send_request(request);
+        var result = this._unmarshal(response);
+
+        return result;
     };
 
     jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, value) {

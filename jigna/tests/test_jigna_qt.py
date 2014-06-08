@@ -91,11 +91,8 @@ class TestJignaQt(unittest.TestCase):
         GUI.process_events()
         return result
 
-    def get_attribute(self, js, expect):
-        return self.execute_js(js)
-
     def assertJSEqual(self, js, value):
-        result = self.get_attribute(js, value)
+        result = self.execute_js(js)
         if isinstance(value, (list, tuple)):
             msg = "Lengths different: expected %d, got %d" % \
                 (len(value), len(result))
@@ -132,8 +129,8 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual("jigna.models.model.phonebook", {})
         fred = self.fred
         fred.phonebook = {'joe' : 123, 'joan' : 345}
-        self.get_attribute("jigna.models.model.phonebook.joe", 123)
-        self.get_attribute("jigna.models.model.phonebook.joan", 123)
+        self.assertJSEqual("jigna.models.model.phonebook.joe", 123)
+        self.assertJSEqual("jigna.models.model.phonebook.joan", 345)
         self.assertJSEqual("jigna.models.model.phonebook", fred.phonebook)
 
         # Now set the value in the JS side.
@@ -203,7 +200,6 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.called_with, 10.0)
         self.execute_js("jigna.models.model.method([1,2])")
         self.assertEqual(fred.called_with, [1,2])
-        self.get_attribute("jigna.models.model.spouse", wilma)
         self.execute_js("jigna.models.model.method(jigna.models.model.spouse)")
         self.assertEqual(fred.called_with, wilma)
 
