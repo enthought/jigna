@@ -59,6 +59,11 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         return deferred.promise();
     };
 
+    jigna.threaded = function(obj, method_name, args) {
+        args = args || [];
+        return this.client.call_instance_method_thread(obj.__id__, method_name, args);
+    };
+
     ///////////////////////////////////////////////////////////////////////////////
     // Client
     ///////////////////////////////////////////////////////////////////////////////
@@ -118,35 +123,10 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         return JSON.parse(jsonized_response).result;
     };
 
-    jigna.Client.prototype.call_method_in_thread = function(request) {
-        /* Send a request to the server to call a method in a thread and return a
-           deferred object.
-        */
-
-        var jsonized_request, deferred;
-
-        request["thread"] = true;
-        jsonized_request  = JSON.stringify(request);
-        deferred = new $.Deferred();
-
-        this.bridge.send_request(jsonized_request).done(
-            function(future_obj) {
-                jigna.add_listener(future_obj, 'done', function(event){
-                    deferred.resolve(event.data);
-                });
-
-                jigna.add_listener(future_obj, 'error', function(event){
-                    deferred.reject(event.data);
-                });
-            }
-        );
-
-        return deferred.promise();
-    };
-
     // Convenience methods for each kind of request //////////////////////////////
 
     jigna.Client.prototype.call_instance_method = function(id, method_name, args) {
+        /* Call an instance method */
         var request = {
             kind        : 'call_instance_method',
             id          : id,
@@ -158,6 +138,36 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
         var result = this._unmarshal(response);
 
         return result;
+    };
+
+    jigna.Client.prototype.call_instance_method_thread = function(id, method_name, args) {
+        /* Call an instance method in a thread. Useful if the method takes long to
+        execute and you don't want to block the UI during that time.*/
+        var request = {
+            kind        : 'call_instance_method',
+            id          : id,
+            method_name : method_name,
+            args        : this._marshal_all(args),
+            thread      : true
+        };
+
+        // the response of a threaded request is a marshalled version of a python
+        // future object. We attach 'done' and 'error' handlers on that object to
+        // resolve/reject our own deferred.
+        var future_obj = this.send_request(request);
+        console.log('obtained future obj', future_obj);
+
+        deferred = new $.Deferred();
+
+        jigna.add_listener(future_obj, 'done', function(event){
+            deferred.resolve(event.data);
+        });
+
+        jigna.add_listener(future_obj, 'error', function(event){
+            deferred.reject(event.data);
+        });
+
+        return deferred.promise();
     };
 
     jigna.Client.prototype.get_attribute = function(proxy, attribute) {
@@ -214,7 +224,7 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
     jigna.Client.prototype.update_context = function() {
         var request  = {kind : 'update_context'};
 
-        return this.send_request(request);
+        this.send_request(request);
     };
 
     // Private protocol //////////////////////////////////////////////////////////

@@ -88,14 +88,14 @@ html = """
 
                 app.controller('MainCtrl', function($scope){
                     $scope.install_new_power_thread = function(event) {
-                        $scope.model.install_new_power_thread()
+                        jigna.threaded($scope.model, 'install_new_power')
                         .done(function(){
                             $(event.target).html("Installed")
                         })
                     }
 
                     $scope.download_new_power_thread = function(event) {
-                        $scope.model.download_new_power_thread()
+                        jigna.threaded($scope.model, 'download_new_power')
                         .fail(function(error){
                             $(event.target).html("Error!")
                         })
