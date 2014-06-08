@@ -1112,25 +1112,13 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
     };
 
     jigna.Client.prototype.get_attribute_from_server = function(proxy, attribute) {
-        var request;
-        var state = proxy.__state__[attribute];
-        var client = this;
 
-        if (state === undefined) {
-            proxy.__state__[attribute] = 'busy';
+        var request = this._get_request_for_attribute(proxy, attribute);
 
-            request = this._get_request_for_attribute(proxy, attribute);
+        var response = this.send_request(request);
+        var result = this._unmarshal(response);
 
-            var response = this.send_request(request);
-            var result = this._unmarshal(response);
-
-            // update the cache
-            proxy.__cache__[attribute] = result;
-            delete proxy.__state__[attribute];
-        }
-
-        // In the sync case, this will be up-to-date, otherwise undefined.
-        return proxy.__cache__[attribute];
+        return result;
     };
 
     jigna.Client.prototype.get_attribute_or_item = function(proxy, attribute) {
@@ -1140,6 +1128,7 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         if (cached_value === undefined) {
             // Get it from the server.
             value = this.get_attribute_from_server(proxy, attribute);
+            proxy.__cache__[attribute] = value;
         }
         else {
             value = cached_value;
