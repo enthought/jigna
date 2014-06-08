@@ -804,7 +804,7 @@ define('subarray',[], function(){
 
 define('qt_bridge',['jquery'], function($){
 
-	QtBridge = function(client, qt_bridge) {
+    QtBridge = function(client, qt_bridge) {
         this.ready = new $.Deferred();
 
         // Private protocol
