@@ -146,7 +146,7 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
 
     // Convenience methods for each kind of request //////////////////////////////
 
-    jigna.Client.prototype.call_instance_method = function(id, method_name, thread, args) {
+    jigna.Client.prototype.call_instance_method = function(id, method_name, args) {
         var request = {
             kind        : 'call_instance_method',
             id          : id,
@@ -154,15 +154,10 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
             args        : this._marshal_all(args)
         };
 
-        if (!thread) {
-            var response = this.send_request(request);
-            var result = this._unmarshal(response);
+        var response = this.send_request(request);
+        var result = this._unmarshal(response);
 
-            return result;
-        }
-        else {
-            return this.call_method_in_thread(request);
-        }
+        return result;
     };
 
     jigna.Client.prototype.get_attribute = function(proxy, attribute) {
@@ -386,25 +381,12 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
     };
 
     jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
-        var method = function (thread, args) {
-            return this.__client__.call_instance_method(
-                this.__id__, method_name, thread, args
-            );
-        };
-
         proxy[method_name] = function() {
             // In here, 'this' refers to the proxy!
             var args = Array.prototype.slice.call(arguments);
-            return method.call(this, false, args);
-        };
-
-        // fixme: this is ugly and potentially dangerous. Ideally we should have a
-        // jigna.thread(func, args) method.
-        proxy[method_name+"_thread"] = function(){
-            // In here, 'this' refers to the proxy!
-            var args = Array.prototype.slice.call(arguments);
-
-            return method.call(this, true, args);
+            return this.__client__.call_instance_method(
+                this.__id__, method_name, args
+            );
         };
     };
 
