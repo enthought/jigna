@@ -119,7 +119,7 @@ class Server(HasTraits):
         method      = getattr(obj, method_name)
 
         from jigna.core.concurrent import Future
-        future = Future(method, args=args,
+        future = Future(method, args=tuple(args),
                         dispatch=self.trait_change_dispatch)
 
         def _on_done(result):
@@ -144,7 +144,7 @@ class Server(HasTraits):
         future.on_done(_on_done)
         future.on_error(_on_error)
 
-        return id(future)
+        return self._marshal(id(future))
 
     def get_instance_attribute(self, request):
         """ Get the value of an instance attribute. """

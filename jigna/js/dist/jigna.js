@@ -1109,7 +1109,9 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         // the response of a threaded request is a marshalled version of a python
         // future object. We attach 'done' and 'error' handlers on that object to
         // resolve/reject our own deferred.
-        var future_obj = this.send_request(request);
+        var response = this.send_request(request);
+        var future_obj = this._unmarshal(response);
+
         var deferred = new $.Deferred();
 
         jigna.add_listener(future_obj, 'done', function(event){
