@@ -7,6 +7,11 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
     // Add initialization function on module run time
     jigna_app.run(['$rootScope', '$compile', function($rootScope, $compile){
 
+        // add the 'jigna' namespace to the $rootScope. This is done so that
+        // any special jigna methods are easily available in directives like
+        // ng-click, ng-mouseover etc.
+        $rootScope.jigna = jigna;
+
         var add_to_scope = function(models){
             for (var model_name in models) {
                 $rootScope[model_name] = models[model_name];
