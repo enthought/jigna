@@ -58,6 +58,8 @@ body_html = """
         </li>
       </ul>
     </div>
+
+    Spouse: {{model.spouse}}
 """
 
 class TestJignaQt(unittest.TestCase):
