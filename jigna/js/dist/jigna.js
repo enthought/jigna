@@ -827,6 +827,19 @@ define('qt_bridge',['jquery'], function($){
         return result;
     };
 
+    QtBridge.prototype.send_request_async = function(jsonized_request) {
+        /* A dummy async version of the send_request method. Since QtBridge is
+        single process, this method indeed waits for the reply but presents
+        a deferred API so that the AsyncClient can use it. Mainly for testing
+        purposes only. */
+
+        var deferred = new $.Deferred();
+
+        deferred.resolve(this._qt_bridge.handle_request(jsonized_request));
+
+        return deferred.promise();
+    };
+
     return QtBridge;
 });
 
@@ -836,7 +849,7 @@ define('qt_bridge',['jquery'], function($){
 
 define('web_bridge',['jquery'], function($){
 
-	WebBridge = function(client) {
+    WebBridge = function(client) {
         this._client = client;
 
         // The jigna_server attribute can be set by a client to point to a
@@ -860,8 +873,7 @@ define('web_bridge',['jquery'], function($){
         var bridge = this;
         this._web_socket.onopen = function() {
             bridge.ready.resolve();
-        }
-        console.log("specifying _web_socket:", this._web_socket);
+        };
         this._web_socket.onmessage = function(event) {
             bridge.handle_event(event.data);
         };
@@ -870,11 +882,9 @@ define('web_bridge',['jquery'], function($){
     WebBridge.prototype.handle_event = function(jsonized_event) {
         /* Handle an event from the server. */
         var response = JSON.parse(jsonized_event);
-        console.log("handling event....", response);
         var request_id = response[0];
         var jsonized_response = response[1];
         if (request_id === -1) {
-        	console.log("handling it in sync fashion");
             this._client.handle_event(jsonized_response);
         }
         else {
@@ -883,43 +893,7 @@ define('web_bridge',['jquery'], function($){
         }
     };
 
-    WebBridge.prototype._pop_deferred_request = function(request_id) {
-        var deferred = this._deferred_requests[request_id];
-        delete this._deferred_requests[request_id];
-        this._request_ids[request_id] = request_id;
-        return deferred;
-    };
-
-    WebBridge.prototype._push_deferred_request = function(deferred) {
-        var id = this._request_ids.pop();
-        this._deferred_requests[id] = deferred;
-        return id;
-    };
-
     WebBridge.prototype.send_request = function(jsonized_request) {
-        if (jigna.async) {
-            return this._send_request_async(jsonized_request);
-        }
-        else {
-            return this._send_request_sync(jsonized_request);
-        }
-    };
-
-    WebBridge.prototype._send_request_async = function(jsonized_request) {
-        /* Send a request to the server and do not wait and return a Promise
-           which is resolved upon completion of the request.
-        */
-
-        var deferred = new $.Deferred();
-        var request_id = this._push_deferred_request(deferred);
-        var bridge = this;
-        this.ready.done(function() {
-            bridge._web_socket.send(JSON.stringify([request_id, jsonized_request]));
-        });
-        return deferred.promise();
-    };
-
-    WebBridge.prototype._send_request_sync = function(jsonized_request) {
         /* Send a request to the server and wait for the reply. */
 
         var jsonized_response;
@@ -941,9 +915,38 @@ define('web_bridge',['jquery'], function($){
         return jsonized_response;
     };
 
+    WebBridge.prototype.send_request_async = function(jsonized_request) {
+        /* Send a request to the server and do not wait and return a Promise
+           which is resolved upon completion of the request.
+        */
+
+        var deferred = new $.Deferred();
+        var request_id = this._push_deferred_request(deferred);
+        var bridge = this;
+        this.ready.done(function() {
+            bridge._web_socket.send(JSON.stringify([request_id, jsonized_request]));
+        });
+        return deferred.promise();
+    };
+
+    //// Private protocol /////////////////////////////////////////////////////
+
+    WebBridge.prototype._pop_deferred_request = function(request_id) {
+        var deferred = this._deferred_requests[request_id];
+        delete this._deferred_requests[request_id];
+        this._request_ids[request_id] = request_id;
+        return deferred;
+    };
+
+    WebBridge.prototype._push_deferred_request = function(deferred) {
+        var id = this._request_ids.pop();
+        this._deferred_requests[id] = deferred;
+        return id;
+    };
+
     return WebBridge;
-})
-;
+});
+
 ///////////////////////////////////////////////////////////////////////////////
 // Enthought product code
 //
@@ -1400,12 +1403,13 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
                 // update the proxy cache
                 proxy.__cache__[attribute] = client._unmarshal(response);
 
-                // set the state as free again
-                proxy.__state__[attribute] = undefined;
-
                 // fire the object changed event to trigger fresh fetches from
                 // the cache
                 jigna.fire_event(jigna, 'object_changed');
+
+                // set the state as free again so that further fetches ask the
+                // server again
+                proxy.__state__[attribute] = undefined;
 
             });
         }

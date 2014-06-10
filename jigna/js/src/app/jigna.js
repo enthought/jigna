@@ -454,12 +454,13 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
                 // update the proxy cache
                 proxy.__cache__[attribute] = client._unmarshal(response);
 
-                // set the state as free again
-                proxy.__state__[attribute] = undefined;
-
                 // fire the object changed event to trigger fresh fetches from
                 // the cache
                 jigna.fire_event(jigna, 'object_changed');
+
+                // set the state as free again so that further fetches ask the
+                // server again
+                proxy.__state__[attribute] = undefined;
 
             });
         }
