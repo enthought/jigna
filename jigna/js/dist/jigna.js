@@ -1100,11 +1100,10 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         execute and you don't want to block the UI during that time.*/
 
         var request = {
-            kind        : 'call_instance_method',
+            kind        : 'call_instance_method_thread',
             id          : id,
             method_name : method_name,
             args        : this._marshal_all(args),
-            thread      : true
         };
 
         // the response of a threaded request is a marshalled version of a python
@@ -1355,11 +1354,10 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         updates on the client.
         */
         var request = {
-            kind        : 'call_instance_method',
+            kind        : 'call_instance_method_thread',
             id          : id,
             method_name : method_name,
             args        : this._marshal_all(args),
-            thread      : true
         };
 
         // Note that this deferred is resolved when the method called in a thread
@@ -1392,10 +1390,11 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
 
         var request = this._create_request(proxy, attribute);
 
-        var response = this.send_request(request);
-        var result = this._unmarshal(response);
+        this.send_request(request).done(function(response){
+            deferred.resolve(this._unmarshal(response));
+        });
 
-        return result;
+        return deferred.promise();
     };
 
     ///////////////////////////////////////////////////////////////////////////////
