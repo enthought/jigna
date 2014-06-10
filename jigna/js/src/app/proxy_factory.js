@@ -3,7 +3,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 define(['event_target', 'proxy', 'list_proxy'],
-function(event_target, Proxy, ListProxy){
+       function(event_target, Proxy, ListProxy){
 
     var ProxyFactory = function(client) {
         // Private protocol.

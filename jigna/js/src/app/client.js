@@ -3,7 +3,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 define(['proxy_factory', 'event_target', 'qt_bridge', 'web_bridge', 'proxy'],
-function(ProxyFactory, event_target, QtBridge, WebBridge, Proxy){
+       function(ProxyFactory, event_target, QtBridge, WebBridge, Proxy){
 
     var Client = function() {};
 

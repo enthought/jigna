@@ -9,6 +9,7 @@ require.config({
         'qt_bridge': 'app/qt_bridge',
         'web_bridge': 'app/web_bridge',
         'client': 'app/client',
+        'async_client': 'app/async_client',
         'proxy_factory': 'app/proxy_factory',
         'proxy': 'app/proxy',
         'list_proxy': 'app/list_proxy'
