@@ -16,8 +16,6 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
 
         options = options || {};
 
-        this.models = {};
-
         if (options.async) {
             this.client = new jigna.AsyncClient();
         }
@@ -25,6 +23,7 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
             this.client = new jigna.Client();
         }
 
+        this.models = {};
         this.client.initialize();
     };
 
@@ -443,14 +442,29 @@ define(['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge'], functi
 
     jigna.AsyncClient.prototype.get_attribute_from_server = function(proxy, attribute) {
         /* Get the specified attribute of the proxy from the server. */
+        var client = this;
 
-        var request = this._create_request(proxy, attribute);
+        // start a new request only if a request for getting that attribute isn't
+        // already sent
+        if (proxy.__state__[attribute] != 'busy') {
+            proxy.__state__[attribute] = 'busy';
 
-        this.send_request(request).done(function(response){
-            deferred.resolve(this._unmarshal(response));
-        });
+            var request = this._create_request(proxy, attribute);
+            this.send_request(request).done(function(response){
+                // update the proxy cache
+                proxy.__cache__[attribute] = client._unmarshal(response);
 
-        return deferred.promise();
+                // set the state as free again
+                proxy.__state__[attribute] = undefined;
+
+                // fire the object changed event to trigger fresh fetches from
+                // the cache
+                jigna.fire_event(jigna, 'object_changed');
+
+            });
+        }
+
+        return proxy.__cache__[attribute];
     };
 
     ///////////////////////////////////////////////////////////////////////////////
