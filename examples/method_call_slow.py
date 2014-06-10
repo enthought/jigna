@@ -45,7 +45,10 @@ html = """
 <html>
 
     <head>
-        <script src="/jigna/jigna.js"></script>
+        <script type='text/javascript' src='/jigna/jigna.js'></script>
+        <script type='text/javascript'>
+            jigna.initialize();
+        </script>
 
         <style type="text/css">
             .progress-bar-container {

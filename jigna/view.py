@@ -24,7 +24,10 @@ from jigna.server import Server
 DOCUMENT_HTML_TEMPLATE = """
 <html ng-app='jigna'>
   <head>
-    <script src="/jigna/jigna.js"></script>
+    <script type="text/javascript" src="/jigna/jigna.js"></script>
+    <script type="text/javascript">
+        jigna.initialize();
+    </script>
 
     {head_html}
 
