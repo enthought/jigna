@@ -11,18 +11,11 @@ define(['jquery', 'event_target', 'client', 'async_client'],
     jigna.initialize = function(options) {
 
         options = options || {};
-
-        if (options.async) {
-            this.client = new AsyncClient();
-        }
-        else {
-            this.client = new Client();
-        }
-
-        this.models = {};
+        this.client = options.async ? new AsyncClient() : new Client();
         this.client.initialize();
     };
 
+    jigna.models = {};
     jigna.add_listener('jigna', 'model_added', function(event){
         var models = event.data;
         for (var model_name in models) {
