@@ -21,6 +21,8 @@ define(['jquery', 'event_target', 'client', 'async_client'],
         for (var model_name in models) {
             jigna.models[model_name] = models[model_name];
         }
+
+        jigna.fire_event('jigna', 'object_changed');
     });
 
     jigna.threaded = function(obj, method_name, args) {
