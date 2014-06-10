@@ -1018,7 +1018,7 @@ define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
 
 define('qt_bridge',['jquery'], function($){
 
-    QtBridge = function(client, qt_bridge) {
+    var QtBridge = function(client, qt_bridge) {
         this.ready = new $.Deferred();
 
         // Private protocol
@@ -1063,7 +1063,7 @@ define('qt_bridge',['jquery'], function($){
 
 define('web_bridge',['jquery'], function($){
 
-    WebBridge = function(client) {
+    var WebBridge = function(client) {
         this._client = client;
 
         // The jigna_server attribute can be set by a client to point to a

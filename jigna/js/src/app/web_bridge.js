@@ -4,7 +4,7 @@
 
 define(['jquery'], function($){
 
-    WebBridge = function(client) {
+    var WebBridge = function(client) {
         this._client = client;
 
         // The jigna_server attribute can be set by a client to point to a
