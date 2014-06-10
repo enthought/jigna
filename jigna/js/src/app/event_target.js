@@ -82,6 +82,7 @@ define([], function(){
         }
     };
 
-    return EventTarget;
+    // return an object of type EventTarget
+    return new EventTarget();
 
-})
+});

@@ -7,7 +7,11 @@ require.config({
         'event_target': 'app/event_target',
         'subarray': 'app/subarray',
         'qt_bridge': 'app/qt_bridge',
-        'web_bridge': 'app/web_bridge'
+        'web_bridge': 'app/web_bridge',
+        'client': 'app/client',
+        'proxy_factory': 'app/proxy_factory',
+        'proxy': 'app/proxy',
+        'list_proxy': 'app/list_proxy'
     },
 
     shim: {

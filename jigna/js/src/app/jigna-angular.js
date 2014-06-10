@@ -17,7 +17,7 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
                 $rootScope[model_name] = models[model_name];
             }
 
-            jigna.fire_event(jigna, 'object_changed');
+            jigna.fire_event('jigna', 'object_changed');
         };
 
         // add the existing models to the angular scope
@@ -36,7 +36,7 @@ define(['jquery', 'angular', 'jigna'], function($, angular, jigna){
         // all the watchers, this operation means that it will trigger off
         // new GET requests for each model attribute that is being used in
         // the registered watchers.
-        jigna.add_listener(jigna, 'object_changed', function() {
+        jigna.add_listener('jigna', 'object_changed', function() {
             if ($rootScope.$$phase === null){
                 $rootScope.$digest();
             }
