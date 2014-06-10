@@ -1510,6 +1510,7 @@ define('async_client',['jquery', 'event_target', 'client'], function($, event_ta
             method_name : method_name,
             args        : this._marshal_all(args),
         };
+        var client = this;
 
         // Note that this deferred is resolved when the method called in a thread
         // finishes, not when the request to call the method finishes.
@@ -1517,8 +1518,9 @@ define('async_client',['jquery', 'event_target', 'client'], function($, event_ta
         // can attach their handlers when the method is done.
         var deferred = new $.Deferred();
 
-        this.send_request(request).done(function(future_obj){
+        this.send_request(request).done(function(response){
 
+            var future_obj = client._unmarshal(response);
             // the response of a threaded request is a marshalled version of a python
             // future object. We attach 'done' and 'error' handlers on that object to
             // resolve/reject our own deferred.
