@@ -37,10 +37,11 @@ define(['jquery', 'event_target', 'client'], function($, event_target, Client){
             method_name : method_name,
             args        : this._marshal_all(args)
         };
+        var client = this;
 
         var deferred = new $.Deferred();
         this.send_request(request).done(function(response){
-            deferred.resolve(this._unmarshal(response));
+            deferred.resolve(client._unmarshal(response));
         });
 
         return deferred.promise();
