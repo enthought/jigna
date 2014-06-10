@@ -1024,24 +1024,15 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
     // Client
     ///////////////////////////////////////////////////////////////////////////////
 
-    jigna.Client = function() {
-        console.log('Client');
-        // Client protocol.
-        this.bridge       = this._get_bridge();
-
-        // Private protocol
-        this._id_to_proxy_map = {};
-        this._proxy_factory   = new jigna.ProxyFactory(this);
-    };
-
-    jigna.Client.prototype.handle_event = function(jsonized_event) {
-        /* Handle an event from the server. */
-        var event = JSON.parse(jsonized_event);
-
-        jigna.fire_event(event.obj, event);
-    };
+    jigna.Client = function() {};
 
     jigna.Client.prototype.initialize = function() {
+        // Client protocol.
+        this.bridge           = this._get_bridge();
+
+        this._id_to_proxy_map = {};
+        this._proxy_factory   = new jigna.ProxyFactory(this);
+
         // Add all of the models being edited
         jigna.add_listener(
             'jigna',
@@ -1056,6 +1047,13 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
         this.bridge.ready.done(function(){
             client.update_context();
         });
+    };
+
+    jigna.Client.prototype.handle_event = function(jsonized_event) {
+        /* Handle an event from the server. */
+        var event = JSON.parse(jsonized_event);
+
+        jigna.fire_event(event.obj, event);
     };
 
     jigna.Client.prototype.on_object_changed = function(event){
@@ -1313,8 +1311,11 @@ define('jigna',['jquery', 'event_target', 'subarray', 'qt_bridge', 'web_bridge']
     // AsyncClient
     ///////////////////////////////////////////////////////////////////////////////
 
+    // Inherit AsyncClient from Client
+    // Source: MDN docs (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create)
     jigna.AsyncClient = function() {};
-    jigna.AsyncClient.prototype = jigna.Client;
+    jigna.AsyncClient.prototype = Object.create(jigna.Client.prototype);
+    jigna.AsyncClient.prototype.constructor = jigna.AsyncClient;
 
     jigna.AsyncClient.prototype.send_request = function(request) {
         /* Send a request to the server and wait for (and return) the response. */
