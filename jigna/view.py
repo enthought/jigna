@@ -26,7 +26,7 @@ DOCUMENT_HTML_TEMPLATE = """
   <head>
     <script type="text/javascript" src="/jigna/jigna.js"></script>
     <script type="text/javascript">
-        jigna.initialize();
+        jigna.initialize({{async: {async}}});
     </script>
 
     {head_html}
@@ -45,7 +45,11 @@ class View(HasTraits):
 
     #### 'View' protocol ######################################################
 
-    #: Should the web backend use an asynchronous bridge.
+    #: Should we use the async client or not.
+    #:
+    #: Async client presents a deferred API and is useful when you want to have
+    #: your View over the web where you don't want to freeze the browser during
+    #: synchronous GET calls from the server.
     async = Bool(False)
 
     #: The base url for all resources (relative urls are resolved corresponding
@@ -90,7 +94,6 @@ class View(HasTraits):
                 body_html = self.body_html,
                 head_html = self.head_html,
                 async     = async,
-
             )
 
         return html
