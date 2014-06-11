@@ -1,5 +1,5 @@
-About Jigna
-============
+Jigna
+=====
 
 Jigna is a bridge between Traits and the HTML world to provide a UI toolkit for
 traits models that is based on the powerful technologies of HTML, CSS and Javascript.
@@ -20,25 +20,25 @@ Installation
 
 You will require the following packages:
 
- - Traits.
- - Pyface with a working Qt backend (either PySide or PyQt4).
+- Traits.
+- Pyface with a working Qt backend (either PySide or PyQt4).
 
 For the web interface, you need:
 
- - Tornado.
+- Tornado.
 
-You can install this either via pip or the usual means::
+You can install this either via pip::
+
+    pip install -r requirements.txt
+
+or the usual means::
 
     python setup.py install
     python setup.py develop
-
-or::
-
-    pip install -r requirements.txt
 
 
 Examples
 =========
 
-If you have set `ETS_TOOLKIT`, remember to set it to `qt4`.  There are
-several examples to play with in the `examples` directory.
+There are several examples to play with in the ``examples`` directory. If
+you have set ``ETS_TOOLKIT``, remember to set it to ``qt4``.  
