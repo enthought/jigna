@@ -49,7 +49,7 @@ class TestJignaWebSync(TestJignaQt):
 
     def get_attribute(self, js, expect):
         self.reset_user_var()
-        get_js = """jigna.get_attribute(\'%s\').done(function(result)
+        get_js = """jigna.wait_for(\'%s\').done(function(result)
                                 {jigna.user = result;})"""%js
         self.execute_js(get_js)
 
