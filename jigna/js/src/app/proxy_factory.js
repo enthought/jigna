@@ -27,15 +27,12 @@ define(['event_target', 'proxy', 'list_proxy'],
 
         get = function() {
             // In here, 'this' refers to the proxy!
-            var value;
             var cached_value = this.__cache__[index];
             if (cached_value === undefined) {
-                value = this.__client__.get_attribute_from_server(proxy, index);
-                this.__cache__[index] = value;
+                return this.__client__.get_attribute_from_server(proxy, index);
             } else {
-                value = cached_value;
+                return cached_value;
             }
-            return value;
         };
 
         set = function(value) {
@@ -63,15 +60,12 @@ define(['event_target', 'proxy', 'list_proxy'],
 
         get = function() {
             // In here, 'this' refers to the proxy!
-            var value;
             var cached_value = this.__cache__[attribute_name];
             if (cached_value === undefined) {
-                value = this.__client__.get_attribute_from_server(proxy, attribute_name);
-                this.__cache__[attribute_name] = value;
+                return this.__client__.get_attribute_from_server(proxy, attribute_name);
             } else {
-                value = cached_value;
+                return cached_value;
             }
-            return value;
         };
 
         set = function(value) {
