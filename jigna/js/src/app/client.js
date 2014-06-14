@@ -117,24 +117,6 @@ define(['proxy_factory', 'event_target', 'qt_bridge', 'web_bridge', 'proxy'],
         return result;
     };
 
-    Client.prototype.get_attribute = function(proxy, attribute) {
-        /* Get the specified attribute of the proxy. If a cached value is
-        available, return that; otherwise get it from the server. */
-        var value;
-        var cached_value = proxy.__cache__[attribute];
-
-        if (cached_value === undefined) {
-            // Get it from the server.
-            value = this.get_attribute_from_server(proxy, attribute);
-            proxy.__cache__[attribute] = value;
-        }
-        else {
-            value = cached_value;
-        }
-
-        return value;
-    };
-
     Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
         var request = {
             kind           : 'set_instance_attribute',

@@ -26,7 +26,16 @@ define(['event_target', 'proxy', 'list_proxy'],
         var descriptor, get, set;
 
         get = function() {
-            return this.__client__.get_attribute(this, index);
+            // In here, 'this' refers to the proxy!
+            var value;
+            var cached_value = this.__cache__[index];
+            if (cached_value === undefined) {
+                value = this.__client__.get_attribute_from_server(proxy, index);
+                this.__cache__[index] = value;
+            } else {
+                value = cached_value;
+            }
+            return value;
         };
 
         set = function(value) {
@@ -36,7 +45,6 @@ define(['event_target', 'proxy', 'list_proxy'],
         };
 
         descriptor = {enumerable:true, get:get, set:set};
-        console.log("defining index property for index:", index);
         Object.defineProperty(proxy, index, descriptor);
     };
 
@@ -55,7 +63,15 @@ define(['event_target', 'proxy', 'list_proxy'],
 
         get = function() {
             // In here, 'this' refers to the proxy!
-            return this.__client__.get_attribute(this, attribute_name);
+            var value;
+            var cached_value = this.__cache__[attribute_name];
+            if (cached_value === undefined) {
+                value = this.__client__.get_attribute_from_server(proxy, attribute_name);
+                this.__cache__[attribute_name] = value;
+            } else {
+                value = cached_value;
+            }
+            return value;
         };
 
         set = function(value) {
@@ -115,6 +131,7 @@ define(['event_target', 'proxy', 'list_proxy'],
         return proxy;
     };
 
+
     ProxyFactory.prototype._create_instance_proxy = function(id, info) {
         var index, proxy;
 
@@ -144,8 +161,6 @@ define(['event_target', 'proxy', 'list_proxy'],
         var index, proxy;
 
         proxy = new ListProxy('list', id, this._client);
-
-        console.log("list proxy:", proxy);
 
         for (index=0; index < info.length; index++) {
             this._add_item_attribute(proxy, index);

@@ -881,7 +881,16 @@ define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
         var descriptor, get, set;
 
         get = function() {
-            return this.__client__.get_attribute(this, index);
+            // In here, 'this' refers to the proxy!
+            var value;
+            var cached_value = this.__cache__[index];
+            if (cached_value === undefined) {
+                value = this.__client__.get_attribute_from_server(proxy, index);
+                this.__cache__[index] = value;
+            } else {
+                value = cached_value;
+            }
+            return value;
         };
 
         set = function(value) {
@@ -891,7 +900,6 @@ define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
         };
 
         descriptor = {enumerable:true, get:get, set:set};
-        console.log("defining index property for index:", index);
         Object.defineProperty(proxy, index, descriptor);
     };
 
@@ -910,7 +918,15 @@ define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
 
         get = function() {
             // In here, 'this' refers to the proxy!
-            return this.__client__.get_attribute(this, attribute_name);
+            var value;
+            var cached_value = this.__cache__[attribute_name];
+            if (cached_value === undefined) {
+                value = this.__client__.get_attribute_from_server(proxy, attribute_name);
+                this.__cache__[attribute_name] = value;
+            } else {
+                value = cached_value;
+            }
+            return value;
         };
 
         set = function(value) {
@@ -970,6 +986,7 @@ define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
         return proxy;
     };
 
+
     ProxyFactory.prototype._create_instance_proxy = function(id, info) {
         var index, proxy;
 
@@ -999,8 +1016,6 @@ define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
         var index, proxy;
 
         proxy = new ListProxy('list', id, this._client);
-
-        console.log("list proxy:", proxy);
 
         for (index=0; index < info.length; index++) {
             this._add_item_attribute(proxy, index);
@@ -1278,24 +1293,6 @@ define('client',['proxy_factory', 'event_target', 'qt_bridge', 'web_bridge', 'pr
         var result = this._unmarshal(response);
 
         return result;
-    };
-
-    Client.prototype.get_attribute = function(proxy, attribute) {
-        /* Get the specified attribute of the proxy. If a cached value is
-        available, return that; otherwise get it from the server. */
-        var value;
-        var cached_value = proxy.__cache__[attribute];
-
-        if (cached_value === undefined) {
-            // Get it from the server.
-            value = this.get_attribute_from_server(proxy, attribute);
-            proxy.__cache__[attribute] = value;
-        }
-        else {
-            value = cached_value;
-        }
-
-        return value;
     };
 
     Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
@@ -1696,10 +1693,10 @@ define('main',['angular', 'jigna', 'jigna-angular'], function(angular, jigna){
 // NOTE: This is a fragment file which will be appended with
 // more code during the build process. Don't change.
 
-// This is done to support the synchronous public API as 
+// This is done to support the synchronous public API as
 // described here: https://github.com/jrburke/almond
 
-	//The modules for your project will be inlined above
+    //The modules for your project will be inlined above
     //this snippet. Ask almond to synchronously require the
     //module value for 'main' here and return it as the
     //value to use for the public API for the built file.
