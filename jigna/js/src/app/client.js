@@ -106,7 +106,7 @@ define(['proxy_factory', 'event_target', 'qt_bridge', 'web_bridge', 'proxy'],
         return deferred.promise();
     };
 
-    Client.prototype.get_attribute_from_server = function(proxy, attribute) {
+    Client.prototype.get_attribute = function(proxy, attribute) {
         /* Get the specified attribute of the proxy from the server. */
 
         var request = this._create_request(proxy, attribute);

@@ -86,7 +86,7 @@ define(['jquery', 'event_target', 'client'], function($, event_target, Client){
         return deferred.promise();
     };
 
-    AsyncClient.prototype.get_attribute_from_server = function(proxy, attribute) {
+    AsyncClient.prototype.get_attribute = function(proxy, attribute) {
         /* Get the specified attribute of the proxy from the server. */
         var client = this;
 

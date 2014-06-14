@@ -884,7 +884,7 @@ define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
             // In here, 'this' refers to the proxy!
             var cached_value = this.__cache__[index];
             if (cached_value === undefined) {
-                return this.__client__.get_attribute_from_server(proxy, index);
+                return this.__client__.get_attribute(proxy, index);
             } else {
                 return cached_value;
             }
@@ -917,7 +917,7 @@ define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
             // In here, 'this' refers to the proxy!
             var cached_value = this.__cache__[attribute_name];
             if (cached_value === undefined) {
-                return this.__client__.get_attribute_from_server(proxy, attribute_name);
+                return this.__client__.get_attribute(proxy, attribute_name);
             } else {
                 return cached_value;
             }
@@ -1278,7 +1278,7 @@ define('client',['proxy_factory', 'event_target', 'qt_bridge', 'web_bridge', 'pr
         return deferred.promise();
     };
 
-    Client.prototype.get_attribute_from_server = function(proxy, attribute) {
+    Client.prototype.get_attribute = function(proxy, attribute) {
         /* Get the specified attribute of the proxy from the server. */
 
         var request = this._create_request(proxy, attribute);
@@ -1530,7 +1530,7 @@ define('async_client',['jquery', 'event_target', 'client'], function($, event_ta
         return deferred.promise();
     };
 
-    AsyncClient.prototype.get_attribute_from_server = function(proxy, attribute) {
+    AsyncClient.prototype.get_attribute = function(proxy, attribute) {
         /* Get the specified attribute of the proxy from the server. */
         var client = this;
 

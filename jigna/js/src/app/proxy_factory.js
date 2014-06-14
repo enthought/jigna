@@ -29,7 +29,7 @@ define(['event_target', 'proxy', 'list_proxy'],
             // In here, 'this' refers to the proxy!
             var cached_value = this.__cache__[index];
             if (cached_value === undefined) {
-                return this.__client__.get_attribute_from_server(proxy, index);
+                return this.__client__.get_attribute(proxy, index);
             } else {
                 return cached_value;
             }
@@ -62,7 +62,7 @@ define(['event_target', 'proxy', 'list_proxy'],
             // In here, 'this' refers to the proxy!
             var cached_value = this.__cache__[attribute_name];
             if (cached_value === undefined) {
-                return this.__client__.get_attribute_from_server(proxy, attribute_name);
+                return this.__client__.get_attribute(proxy, attribute_name);
             } else {
                 return cached_value;
             }
