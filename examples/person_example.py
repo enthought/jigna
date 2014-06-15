@@ -1,14 +1,11 @@
 """
-This example is the most basic example which shows two-way data binding
-in Jigna. Some traits change automatically after some time on the model
-so you should see the corresponding change in the HTML DOM.
+This example is the simplest example which shows how to start a jigna view.
 """
 
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
 from pyface.qt import QtGui
-from pyface.timer.api import do_after
 from jigna.api import View
 
 #### Domain model ####
@@ -17,15 +14,12 @@ class Person(HasTraits):
     name = Str
     age  = Int
 
-    def update_name(self, name):
-        self.name = name
-
 #### UI layer ####
 
 body_html = """
     <div>
-      Name: <input ng-model="model.name">
-      Age: <input ng-model="model.age" type='number'>
+      Name: <input ng-model="person.name"><br>
+      Age: <input ng-model="person.age" type='number'>
     </div>
 """
 
@@ -34,15 +28,16 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    
-    fred  = Person(name='Fred', age=42)
-    def on_trait_change(obj, trait, old, new):
-        print trait, old, new
-    fred.on_trait_change(on_trait_change)
-    person_view.show(model=fred)
-    do_after(2000, fred.update_name, "Freddie")
+    # Start a QtGui application
+    app = QtGui.QApplication([])
 
+    # Instantiate the domain model
+    fred = Person(name='Fred', age=42)
+
+    # Render the view with the domain model added to the context
+    person_view.show(person=fred)
+
+    # Start the event loop
     app.exec_()
 
 if __name__ == "__main__":
