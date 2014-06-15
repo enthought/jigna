@@ -35,15 +35,9 @@ define(['jquery', 'event_target', 'client', 'async_client'],
     // Arguments:
     //   - expr a javascript expression to evaluate,
     //   - timeout (optional) in seconds; defaults to 2 seconds,
-    jigna.wait_for = function (expr, timeout, deferred) {
-        if (timeout === undefined) {
-            timeout = 2;
-        }
-        if (deferred === undefined) {
-            deferred = new $.Deferred();
-        }
+    jigna.wait_for = function (expr, timeout) {
+        var deferred = new $.Deferred();
 
-        var wait = 100;
         var result;
         try {
             result = eval(expr);
@@ -58,10 +52,13 @@ define(['jquery', 'event_target', 'client', 'async_client'],
             if (timeout <= 0) {
                 deferred.reject("Timeout exceeded while waiting for expression: " + expr);
             }
-            setTimeout(function() {
-                    jigna.wait_for(expr, (timeout*1000 - wait)/1000.0, deferred);
-                }, wait
-            );
+            var wait = 100;
+            timeout = timeout || 2;
+            setTimeout(function(){
+                expr_loaded = jigna.wait_for(expr, (timeout*1000 - wait)/1000.0);
+                expr_loaded.done(function(value){deferred.resolve(value);});
+                expr_loaded.fail(function(err){deferred.reject(err);});
+            }, wait);
         }
         else {
             deferred.resolve(result);
