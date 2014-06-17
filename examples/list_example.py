@@ -1,111 +1,57 @@
 """
-This example shows two-way data bindings in `List` traits. Both - a list
-of primitive variables and a list of instance traits are supported and
-demonstrated.
+This example shows two-way data binding for the `List` traits whose items are of
+the primitive type.
 """
 
 #### Imports ##################################################################
 
-from traits.api import HasTraits, Instance, Int, Str, List
+from traits.api import HasTraits, Instance, Str, List
 from pyface.qt import QtGui
-from pyface.timer.api import do_after
 from jigna.api import View
-
-#### Utility function    ######################################################
-def parse_command_line_args(argv=None, description="Example"):
-    import argparse
-    parser = argparse.ArgumentParser(
-        description=description,
-        add_help=True
-        )
-    parser.add_argument("--web",
-                        help="Run the websocket version by starting a tornado server\
-                        on port 8888",
-                        action="store_true")
-    args = parser.parse_args(argv)
-    return args
-
 
 #### Domain model ####
 
-class Person(HasTraits):
-    name = Str
-    age  = Int
+class Basket(HasTraits):
     fruits = List(Str)
-    friends = List(Instance('Person'))
 
 #### UI layer ####
 
+# Looping over the list of primitive variables using `ng-repeat`. We need to add
+# `track by $index` for primitive variables so that the order of the items in
+# the view is bound to the list order in the model.
 body_html = """
     <div>
-      Name: <input ng-model="model.name">
-      Age: <input ng-model="model.age" type='number'>
-      <br/>
-      Fruits:
-      <ul>
-        <li ng-repeat="fruit in model.fruits track by $index">
-          <input ng-model="model.fruits[$index]">
-        </li>
-      </ul>
-
-      <br/>
-
-      Friends:
-      <ul>
-        <li ng-repeat="friend in model.friends">
-          Name: <input ng-model="friend.name">
-          Age: <input ng-model="friend.age" type="number">
-          Fruits:
-          <ul>
-            <li ng-repeat="fruit in friend.fruits track by $index">
-              <input ng-model="friend.fruits[$index]">
-            </li>
-          </ul>
-        </li>
-      </ul>
+      Fruits in the basket:
+      <div ng-repeat="fruit in basket.fruits track by $index">
+        <input ng-model="basket.fruits[$index]">
+      </div>
     </div>
 """
 
-person_view = View(body_html=body_html)
+basket_view = View(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    def listener(obj, traitname, old, new):
-        print obj, traitname, old, new
+    # Start a QtGui application
+    app = QtGui.QApplication([])
 
-    fred = Person(name='Fred', age=42)
-    fred.on_trait_change(listener)
-    wilma = Person(name="Wilma", age=42, fruits=['pineapple', 'litchi'])
-    barney = Person(name="Barney", age=40)
+    # Instantiate the domain model
+    basket = Basket(fruits=['peach', 'pear'])
 
-    fred.fruits = ['peach', 'pear']
+    # Render the view with the domain model added to the context
+    basket_view.show(basket=basket)
 
-    def set_list():
-        fred.fruits = ["banana", "kiwi"]
-        fred.friends = [wilma]
+    # Schedule some operations on the list
+    from pyface.timer.api import do_after
+    do_after(2500, basket.fruits.append, 'mango')
+    do_after(5000, basket.fruits.insert, 0, 'banana')
 
-    def update_list():
-        fred.fruits.append("apple")
-        fred.friends.append(barney)
-        fred.fruits[0] = 'mango'
-        wilma.fruits.append('guava')
-        wilma.fruits[0] = 'strawberry'
+    # Start the event loop
+    app.exec_()
 
-    args = parse_command_line_args(description=__doc__)
-    if args.web:
-        set_list()
-        update_list()
-        person_view.serve(model=fred)
-    else:
-        app = QtGui.QApplication.instance() or QtGui.QApplication([])
-        do_after(3000, set_list)
-        do_after(4000, update_list)
-        person_view.show(model=fred)
-        app.exec_()
-    print fred.fruits
-    print wilma.fruits
-    print [x.name for x in fred.friends]
+    # Check the final values of the list attribute
+    print basket.fruits
 
 if __name__ == "__main__":
     main()
