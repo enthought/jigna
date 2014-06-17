@@ -5,7 +5,7 @@ the primitive type.
 
 #### Imports ##################################################################
 
-from traits.api import HasTraits, Instance, Str, List
+from traits.api import HasTraits, Str, List
 from pyface.qt import QtGui
 from jigna.api import View
 
