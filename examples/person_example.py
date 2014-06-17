@@ -40,6 +40,9 @@ def main():
     # Start the event loop
     app.exec_()
 
+    # Check the values after the UI is closed
+    print fred.name, fred.age
+
 if __name__ == "__main__":
     main()
 
