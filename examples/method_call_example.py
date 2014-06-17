@@ -1,54 +1,46 @@
-""" This example demonstrates Jigna's ability to call public methods of the
+"""
+This example demonstrates Jigna's ability to call public methods of the
 traits model from the HTML interface. You can supply primitive arguments and
-also pass model variables.
+also pass instances.
 """
 
 #### Imports ##################################################################
 
-from traits.api import HasTraits, Int, Str
+from traits.api import HasTraits, Int, Str, Instance
 from pyface.qt import QtGui
 from jigna.api import View
-
-#### Utility function    ######################################################
-def parse_command_line_args(argv=None, description="Example"):
-    import argparse
-    parser = argparse.ArgumentParser(
-        description=description,
-        add_help=True
-        )
-    parser.add_argument("--web",
-                        help="Run the websocket version by starting a tornado server\
-                        on port 8888",
-                        action="store_true")
-    args = parser.parse_args(argv)
-    return args
-
 
 #### Domain model ####
 
 class Person(HasTraits):
     name = Str
-    age  = Int
+    age = Int
 
-    def do_something(self):
-        print 'do something!!!!!!!!'
+    spouse = Instance('Person')
 
-    def upper(self, name):
-        self.name = name.upper()
-        print 'upper', self.name
+    def greet(self):
+        """ Simple method without any arguments. """
+        print 'Greetings %s, from the Javascript world!' % self.name
 
-    def pass_instance(self, obj):
-        print 'got obj', obj.name
+    def update_age(self, age):
+        """ Method which takes a primitive argument. """
+        self.age = age
+
+    def marry(self, person):
+        """ Method which takes an instance argument. """
+        self.spouse = person
 
 #### UI layer ####
 
 body_html = """
     <div>
-      Name: <input ng-model="model.name">
-      Age: <input ng-model="model.age" type='number'>
-      <button ng-click="model.do_something()">Do Something!</button>
-      <button ng-click="model.upper(model.name)">Upper</button>
-      <button ng-click="model.pass_instance(model)">Pass Instance</button>
+      Name: <input ng-model="person.name"> <br/>
+      Age: {{person.age}} <br/>
+      Spouse: {{person.spouse.name}} <br/>
+
+      <button ng-click="person.greet()">Greet!</button>
+      <button ng-click="person.update_age(25)">Grow old</button>
+      <button ng-click="person.marry(spouse)">Marry</button>
     </div>
 """
 
@@ -57,18 +49,21 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    fred  = Person(name='Fred', age=42)
+    # Start a QtGui application
+    app = QtGui.QApplication([])
 
-    args = parse_command_line_args(description=__doc__)
-    if args.web:
-        person_view.serve(model=fred)
-    else:
-        app = QtGui.QApplication.instance() or QtGui.QApplication([])
-        person_view.show(model=fred)
+    # Instantiate the domain models
+    fred = Person(name='Fred', age=14)
+    wilma = Person(name='Wilma', age=25)
 
-        app.exec_()
+    # Render the view with the domain models added to the context
+    person_view.show(person=fred, spouse=wilma)
 
-    return
+    # Start the event loop
+    app.exec_()
+
+    # Check the final values of the list attribute
+    print fred.name, fred.age, fred.spouse.name
 
 if __name__ == '__main__':
     main()
