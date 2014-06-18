@@ -10,9 +10,9 @@
         </script>
     </head>
 
-    <!-- `ng-app='jigna'` attaches the current DOM within the body to the
-    jigna angular application. This makes sure that the rootScope has objects
-    which obtain the values from Python application when needed. -->
+    <!-- `ng-app='jigna'` attaches the jigna angular application to the current
+    DOM tree. This makes sure that the rootScope has objects
+    which are Javascript proxies for the Python application models. -->
     <body ng-app='jigna'>
         Name: <input ng-model="person.name">
         Age: <input ng-model="person.age" type='number'>

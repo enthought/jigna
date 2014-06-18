@@ -15,7 +15,6 @@ from jigna.api import View
 class Person(HasTraits):
     name = Str
     age = Int
-
     spouse = Instance('Person')
 
     def greet(self):
