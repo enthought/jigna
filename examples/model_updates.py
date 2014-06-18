@@ -39,7 +39,7 @@ def main():
     # Render the view with the domain model added to the context
     motd_view.show(motd=motd)
 
-    # Call a method on the model after some time
+    # Schedule an update to a model variable
     from pyface.timer.api import do_after
     do_after(2500, motd.update_message, "Flat is better than nested.")
 
