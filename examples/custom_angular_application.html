@@ -29,7 +29,7 @@
     </head>
 
     <body ng-app='ClockApp'>
-        Time: {{clock.time | displayTime}}
+        Time: {{clock.time | displayTime}} <br/>
 
         <!-- Start the clock in a new thread because it is a slow operation -->
         <button ng-click="jigna.threaded(clock, 'start')"

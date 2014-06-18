@@ -5,126 +5,82 @@ performed in a separate thread.
 
 #### Imports ##################################################################
 
-from traits.api import HasTraits, Int, Str
+from traits.api import HasTraits, Int, Str, Instance
 from pyface.qt import QtGui
 from jigna.api import View
 import time
 
 #### Domain model ####
 
-class Person(HasTraits):
+class App(HasTraits):
     name = Str
-    age  = Int
+    version = Str
 
-    power = Int
+class Installer(HasTraits):
+    current_app = Instance('App')
+    progress = Int
 
-    def install_new_power(self):
-        print "Installing new power...."
-
-        while self.power < 100:
+    def install(self, app):
+        print "installing"
+        self.current_app = app
+        while self.progress < 100:
             time.sleep(0.5)
-            self.power += 10
-            print "Power increased to: ", self.power
-
-        self.name = 'Batman'
-        self.age = 400
-
-    def download_new_power(self):
-        print "Downloading new power...."
-
-        time.sleep(1)
-
-        import urllib2
-        urllib2.urlopen('http://someboguswebsite.com')
-
-        print "error!"
+            self.progress += 10
 
 #### UI layer ####
 
-html = """
-<html>
+body_html = """
+    <div>
+        Current app: {{installer.current_app.name}}-{{installer.current_app.version}}
 
-    <head>
-        <script type='text/javascript' src='/jigna/jigna.js'></script>
-        <script type='text/javascript'>
-            jigna.initialize();
-        </script>
+        <button ng-click="jigna.threaded(installer, 'install', new_app)"
+                ng-show="installer.progress==0">
+            Install {{new_app.name}}-{{new_app.version}}
+        </button>
 
-        <style type="text/css">
-            .progress-bar-container {
-                height: 10px;
-                border: solid 1px #999;
-                background-color: white;
-                margin-top: 10px;
-            }
-            .completed-progress {
-                background-color: blue;
-                height: 100%;
-            }
-        </style>
-
-    </head>
-
-    <body>
-        <div ng-controller='MainCtrl'>
-            Name: <input ng-model="model.name">
-            Age: <input ng-model="model.age" type='number'>
-            Power: {{model.power}}
-            <button id="install_btn" ng-click="install_new_power_thread($event)">
-                Install new power!
-            </button>
-
-            <button id="download_btn" ng-click="download_new_power_thread($event)">
-                Download new power!
-            </button>
-
-            <div class='progress-bar-container'>
-                <div class='completed-progress'
-                     ng-style="{ width: model.power + '%' }">
-                </div>
+        <div class='progress-bar-container'>
+            <div class='completed-progress'
+                 ng-style="{ width: installer.progress + '%' }">
             </div>
         </div>
+    </div>
 
-        <script>
-            angular.element(document).ready(function(){
-                var app = angular.module('MyApp', ['jigna']);
-
-                app.controller('MainCtrl', function($scope){
-                    $scope.install_new_power_thread = function(event) {
-                        jigna.threaded($scope.model, 'install_new_power')
-                        .done(function(){
-                            $(event.target).html("Installed")
-                        })
-                    }
-
-                    $scope.download_new_power_thread = function(event) {
-                        jigna.threaded($scope.model, 'download_new_power')
-                        .fail(function(error){
-                            $(event.target).html("Error!")
-                        })
-                    }
-                })
-
-                angular.bootstrap(document, ['MyApp']);
-            });
-
-        </script>
-    </body>
-
-</html>
+    <style type="text/css">
+        .progress-bar-container {
+            height: 10px;
+            border: solid 1px #999;
+            background-color: white;
+            margin-top: 10px;
+        }
+        .completed-progress {
+            background-color: blue;
+            height: 100%;
+        }
+    </style>
 """
 
-person_view = View(html=html)
+installer_view = View(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    bruce = Person(name='Bruce', age=30)
-    person_view.show(model=bruce)
+    # Start a QtGui application
+    app = QtGui.QApplication([])
+
+    # Instantiate the domain models
+    installer = Installer()
+    pandas = App(name='Pandas', version='1.0')
+
+    # Render the view with the domain models added to the context
+    installer_view.show(installer=installer, new_app=pandas)
+
+    # Start the event loop
+    app.exec_()
+
+    # Check the final values
+    print installer.current_app.name, installer.current_app.version
 
 if __name__ == '__main__':
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
     main()
-    app.exec_()
 
 #### EOF ######################################################################
