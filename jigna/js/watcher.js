@@ -13,7 +13,7 @@ watchr.watch({
     listener: function(){
         console.log("Reloading...");
 
-        var cmd = 'node_modules/.bin/r.js -o build.js optimize=none';
+        var cmd = 'node build.js';
         exec(cmd, function(error, stdout, stderr){
             console.log(stdout);
             console.error(stderr);
