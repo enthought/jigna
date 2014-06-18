@@ -1,0 +1,49 @@
+<html>
+    <head>
+        <!-- Load the jigna script. The location of jigna script file would
+        always be '/jigna/jigna.js' -->
+        <script type='text/javascript' src='/jigna/jigna.js'></script>
+
+        <!-- Once jigna is loaded, initialize it. -->
+        <script type='text/javascript'>
+            jigna.initialize();
+        </script>
+
+        <!-- Custom angular application. -->
+        <script type='text/javascript'>
+            // Specify the 'jigna' angular app as a dependency
+            var app = angular.module('ClockApp', ['jigna']);
+
+            // Define a filter to display time (in seconds) in a proper hh:mm:ss
+            // format
+            app.filter('displayTime', function(){
+                return function(time_in_seconds){
+                    hours = Math.floor(time_in_seconds/3600)
+                    mins = Math.floor((time_in_seconds%3600)/60)
+                    seconds = (time_in_seconds%3600)%60
+
+                    return hours + ":" + mins + ":" + seconds
+                }
+            })
+        </script>
+    </head>
+
+    <body ng-app='ClockApp'>
+        Time: {{clock.time | displayTime}}
+
+        <!-- Start the clock in a new thread because it is a slow operation -->
+        <button ng-click="jigna.threaded(clock, 'start')"
+                ng-show="clock.state=='stopped'">
+            Start
+        </button>
+
+        <button ng-click="clock.stop()"
+                ng-show="clock.state=='running'">
+            Stop
+        </button>
+
+        <button ng-click="clock.reset()">
+            Reset
+        </button>
+    </body>
+</html>
