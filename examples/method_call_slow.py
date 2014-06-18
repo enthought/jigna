@@ -17,12 +17,11 @@ class App(HasTraits):
     version = Str
 
 class Installer(HasTraits):
-    current_app = Instance('App')
+    current = Instance('App')
     progress = Int
 
     def install(self, app):
-        print "installing"
-        self.current_app = app
+        self.current = app
         while self.progress < 100:
             time.sleep(0.5)
             self.progress += 10
@@ -31,13 +30,23 @@ class Installer(HasTraits):
 
 body_html = """
     <div>
-        Current app: {{installer.current_app.name}}-{{installer.current_app.version}}
-
-        <button ng-click="jigna.threaded(installer, 'install', new_app)"
-                ng-show="installer.progress==0">
+        <!-- Show a button to install in a thread -->
+        <button ng-show="installer.progress==0"
+                ng-click="jigna.threaded(installer, 'install', new_app)">
             Install {{new_app.name}}-{{new_app.version}}
         </button>
 
+        <!-- Show an "Installing..." text while progress is between 0 and 100 -->
+        <div ng-show="installer.progress > 0 && installer.progress < 100">
+            Installing {{installer.current.name}}-{{installer.current.version}}...
+        </div>
+
+        <!-- Show "Done" when the progress is 100% -->
+        <div ng-show="installer.progress >= 100">
+            Done!
+        </div>
+
+        <!-- A graphical progress bar -->
         <div class='progress-bar-container'>
             <div class='completed-progress'
                  ng-style="{ width: installer.progress + '%' }">
@@ -48,8 +57,7 @@ body_html = """
     <style type="text/css">
         .progress-bar-container {
             height: 10px;
-            border: solid 1px #999;
-            background-color: white;
+            border: solid 1px gray;
             margin-top: 10px;
         }
         .completed-progress {
@@ -78,7 +86,7 @@ def main():
     app.exec_()
 
     # Check the final values
-    print installer.current_app.name, installer.current_app.version
+    print installer.current.name, installer.current.version
 
 if __name__ == '__main__':
     main()
