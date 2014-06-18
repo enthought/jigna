@@ -3,86 +3,78 @@
 // MIT License
 ///////////////////////////////////////////////////////////////////////////////
 
-define([], function(){
+var EventTarget = function(){
+    this._listeners = {};
+};
 
-    function EventTarget(){
-        this._listeners = {};
-    }
+EventTarget.prototype = {
 
-    EventTarget.prototype = {
+    constructor: EventTarget,
 
-        constructor: EventTarget,
+    add_listener: function(obj, event_name, listener, thisArg){
+        var id = this._to_id(obj);
 
-        add_listener: function(obj, event_name, listener, thisArg){
-            var id = this._to_id(obj);
+        if (this._listeners[id] === undefined){
+            this._listeners[id] = {};
+        }
 
-            if (this._listeners[id] === undefined){
-                this._listeners[id] = {};
-            }
+        if (this._listeners[id][event_name] === undefined) {
+            this._listeners[id][event_name] = [];
+        }
 
-            if (this._listeners[id][event_name] === undefined) {
-                this._listeners[id][event_name] = [];
-            }
+        this._listeners[id][event_name].push({thisArg: thisArg, listener: listener});
+    },
 
-            this._listeners[id][event_name].push({thisArg: thisArg, listener: listener});
-        },
+    fire_event: function(obj, event){
+        var id = this._to_id(obj);
 
-        fire_event: function(obj, event){
-            var id = this._to_id(obj);
+        if (typeof event == "string"){
+            event = { name: event };
+        }
+        if (!event.target){
+            event.target = obj;
+        }
 
-            if (typeof event == "string"){
-                event = { name: event };
-            }
-            if (!event.target){
-                event.target = obj;
-            }
+        if (!event.name){  //falsy
+            throw new Error("Event object missing 'name' property.");
+        }
 
-            if (!event.name){  //falsy
-                console.log('event:', event);
-                throw new Error("Event object missing 'name' property.");
-            }
+        if (this._listeners[id] === undefined) {
+            return;
+        }
 
-            if (this._listeners[id] === undefined) {
-                return;
-            }
-
-            if (this._listeners[id][event.name] instanceof Array){
-                var listeners = this._listeners[id][event.name];
-                for (var i=0, len=listeners.length; i < len; i++){
-                    listener = listeners[i].listener;
-                    thisArg = listeners[i].thisArg;
-                    listener.call(thisArg, event);
-                }
-            }
-        },
-
-        remove_listener: function(obj, event_name, listener){
-            var id = this._to_id(obj);
-
-            if (this._listeners[id][event_name] instanceof Array){
-                var listeners = this._listeners[id][event_name];
-                for (var i=0, len=listeners.length; i < len; i++){
-                    if (listeners[i] === listener){
-                        listeners.splice(i, 1);
-                        break;
-                    }
-                }
-            }
-        },
-
-        //// Private protocol /////////////////////////////////////////////////////
-
-        _to_id: function(obj){
-            if (obj.__id__ !== undefined) {
-                return obj.__id__;
-            }
-            else {
-                return obj;
+        if (this._listeners[id][event.name] instanceof Array){
+            var listeners = this._listeners[id][event.name];
+            for (var i=0, len=listeners.length; i < len; i++){
+                listener = listeners[i].listener;
+                thisArg = listeners[i].thisArg;
+                listener.call(thisArg, event);
             }
         }
-    };
+    },
 
-    // return an object of type EventTarget
-    return new EventTarget();
+    remove_listener: function(obj, event_name, listener){
+        var id = this._to_id(obj);
 
-});
+        if (this._listeners[id][event_name] instanceof Array){
+            var listeners = this._listeners[id][event_name];
+            for (var i=0, len=listeners.length; i < len; i++){
+                if (listeners[i] === listener){
+                    listeners.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    },
+
+    //// Private protocol /////////////////////////////////////////////////////
+
+    _to_id: function(obj){
+        if (obj.__id__ !== undefined) {
+            return obj.__id__;
+        }
+        else {
+            return obj;
+        }
+    }
+};

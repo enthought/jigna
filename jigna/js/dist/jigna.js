@@ -636,1053 +636,127 @@ define("angular", ["jquery"], (function (global) {
     };
 }(this)));
 
-///// EventTarget /////////////////////////////////////////////////////////////
-// Copyright (c) 2010 Nicholas C. Zakas. All rights reserved.
-// MIT License
-///////////////////////////////////////////////////////////////////////////////
-
-define('event_target',[], function(){
-
-    function EventTarget(){
-        this._listeners = {};
-    }
-
-    EventTarget.prototype = {
-
-        constructor: EventTarget,
-
-        add_listener: function(obj, event_name, listener, thisArg){
-            var id = this._to_id(obj);
-
-            if (this._listeners[id] === undefined){
-                this._listeners[id] = {};
-            }
-
-            if (this._listeners[id][event_name] === undefined) {
-                this._listeners[id][event_name] = [];
-            }
-
-            this._listeners[id][event_name].push({thisArg: thisArg, listener: listener});
-        },
-
-        fire_event: function(obj, event){
-            var id = this._to_id(obj);
-
-            if (typeof event == "string"){
-                event = { name: event };
-            }
-            if (!event.target){
-                event.target = obj;
-            }
-
-            if (!event.name){  //falsy
-                console.log('event:', event);
-                throw new Error("Event object missing 'name' property.");
-            }
-
-            if (this._listeners[id] === undefined) {
-                return;
-            }
-
-            if (this._listeners[id][event.name] instanceof Array){
-                var listeners = this._listeners[id][event.name];
-                for (var i=0, len=listeners.length; i < len; i++){
-                    listener = listeners[i].listener;
-                    thisArg = listeners[i].thisArg;
-                    listener.call(thisArg, event);
-                }
-            }
-        },
-
-        remove_listener: function(obj, event_name, listener){
-            var id = this._to_id(obj);
-
-            if (this._listeners[id][event_name] instanceof Array){
-                var listeners = this._listeners[id][event_name];
-                for (var i=0, len=listeners.length; i < len; i++){
-                    if (listeners[i] === listener){
-                        listeners.splice(i, 1);
-                        break;
-                    }
-                }
-            }
-        },
-
-        //// Private protocol /////////////////////////////////////////////////////
-
-        _to_id: function(obj){
-            if (obj.__id__ !== undefined) {
-                return obj.__id__;
-            }
-            else {
-                return obj;
-            }
-        }
-    };
-
-    // return an object of type EventTarget
-    return new EventTarget();
-
-});
-
-///////////////////////////////////////////////////////////////////////////////
-// Proxy
-///////////////////////////////////////////////////////////////////////////////
-
-define('proxy',[], function(){
-
-    var Proxy = function(type, id, client) {
-        // We use the '__attribute__' pattern to reduce the risk of name clashes
-        // with the actuall attribute and methods on the object that we are a
-        // proxy for.
-        Object.defineProperty(this, '__type__',   {value : type});
-        Object.defineProperty(this, '__id__',     {value : id});
-        Object.defineProperty(this, '__client__', {value : client});
-        Object.defineProperty(this, '__cache__',  {value : {}});
-
-        // The state for each attribute can be 'busy' or undefined, if 'busy' it
-        // implies that the server is waiting to receive the value.
-        Object.defineProperty(this, '__state__',  {value : {}});
-    };
-
-    return Proxy;
-});
-
-// SubArray.js ////////////////////////////////////////////////////////////////
-// (C) Copyright Juriy Zaytsev
-// Source: 1. https://github.com/kangax/array_subclassing
-//         2. http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-
-//            to-subclass-an-array/
-///////////////////////////////////////////////////////////////////////////////
-
-define('subarray',[], function(){
-
-    var makeSubArray = (function(){
-
-      var MAX_SIGNED_INT_VALUE = Math.pow(2, 32) - 1,
-          hasOwnProperty = Object.prototype.hasOwnProperty;
-
-      function ToUint32(value) {
-        return value >>> 0;
-      }
-
-      function getMaxIndexProperty(object) {
-        var maxIndex = -1, isValidProperty;
-
-        for (var prop in object) {
-
-          isValidProperty = (
-            String(ToUint32(prop)) === prop &&
-            ToUint32(prop) !== MAX_SIGNED_INT_VALUE &&
-            hasOwnProperty.call(object, prop));
-
-          if (isValidProperty && prop > maxIndex) {
-            maxIndex = prop;
-          }
-        }
-        return maxIndex;
-      }
-
-      return function(methods) {
-        var length = 0;
-        methods = methods || { };
-
-        methods.length = {
-          get: function() {
-            var maxIndexProperty = +getMaxIndexProperty(this);
-            return Math.max(length, maxIndexProperty + 1);
-          },
-          set: function(value) {
-            var constrainedValue = ToUint32(value);
-            if (constrainedValue !== +value) {
-              throw new RangeError();
-            }
-            for (var i = constrainedValue, len = this.length; i < len; i++) {
-              delete this[i];
-            }
-            length = constrainedValue;
-          }
-        };
-        methods.toString = {
-          value: Array.prototype.join
-        };
-        return Object.create(Array.prototype, methods);
-      };
-    })();
-
-    function SubArray() {
-      var arr = makeSubArray();
-      if (arguments.length === 1) {
-        arr.length = arguments[0];
-      }
-      else {
-        arr.push.apply(arr, arguments);
-      }
-      return arr;
-    }
-
-    return SubArray;
-});
-///////////////////////////////////////////////////////////////////////////////
-// ListProxy
-///////////////////////////////////////////////////////////////////////////////
-
-// ListProxy is handled separately because it has to do special handling
-// to behave as regular Javascript `Array` objects
-// See "Wrappers. Prototype chain injection" section in this article:
-// http://perfectionkills.com/how-ecmascript-5-still-does-not-allow-to-subclass-an-array/
-
-define('list_proxy',['subarray'], function(SubArray){
-
-    var ListProxy = function(type, id, client) {
-
-        var arr = new SubArray();
-
-        // fixme: repetition of property definition
-        Object.defineProperty(arr, '__type__',   {value : type});
-        Object.defineProperty(arr, '__id__',     {value : id});
-        Object.defineProperty(arr, '__client__', {value : client});
-        Object.defineProperty(arr, '__cache__',  {value : []});
-        // The state for each attribute can be 'busy' or undefined, if 'busy' it
-        // implies that the server is waiting to receive the value.
-        Object.defineProperty(arr, '__state__',  {value : {}});
-
-        return arr;
-    };
-
-    return ListProxy;
-});
-
-///////////////////////////////////////////////////////////////////////////////
-// ProxyFactory
-///////////////////////////////////////////////////////////////////////////////
-
-define('proxy_factory',['event_target', 'proxy', 'list_proxy'],
-       function(event_target, Proxy, ListProxy){
-
-    var ProxyFactory = function(client) {
-        // Private protocol.
-        this._client = client;
-    };
-
-    ProxyFactory.prototype.create_proxy = function(type, obj, info) {
-        /* Create a proxy for the given type and value. */
-
-        var factory_method = this['_create_' + type + '_proxy'];
-        if (factory_method === undefined) {
-            throw 'cannot create proxy for: ' + type;
-        }
-        return factory_method.apply(this, [obj, info]);
-    };
-
-    // Private protocol //////////////////////////////////////////////////////////
-
-    ProxyFactory.prototype._add_item_attribute = function(proxy, index){
-        var descriptor, get, set;
-
-        get = function() {
-            // In here, 'this' refers to the proxy!
-            var cached_value = this.__cache__[index];
-            if (cached_value === undefined) {
-                return this.__client__.get_attribute(proxy, index);
-            } else {
-                return cached_value;
-            }
-        };
-
-        set = function(value) {
-            // In here, 'this' refers to the proxy!
-            this.__cache__[index] = value;
-            this.__client__.set_item(this.__id__, index, value);
-        };
-
-        descriptor = {enumerable:true, get:get, set:set};
-        Object.defineProperty(proxy, index, descriptor);
-    };
-
-    ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
-        proxy[method_name] = function() {
-            // In here, 'this' refers to the proxy!
-            var args = Array.prototype.slice.call(arguments);
-            return this.__client__.call_instance_method(
-                this.__id__, method_name, args
-            );
-        };
-    };
-
-    ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute_name){
-        var descriptor, get, set;
-
-        get = function() {
-            // In here, 'this' refers to the proxy!
-            var cached_value = this.__cache__[attribute_name];
-            if (cached_value === undefined) {
-                return this.__client__.get_attribute(proxy, attribute_name);
-            } else {
-                return cached_value;
-            }
-        };
-
-        set = function(value) {
-            // In here, 'this' refers to the proxy!
-            //
-            // If the proxy is for a 'HasTraits' instance then we don't need
-            // to set the cached value here as the value will get updated when
-            // we get the corresponsing trait event. However, setting the value
-            // here means that we can create jigna UIs for non-traits objects - it
-            // just means we won't react to external changes to the model(s).
-            this.__cache__[attribute_name] = value;
-            this.__client__.set_instance_attribute(
-                this.__id__, attribute_name, value
-            );
-        };
-
-        descriptor = {enumerable:true, get:get, set:set};
-        Object.defineProperty(proxy, attribute_name, descriptor);
-
-        event_target.add_listener(
-            proxy,
-            attribute_name,
-            this._client.on_object_changed,
-            this._client
-        );
-    };
-
-    ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
-        var descriptor, set;
-
-        set = function(value) {
-            this.__cache__[event_name] = value;
-            this.__client__.set_instance_attribute(
-                this.__id__, event_name, value
-            );
-        };
-
-        descriptor = {enumerable:false, set:set};
-        Object.defineProperty(proxy, event_name, descriptor);
-
-        event_target.add_listener(
-            proxy,
-            event_name,
-            this._client.on_object_changed,
-            this._client
-        );
-    };
-
-    ProxyFactory.prototype._create_dict_proxy = function(id, info) {
-        var index;
-
-        var proxy = new Proxy('dict', id, this._client);
-
-        for (index in info.keys) {
-            this._add_item_attribute(proxy, info.keys[index]);
-        }
-        return proxy;
-    };
-
-
-    ProxyFactory.prototype._create_instance_proxy = function(id, info) {
-        var index, proxy;
-
-        proxy = new Proxy('instance', id, this._client);
-
-        for (index in info.attribute_names) {
-            this._add_instance_attribute(proxy, info.attribute_names[index]);
-        }
-
-        for (index in info.event_names) {
-            this._add_instance_event(proxy, info.event_names[index]);
-        }
-
-        for (index in info.method_names) {
-            this._add_instance_method(proxy, info.method_names[index]);
-        }
-
-        // This property is not actually used by jigna itself. It is only there to
-        // make it easy to see what the type of the server-side object is when
-        // debugging the JS code in the web inspector.
-        Object.defineProperty(proxy, '__type_name__', {value : info.type_name});
-
-        return proxy;
-    };
-
-    ProxyFactory.prototype._create_list_proxy = function(id, info) {
-        var index, proxy;
-
-        proxy = new ListProxy('list', id, this._client);
-
-        for (index=0; index < info.length; index++) {
-            this._add_item_attribute(proxy, index);
-        }
-
-        return proxy;
-    };
-
-    return ProxyFactory;
-});
-
-///////////////////////////////////////////////////////////////////////////////
-// QtBridge (intra-process)
-///////////////////////////////////////////////////////////////////////////////
-
-define('qt_bridge',['jquery'], function($){
-
-    var QtBridge = function(client, qt_bridge) {
-        this.ready = new $.Deferred();
-
-        // Private protocol
-        this._client    = client;
-        this._qt_bridge = qt_bridge;
-
-        this.ready.resolve();
-    };
-
-    QtBridge.prototype.handle_event = function(jsonized_event) {
-        /* Handle an event from the server. */
-        this._client.handle_event(jsonized_event);
-    };
-
-    QtBridge.prototype.send_request = function(jsonized_request) {
-        /* Send a request to the server and wait for the reply. */
-
-        result = this._qt_bridge.handle_request(jsonized_request);
-
-        return result;
-    };
-
-    QtBridge.prototype.send_request_async = function(jsonized_request) {
-        /* A dummy async version of the send_request method. Since QtBridge is
-        single process, this method indeed waits for the reply but presents
-        a deferred API so that the AsyncClient can use it. Mainly for testing
-        purposes only. */
-
-        var deferred = new $.Deferred();
-
-        deferred.resolve(this._qt_bridge.handle_request(jsonized_request));
-
-        return deferred.promise();
-    };
-
-    return QtBridge;
-});
-
-///////////////////////////////////////////////////////////////////////////////
-// WebBridge
-///////////////////////////////////////////////////////////////////////////////
-
-define('web_bridge',['jquery'], function($){
-
-    var WebBridge = function(client) {
-        this._client = client;
-
-        // The jigna_server attribute can be set by a client to point to a
-        // different Jigna server.
-        var jigna_server = window['jigna_server'];
-        if (jigna_server === undefined) {
-            jigna_server = window.location.host;
-        }
-        this._server_url = 'http://' + jigna_server;
-
-        var url = 'ws://' + jigna_server + '/_jigna_ws';
-
-        this._deferred_requests = {};
-        this._request_ids = [];
-        for (var index=0; index < 1024; index++) {
-            this._request_ids.push(index);
-        }
-
-        this._web_socket = new WebSocket(url);
-        this.ready = new $.Deferred();
-        var bridge = this;
-        this._web_socket.onopen = function() {
-            bridge.ready.resolve();
-        };
-        this._web_socket.onmessage = function(event) {
-            bridge.handle_event(event.data);
-        };
-    };
-
-    WebBridge.prototype.handle_event = function(jsonized_event) {
-        /* Handle an event from the server. */
-        var response = JSON.parse(jsonized_event);
-        var request_id = response[0];
-        var jsonized_response = response[1];
-        if (request_id === -1) {
-            this._client.handle_event(jsonized_response);
-        }
-        else {
-            var deferred = this._pop_deferred_request(request_id);
-            deferred.resolve(jsonized_response);
-        }
-    };
-
-    WebBridge.prototype.send_request = function(jsonized_request) {
-        /* Send a request to the server and wait for the reply. */
-
-        var jsonized_response;
-        var deferred = new $.Deferred();
-
-        $.ajax(
-            {
-                url     : '/_jigna',
-                type    : 'GET',
-                data    : {'data': jsonized_request},
-                success : function(result) {jsonized_response = result;},
-                error   : function(status, error) {
-                              console.warning("Error: " + error);
-                          },
-                async   : false
-            }
-        );
-
-        return jsonized_response;
-    };
-
-    WebBridge.prototype.send_request_async = function(jsonized_request) {
-        /* Send a request to the server and do not wait and return a Promise
-           which is resolved upon completion of the request.
-        */
-
-        var deferred = new $.Deferred();
-        var request_id = this._push_deferred_request(deferred);
-        var bridge = this;
-        this.ready.done(function() {
-            bridge._web_socket.send(JSON.stringify([request_id, jsonized_request]));
-        });
-        return deferred.promise();
-    };
-
-    //// Private protocol /////////////////////////////////////////////////////
-
-    WebBridge.prototype._pop_deferred_request = function(request_id) {
-        var deferred = this._deferred_requests[request_id];
-        delete this._deferred_requests[request_id];
-        this._request_ids[request_id] = request_id;
-        return deferred;
-    };
-
-    WebBridge.prototype._push_deferred_request = function(deferred) {
-        var id = this._request_ids.pop();
-        this._deferred_requests[id] = deferred;
-        return id;
-    };
-
-    return WebBridge;
-});
-
-///////////////////////////////////////////////////////////////////////////////
-// Client
-///////////////////////////////////////////////////////////////////////////////
-
-define('client',['proxy_factory', 'event_target', 'qt_bridge', 'web_bridge', 'proxy'],
-       function(ProxyFactory, event_target, QtBridge, WebBridge, Proxy){
-
-    var Client = function() {};
-
-    Client.prototype.initialize = function() {
-        // Client protocol.
-        this.bridge           = this._get_bridge();
-
-        this._id_to_proxy_map = {};
-        this._proxy_factory   = new ProxyFactory(this);
-
-        // Add all of the models being edited
-        event_target.add_listener(
-            'jigna',
-            'context_updated',
-            function(event){this._add_models(event.data);},
-            this
-        );
-
-        // Wait for the bridge to be ready, and when it is ready, update the
-        // context so that initial models are added to jigna scope
-        var client = this;
-        this.bridge.ready.done(function(){
-            client.update_context();
-        });
-    };
-
-    Client.prototype.handle_event = function(jsonized_event) {
-        /* Handle an event from the server. */
-        var event = JSON.parse(jsonized_event);
-
-        event_target.fire_event(event.obj, event);
-    };
-
-    Client.prototype.on_object_changed = function(event){
-        this._invalidate_cached_attribute(event.obj, event.name);
-
-        // fixme: Creating a new proxy smells... It is used when we have a list of
-        // instances but it blows away caching advantages. Can we make it smarter
-        // by managing the details of a TraitListEvent?
-
-        var data = event.data;
-        this._create_proxy(data.type, data.value, data.info);
-        event_target.fire_event('jigna', 'object_changed');
-    };
-
-    Client.prototype.send_request = function(request) {
-        /* Send a request to the server and wait for (and return) the response. */
-
-        var jsonized_request  = JSON.stringify(request);
-        var jsonized_response = this.bridge.send_request(jsonized_request);
-
-        return JSON.parse(jsonized_response).result;
-    };
-
-    // Convenience methods for each kind of request //////////////////////////////
-
-    Client.prototype.call_instance_method = function(id, method_name, args) {
-        /* Call an instance method */
-
-        var request = {
-            kind        : 'call_instance_method',
-            id          : id,
-            method_name : method_name,
-            args        : this._marshal_all(args)
-        };
-
-        var response = this.send_request(request);
-        var result = this._unmarshal(response);
-
-        return result;
-    };
-
-    Client.prototype.call_instance_method_thread = function(id, method_name, args) {
-        /* Call an instance method in a thread. Useful if the method takes long to
-        execute and you don't want to block the UI during that time.*/
-
-        var request = {
-            kind        : 'call_instance_method_thread',
-            id          : id,
-            method_name : method_name,
-            args        : this._marshal_all(args),
-        };
-
-        // the response of a threaded request is a marshalled version of a python
-        // future object. We attach 'done' and 'error' handlers on that object to
-        // resolve/reject our own deferred.
-        var response = this.send_request(request);
-        var future_obj = this._unmarshal(response);
-
-        var deferred = new $.Deferred();
-
-        event_target.add_listener(future_obj, 'done', function(event){
-            deferred.resolve(event.data);
-        });
-
-        event_target.add_listener(future_obj, 'error', function(event){
-            deferred.reject(event.data);
-        });
-
-        return deferred.promise();
-    };
-
-    Client.prototype.get_attribute = function(proxy, attribute) {
-        /* Get the specified attribute of the proxy from the server. */
-
-        var request = this._create_request(proxy, attribute);
-
-        var response = this.send_request(request);
-        var result = this._unmarshal(response);
-
-        return result;
-    };
-
-    Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
-        var request = {
-            kind           : 'set_instance_attribute',
-            id             : id,
-            attribute_name : attribute_name,
-            value          : this._marshal(value)
-        };
-
-        this.send_request(request);
-    };
-
-    Client.prototype.set_item = function(id, index, value) {
-        var request = {
-            kind  : 'set_item',
-            id    : id,
-            index : index,
-            value : this._marshal(value)
-        };
-
-        this.send_request(request);
-    };
-
-    Client.prototype.update_context = function() {
-        var request  = {kind : 'update_context'};
-
-        this.send_request(request);
-    };
-
-    // Private protocol //////////////////////////////////////////////////////////
-
-    Client.prototype._add_model = function(model_name, id, info) {
-        // Create a proxy for the object identified by the Id...
-        var proxy = this._create_proxy('instance', id, info);
-
-        // fire the event to let the UI toolkit know that a new model was added
-        var data = {};
-        data[model_name] = proxy;
-
-        event_target.fire_event('jigna', {
-            name: 'model_added',
-            data: data,
-        });
-
-        return proxy;
-    };
-
-    Client.prototype._add_models = function(context) {
-        var client = this;
-        var models = {};
-        $.each(context, function(model_name, model) {
-            proxy = client._add_model(model_name, model.value, model.info);
-            models[model_name] = proxy;
-        });
-
-        return models;
-    };
-
-    Client.prototype._create_proxy = function(type, obj, info) {
-        if (type === 'primitive') {
-            return obj;
-        }
-        else {
-            var proxy = this._proxy_factory.create_proxy(type, obj, info);
-            this._id_to_proxy_map[obj] = proxy;
-            return proxy;
-        }
-    };
-
-    Client.prototype._get_bridge = function() {
-        var bridge, qt_bridge;
-
-        // Are we using the intra-process Qt Bridge...
-        qt_bridge = window['qt_bridge'];
-        if (qt_bridge !== undefined) {
-            bridge = new QtBridge(this, qt_bridge);
-        // ... or the inter-process web bridge?
-        } else {
-            bridge = new WebBridge(this);
-        }
-
-        return bridge;
-    };
-
-    Client.prototype._create_request = function(proxy, attribute) {
-        /* Create the request object for getting the given attribute of the proxy. */
-
-        var request;
-        if (proxy.__type__ === 'instance') {
-            request = {
-                kind           : 'get_instance_attribute',
-                id             : proxy.__id__,
-                attribute_name : attribute
-            };
-        }
-        else if ((proxy.__type__ === 'list') || (proxy.__type__ === 'dict')) {
-            request = {
-                kind  : 'get_item',
-                id    : proxy.__id__,
-                index : attribute
-            };
-        }
-        return request;
-    };
-
-    Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
-        var proxy = this._id_to_proxy_map[id];
-        proxy.__cache__[attribute_name] = undefined;
-    };
-
-    Client.prototype._marshal = function(obj) {
-        var type, value;
-
-        if (obj instanceof Proxy) {
-            type  = obj.__type__;
-            value = obj.__id__;
-
-        } else {
-            type  = 'primitive';
-            value = obj;
-        }
-
-        return {'type' : type, 'value' : value};
-    };
-
-    Client.prototype._marshal_all = function(objs) {
-        var index;
-
-        for (index in objs) {
-            objs[index] = this._marshal(objs[index]);
-        }
-
-        // For convenience, as we modify the array in-place.
-        return objs;
-    };
-
-    Client.prototype._unmarshal = function(obj) {
-
-        if (obj.type === 'primitive') {
-            return obj.value;
-        } else {
-            value = this._id_to_proxy_map[obj.value];
-            if (value === undefined) {
-                return this._create_proxy(obj.type, obj.value, obj.info);
-            }
-            else {
-                return value;
-            }
-        }
-    };
-
-    return Client;
-});
-
-///////////////////////////////////////////////////////////////////////////////
-// AsyncClient
-///////////////////////////////////////////////////////////////////////////////
-
-define('async_client',['jquery', 'event_target', 'client'], function($, event_target, Client){
-
-    // Inherit AsyncClient from Client
-    // Source: MDN docs (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create)
-    var AsyncClient = function() {};
-    AsyncClient.prototype = Object.create(Client.prototype);
-    AsyncClient.prototype.constructor = AsyncClient;
-
-    AsyncClient.prototype.send_request = function(request) {
-        /* Send a request to the server and wait for (and return) the response. */
-
-        var jsonized_request  = JSON.stringify(request);
-
-        var deferred = new $.Deferred();
-        this.bridge.send_request_async(jsonized_request).done(function(jsonized_response){
-            deferred.resolve(JSON.parse(jsonized_response).result);
-        });
-
-        return deferred.promise();
-    };
-
-    AsyncClient.prototype.call_instance_method = function(id, method_name, args) {
-        /* Calls an instance method. Do not use this to call any long running
-        methods.
-
-        Note: Since this is an async client, it won't block the UI even if you
-        call a long running method here but the UI updates (progress bars etc)
-        won't be available until the server completes running that method.
-        */
-        var request = {
-            kind        : 'call_instance_method',
-            id          : id,
-            method_name : method_name,
-            args        : this._marshal_all(args)
-        };
-        var client = this;
-
-        var deferred = new $.Deferred();
-        this.send_request(request).done(function(response){
-            deferred.resolve(client._unmarshal(response));
-        });
-
-        return deferred.promise();
-    };
-
-    AsyncClient.prototype.call_instance_method_thread = function(id, method_name, args) {
-        /* Calls an instance method in a thread on the server. Use this to call
-        any long running method on the server otherwise you won't get any UI
-        updates on the client.
-        */
-        var request = {
-            kind        : 'call_instance_method_thread',
-            id          : id,
-            method_name : method_name,
-            args        : this._marshal_all(args),
-        };
-        var client = this;
-
-        // Note that this deferred is resolved when the method called in a thread
-        // finishes, not when the request to call the method finishes.
-        // This is done to make this similar to the sync client so that the users
-        // can attach their handlers when the method is done.
-        var deferred = new $.Deferred();
-
-        this.send_request(request).done(function(response){
-
-            var future_obj = client._unmarshal(response);
-            // the response of a threaded request is a marshalled version of a python
-            // future object. We attach 'done' and 'error' handlers on that object to
-            // resolve/reject our own deferred.
-
-            event_target.add_listener(future_obj, 'done', function(event){
-                deferred.resolve(event.data);
-            });
-
-            event_target.add_listener(future_obj, 'error', function(event){
-                deferred.reject(event.data);
-            });
-
-        });
-
-        return deferred.promise();
-    };
-
-    AsyncClient.prototype.get_attribute = function(proxy, attribute) {
-        /* Get the specified attribute of the proxy from the server. */
-        var client = this;
-
-        // start a new request only if a request for getting that attribute isn't
-        // already sent
-        if (proxy.__state__[attribute] != 'busy') {
-            proxy.__state__[attribute] = 'busy';
-
-            var request = this._create_request(proxy, attribute);
-            this.send_request(request).done(function(response){
-                // update the proxy cache
-                proxy.__cache__[attribute] = client._unmarshal(response);
-
-                // fire the object changed event to trigger fresh fetches from
-                // the cache
-                event_target.fire_event('jigna', 'object_changed');
-
-                // set the state as free again so that further fetches ask the
-                // server again
-                proxy.__state__[attribute] = undefined;
-
-            });
-        }
-
-        return proxy.__cache__[attribute];
-    };
-
-    return AsyncClient;
-});
-
 ///////////////////////////////////////////////////////////////////////////////
 // Jigna
 ///////////////////////////////////////////////////////////////////////////////
 
-define('jigna',['jquery', 'event_target', 'client', 'async_client'],
-       function($, event_target, Client, AsyncClient){
+// Namespace for all Jigna-related objects.
+var jigna = new EventTarget();
 
-    // Namespace for all Jigna-related objects.
-    var jigna = Object.create(event_target);
+jigna.initialize = function(options) {
+    options = options || {};
+    this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
+    this.client.initialize();
+};
 
-    jigna.initialize = function(options) {
+jigna.models = {};
+jigna.add_listener('jigna', 'model_added', function(event){
+    var models = event.data;
+    for (var model_name in models) {
+        jigna.models[model_name] = models[model_name];
+    }
 
-        options = options || {};
-        this.client = options.async ? new AsyncClient() : new Client();
-        this.client.initialize();
-    };
-
-    jigna.models = {};
-    jigna.add_listener('jigna', 'model_added', function(event){
-        var models = event.data;
-        for (var model_name in models) {
-            jigna.models[model_name] = models[model_name];
-        }
-
-        jigna.fire_event('jigna', 'object_changed');
-    });
-
-    jigna.threaded = function(obj, method_name, args) {
-        args = args || [];
-        return this.client.call_instance_method_thread(obj.__id__, method_name, args);
-    };
-
-    // A convenience function to get a particular expression once it is really
-    // set.  This returns a promise object.
-    // Arguments:
-    //   - expr a javascript expression to evaluate,
-    //   - timeout (optional) in seconds; defaults to 2 seconds,
-    jigna.wait_for = function (expr, timeout) {
-        var deferred = new $.Deferred();
-
-        var result;
-        try {
-            result = eval(expr);
-        }
-        catch(err) {
-            result = undefined;
-            if (timeout <= 0) {
-                deferred.reject(err);
-            }
-        }
-
-        // resolve with the obtained result if it wasn't undefined
-        if (result !== undefined) {
-            deferred.resolve(result);
-        }
-        // otherwise, try again after some time until the given timeout
-        else {
-            timeout = timeout || 2;
-            // keep polling for the result every 100 ms or so. Keep decreasing
-            // the time remaining on each call by 100 ms and break when we reach
-            // 0.
-            if (timeout > 0) {
-                var wait = 100;
-                setTimeout(function(){
-                    expr_loaded = jigna.wait_for(expr, (timeout*1000 - wait)/1000.0);
-                    expr_loaded.done(function(value){deferred.resolve(value);});
-                    expr_loaded.fail(function(err){deferred.reject(err);});
-                }, wait);
-            }
-            else {
-                deferred.reject("Timeout exceeded while waiting for expression: " + expr);
-            }
-        }
-
-        return deferred.promise();
-    };
-
-    return jigna;
-
+    jigna.fire_event('jigna', 'object_changed');
 });
+
+jigna.threaded = function(obj, method_name, args) {
+    args = args || [];
+    return this.client.call_instance_method_thread(obj.__id__, method_name, args);
+};
+
+// A convenience function to get a particular expression once it is really
+// set.  This returns a promise object.
+// Arguments:
+//   - expr a javascript expression to evaluate,
+//   - timeout (optional) in seconds; defaults to 2 seconds,
+jigna.wait_for = function (expr, timeout) {
+    var deferred = new $.Deferred();
+
+    var result;
+    try {
+        result = eval(expr);
+    }
+    catch(err) {
+        result = undefined;
+        if (timeout <= 0) {
+            deferred.reject(err);
+        }
+    }
+
+    // resolve with the obtained result if it wasn't undefined
+    if (result !== undefined) {
+        deferred.resolve(result);
+    }
+    // otherwise, try again after some time until the given timeout
+    else {
+        timeout = timeout || 2;
+        // keep polling for the result every 100 ms or so. Keep decreasing
+        // the time remaining on each call by 100 ms and break when we reach
+        // 0.
+        if (timeout > 0) {
+            var wait = 100;
+            setTimeout(function(){
+                expr_loaded = jigna.wait_for(expr, (timeout*1000 - wait)/1000.0);
+                expr_loaded.done(function(value){deferred.resolve(value);});
+                expr_loaded.fail(function(err){deferred.reject(err);});
+            }, wait);
+        }
+        else {
+            deferred.reject("Timeout exceeded while waiting for expression: " + expr);
+        }
+    }
+
+    return deferred.promise();
+};
+
+define("jigna", ["angular"], (function (global) {
+    return function () {
+        var ret, fn;
+        return ret || global.jigna;
+    };
+}(this)));
 
 // An AngularJS app running the jigna app
 
-define('jigna-angular',['jquery', 'angular', 'jigna'], function($, angular, jigna){
+// Namespace for the angular app of jigna
+jigna.angular = {};
 
-    var jigna_app = angular.module('jigna', []);
+jigna.angular.app = angular.module('jigna', []);
 
-    // Add initialization function on module run time
-    jigna_app.run(['$rootScope', '$compile', function($rootScope, $compile){
+// Add initialization function on module run time
+jigna.angular.app.run(['$rootScope', '$compile', function($rootScope, $compile){
 
-        // add the 'jigna' namespace to the $rootScope. This is done so that
-        // any special jigna methods are easily available in directives like
-        // ng-click, ng-mouseover etc.
-        $rootScope.jigna = jigna;
+    // add the 'jigna' namespace to the $rootScope. This is done so that
+    // any special jigna methods are easily available in directives like
+    // ng-click, ng-mouseover etc.
+    $rootScope.jigna = jigna;
 
-        var add_to_scope = function(models){
-            for (var model_name in models) {
-                $rootScope[model_name] = models[model_name];
-            }
-        };
-        // add the existing models to the angular scope
+    var add_to_scope = function(models){
+        for (var model_name in models) {
+            $rootScope[model_name] = models[model_name];
+        }
+    };
+    // add the existing models to the angular scope
+    add_to_scope(jigna.models);
+
+    // Start the $digest cycle on rootScope whenever anything in the
+    // model object is changed.
+    //
+    // Since the $digest cycle essentially involves dirty checking of
+    // all the watchers, this operation means that it will trigger off
+    // new GET requests for each model attribute that is being used in
+    // the registered watchers.
+    jigna.add_listener('jigna', 'object_changed', function() {
         add_to_scope(jigna.models);
 
-        // Start the $digest cycle on rootScope whenever anything in the
-        // model object is changed.
-        //
-        // Since the $digest cycle essentially involves dirty checking of
-        // all the watchers, this operation means that it will trigger off
-        // new GET requests for each model attribute that is being used in
-        // the registered watchers.
-        jigna.add_listener('jigna', 'object_changed', function() {
-            add_to_scope(jigna.models);
+        if ($rootScope.$$phase === null){
+            $rootScope.$digest();
+        }
+    });
 
-            if ($rootScope.$$phase === null){
-                $rootScope.$digest();
-            }
-        });
+}]);
 
-    }]);
-
-    return jigna_app;
-});
+define("jigna-angular", function(){});
 
 define('main',['angular', 'jigna', 'jigna-angular'], function(angular, jigna){
     // Export the following namespaces to the global scope.
