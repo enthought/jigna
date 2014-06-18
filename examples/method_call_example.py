@@ -62,7 +62,7 @@ def main():
     # Start the event loop
     app.exec_()
 
-    # Check the final values of the list attribute
+    # Check the final values
     print fred.name, fred.age, fred.spouse.name
 
 if __name__ == '__main__':

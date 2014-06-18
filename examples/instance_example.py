@@ -4,43 +4,28 @@ This example shows two-way data binding on an `Instance` trait.
 
 #### Imports ##################################################################
 
-from traits.api import HasTraits, Instance, Int, Str
+from traits.api import HasTraits, Instance, Str
 from pyface.qt import QtGui
-from pyface.timer.api import do_after
 from jigna.api import View
-
-#### Utility function    ######################################################
-def parse_command_line_args(argv=None, description="Example"):
-    import argparse
-    parser = argparse.ArgumentParser(
-        description=description,
-        add_help=True
-        )
-    parser.add_argument("--web",
-                        help="Run the websocket version by starting a tornado server\
-                        on port 8888",
-                        action="store_true")
-    args = parser.parse_args(argv)
-    return args
-
 
 #### Domain model ####
 
 class Person(HasTraits):
     name = Str
-    age  = Int
     friend = Instance('Person')
+
+    def make_friends(self, person):
+        """ Makes self and the person friends with each other. """
+        self.friend = person
+        person.friend = self
 
 #### UI layer ####
 
 body_html = """
     <div>
-      Name: <input ng-model="model.name">
-      Age: <input ng-model="model.age" type='number'>
-      <br/>
-      Friend name: <input ng-model="model.friend.name">
-      <br/>
-      Friend age: <input ng-model="model.friend.age" type='number'>
+      Name: <input ng-model="person.name"><br/>
+      Friend's name: <input ng-model="person.friend.name"><br/>
+      Friend's friend's name: <input ng-model="person.friend.friend.name">
     </div>
 """
 
@@ -50,35 +35,25 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    def listener(obj, traitname, old, new):
-        print obj, traitname, old, new
+    # Start a QtGui application
+    app = QtGui.QApplication([])
 
-    fred  = Person(name='Fred', age=42)
-    fred.on_trait_change(listener)
-    fred.friend = Person(name='Wilma', age=34)
+    # Instantiate the domain model
+    fred = Person(name='Fred')
+    wilma = Person(name='Wilma')
 
-    def update_friend():
-        fred.friend.name = "Barney"
-        fred.friend.age = 41
+    # Render the view with the domain model added to the context
+    person_view.show(person=fred)
 
-    def set_friend():
-        print "Setting friend to Dino"
-        fred.friend = Person(name="Dino", age=10)
+    # Schedule some operations on the domain model
+    from pyface.timer.api import do_after
+    do_after(2500, fred.make_friends, wilma)
 
-    args = parse_command_line_args(description=__doc__)
-    if args.web:
-        person_view.serve(model=fred)
-    else:
-        app = QtGui.QApplication.instance() or QtGui.QApplication([])
-        do_after(3000, update_friend)
-        do_after(4000, set_friend)
+    # Start the event loop
+    app.exec_()
 
-        person_view.show(model=fred)
-        app.exec_()
-
-    print fred.name
-    print fred.age
-    print fred.friend.name, fred.friend.age
+    # Check the final values of the instance
+    print fred.name, fred.friend.name
 
 if __name__ == "__main__":
     main()
