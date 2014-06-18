@@ -1,4 +1,5 @@
 var fs = require('fs');
+var util = require('util');
 var path = require('path');
 
 function concatenate(options) {
@@ -23,7 +24,7 @@ function concatenate(options) {
     for (var j=0; j<options.exports.length; j++) {
         _export = options.exports[j];
         // Adding string of type: 'window.jigna = jigna;'
-        concat_str = concat_str + "window." + _export + " = " + _export + ";\n";
+        concat_str = concat_str + util.format("window.%s = %s;\n", _export, _export);
     }
 
     // End the anonymous function wrap
