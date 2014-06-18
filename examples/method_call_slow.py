@@ -1,6 +1,9 @@
-""" This example demonstrates a progress bar to show how the UI is not
-blocked during a slow method call. This is because the method calls are
-performed in a separate thread.
+""" This example shows how to call methods of the application model which take
+a while to complete and you don't want to block the UI during that time. We
+present an API to call such slow methods in a thread.
+
+Note: It's the user's responsibility to make sure the method called in a thread
+is thread-safe.
 """
 
 #### Imports ##################################################################
@@ -30,7 +33,7 @@ class Installer(HasTraits):
 
 body_html = """
     <div>
-        <!-- Show a button to install in a thread -->
+        <!-- Show a button initially to install in a thread -->
         <button ng-show="installer.progress==0"
                 ng-click="jigna.threaded(installer, 'install', new_app)">
             Install {{new_app.name}}-{{new_app.version}}
