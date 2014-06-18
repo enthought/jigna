@@ -18,9 +18,7 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-# Looping over the list of instances here. The display order of the list of
-# instances (non-primitives) is inherently bound to the list order in the
-# model.
+# Looping over the list of instances here. No surprises here.
 body_html = """
     <div>
       Name: {{person.name}} <br/>

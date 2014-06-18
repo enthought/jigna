@@ -16,9 +16,20 @@ class Basket(HasTraits):
 
 #### UI layer ####
 
-# Looping over the list of primitive variables using `ng-repeat`. We need to add
-# `track by $index` for primitive variables so that the order of the items in
-# the view is bound to the list order in the model.
+# Looping over the list of primitive variables using `ng-repeat` has two gotchas
+# (both of them are standard AngularJS gotchas):
+#
+# 1. We need to add `track by $index` for looping through primitive variables
+# otherwise angular creates new DOM nodes for every edit of the variable. One
+# manifestation of this behaviour is that the input field gets out of focus for
+# every edit since each edit really creates a new input field node.
+# See http://www.bennadel.com/blog/2556-using-track-by-with-ngrepeat-in-angularjs-1-2.htm
+#
+# 2. We can't write to the `fruit` variable by making a local assignment i.e.
+# `ng-model="fruit"`. This is because `fruit` refers to a local scope variable,
+# so any writes to this local variable won't update the model values in Python
+# which are bound to the $rootScope.
+# See http://stackoverflow.com/questions/15488342/binding-inputs-to-an-array-of-primitives-using-ngrepeat-uneditable-inputs
 body_html = """
     <div>
       Fruits in the basket:
