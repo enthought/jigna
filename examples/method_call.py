@@ -29,6 +29,7 @@ class Person(HasTraits):
     def marry(self, person):
         """ Method which takes an instance argument. """
         self.spouse = person
+        person.spouse = self
 
 #### UI layer ####
 
