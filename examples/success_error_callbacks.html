@@ -1,0 +1,67 @@
+<html>
+    <head>
+        <!-- Load the jigna script. -->
+        <script type='text/javascript' src='/jigna/jigna.js'></script>
+
+        <!-- Once jigna is loaded, initialize it. -->
+        <script type='text/javascript'>
+            jigna.initialize();
+        </script>
+
+        <!-- Custom angularjs app to handle the view related logic of attaching
+        success/error callbacks -->
+        <script type='text/javascript'>
+            var app = angular.module('WorkerApp', ['jigna']);
+
+            app.controller('WorkerController', function($scope){
+
+                $scope.status = "Nothing happening here";
+
+                $scope.do_work = function(event){
+                    /* Internally calls 'worker.do_work' in a thread and
+                    attaches a success callback */
+
+                    $scope.status = 'Doing some work...';
+
+                    var deferred = jigna.threaded($scope.worker, 'do_work');
+                    deferred.done(function(){
+                        $scope.status = "Done";
+                        $scope.$digest();
+                    })
+                };
+
+                $scope.do_illegal_work = function(event){
+                    /* Internally calls 'worker.do_illegal_work' in a thread and
+                    attaches an error callback */
+
+                    $scope.status = 'Trying to do some illegal work...';
+
+                    var deferred = jigna.threaded($scope.worker, 'do_illegal_work');
+                    deferred.fail(function(error){
+                        $scope.status = "Error: \n" + error;
+                        $scope.$digest();
+                    })
+                };
+
+            });
+        </script>
+    </head>
+
+    <body ng-app='WorkerApp'>
+        <div ng-controller='WorkerController'>
+            <!-- Call 'do_work' in WorkerController, which attaches the
+            success callback. -->
+            <button ng-click="do_work()">
+                Do work
+            </button>
+
+            <!-- Call 'do_illegal_work' in WorkerController, which attaches
+            the error callback. -->
+            <button ng-click="do_illegal_work()">
+                Do illegal work
+            </button>
+
+            <pre>{{status}}</pre>
+        </div>
+    </body>
+</html>
