@@ -1,7 +1,6 @@
 <html>
     <head>
-        <!-- Load the jigna script. The location of jigna script file would
-        always be '/jigna/jigna.js' -->
+        <!-- Load the jigna script. -->
         <script type='text/javascript' src='/jigna/jigna.js'></script>
 
         <!-- Once jigna is loaded, initialize it. -->
@@ -37,11 +36,13 @@
             Start
         </button>
 
+        <!-- Stop -->
         <button ng-click="clock.stop()"
                 ng-show="clock.state=='running'">
             Stop
         </button>
 
+        <!-- Reset -->
         <button ng-click="clock.reset()">
             Reset
         </button>

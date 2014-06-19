@@ -30,6 +30,7 @@ class Basket(HasTraits):
 # so any writes to this local variable won't update the model values in Python
 # which are bound to the $rootScope.
 # See http://stackoverflow.com/questions/15488342/binding-inputs-to-an-array-of-primitives-using-ngrepeat-uneditable-inputs
+
 body_html = """
     <div>
       Fruits in the basket:

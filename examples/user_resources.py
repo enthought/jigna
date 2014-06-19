@@ -25,13 +25,12 @@ body_html = """
         </div>
     </div>
 
-    <script src='color_change.js'></script>
+    <script type='text/javascript' src='color_change.js'></script>
     <link rel='stylesheet' href='colors.css' />
 """
 
-# The base_url field specifies where to look when trying to get resources like
-# the css, js and image files (defaults to an empty string, i.e. the current
-# directory)
+# The base_url field specifies where to look when trying to get external
+# resources(defaults to an empty string, i.e. the current directory)
 person_view = View(body_html=body_html, base_url='user_resources_data/')
 
 #### Entry point ####

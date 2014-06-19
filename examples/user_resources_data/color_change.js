@@ -6,7 +6,7 @@ element.addEventListener('mouseover', function(){
     element.className = 'green';
 });
 
-// ...and 'red' on mouseout
+// ... and 'red' on mouseout
 element.addEventListener('mouseout', function(){
     element.className = 'red';
 });

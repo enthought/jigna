@@ -1,9 +1,9 @@
-""" This example shows how to call methods of the application model which take
-a while to complete and you don't want to block the UI during that time. We
-present an API to call such slow methods in a thread.
+""" This example shows how to call slow methods of the application model such
+that the UI doesn't block while the method is executing. We present an API to
+call such methods in a thread.
 
-Note: It's the user's responsibility to make sure the method called in a thread
-is thread-safe.
+Note: It's the user's responsibility to make sure that there aren't thread
+safety related issues with that method.
 """
 
 #### Imports ##################################################################

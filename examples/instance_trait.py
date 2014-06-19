@@ -12,20 +12,19 @@ from jigna.api import View
 
 class Person(HasTraits):
     name = Str
-    friend = Instance('Person')
+    spouse = Instance('Person')
 
-    def make_friends(self, person):
-        """ Makes self and the person friends with each other. """
-        self.friend = person
-        person.friend = self
+    def marry(self, person):
+        self.spouse = person
+        person.spouse = self
 
 #### UI layer ####
 
 body_html = """
     <div>
       Name: <input ng-model="person.name"><br/>
-      Friend's name: <input ng-model="person.friend.name"><br/>
-      Friend's friend's name: <input ng-model="person.friend.friend.name">
+      Spouse's name: <input ng-model="person.spouse.name"><br/>
+      Spouse's spouse's name: <input ng-model="person.spouse.spouse.name">
     </div>
 """
 
@@ -47,13 +46,13 @@ def main():
 
     # Schedule some operations on the domain model
     from pyface.timer.api import do_after
-    do_after(2500, fred.make_friends, wilma)
+    do_after(2500, fred.marry, wilma)
 
     # Start the event loop
     app.exec_()
 
     # Check the final values of the instance
-    print fred.name, fred.friend.name
+    print fred.name, fred.spouse.name, wilma.name
 
 if __name__ == "__main__":
     main()
