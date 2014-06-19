@@ -49,7 +49,7 @@ class TestJignaWebSync(TestJignaQt):
 
     def get_attribute(self, js, expect):
         self.reset_user_var()
-        get_js = """jigna.get_attribute(\'%s\').done(function(result)
+        get_js = """jigna.wait_for(\'%s\').done(function(result)
                                 {jigna.user = result;})"""%js
         self.execute_js(get_js)
 
@@ -85,7 +85,6 @@ class TestJignaWebSync(TestJignaQt):
         self.assertJSEqual("jigna.models.model.spouse", None)
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
-        self.get_attribute("jigna.models.model.spouse.name", "")
         self.assertJSEqual("jigna.models.model.spouse.name", 'Wilma')
         self.assertJSEqual("jigna.models.model.spouse.age", 40)
 

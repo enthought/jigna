@@ -20,7 +20,6 @@ class TestJignaWebAsync(TestJignaWebSync):
         self.assertEqual(fred.called_with, 10.0)
         self.execute_js("var x; jigna.models.model.method([1,2]).done(function(r){x=r;}); return x;")
         self.assertEqual(fred.called_with, [1,2])
-        self.get_attribute("jigna.models.model.spouse", wilma)
         self.execute_js("var x; jigna.models.model.method(jigna.models.model.spouse).done(function(r){x=r;}); return x;")
         self.assertEqual(fred.called_with, wilma)
 

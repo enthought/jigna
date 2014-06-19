@@ -45,35 +45,9 @@ html = """
 <html>
 
     <head>
-        <script src='/jigna/js/jquery.min.js'></script>
-        <script src='/jigna/js/angular.min.js'></script>
-        <script src='/jigna/js/jigna.js'></script>
-        <script>
+        <script type='text/javascript' src='/jigna/jigna.js'></script>
+        <script type='text/javascript'>
             jigna.initialize();
-        </script>
-
-        <script>
-            $(document).ready(function(){
-                var app = angular.module('MyApp', ['jigna']);
-
-                app.controller('MainCtrl', function($scope){
-                    $scope.install_new_power_thread = function(event) {
-                        $scope.model.install_new_power_thread()
-                        .done(function(){
-                            $(event.target).html("Installed")
-                        })
-                    }
-
-                    $scope.download_new_power_thread = function(event) {
-                        $scope.model.download_new_power_thread()
-                        .fail(function(error){
-                            $(event.target).html("Error!")
-                        })
-                    }
-                })
-
-                angular.bootstrap(document, ['MyApp']);
-            });
         </script>
 
         <style type="text/css">
@@ -87,7 +61,7 @@ html = """
                 background-color: blue;
                 height: 100%;
             }
-        </style>    
+        </style>
 
     </head>
 
@@ -105,11 +79,36 @@ html = """
             </button>
 
             <div class='progress-bar-container'>
-                <div class='completed-progress' 
+                <div class='completed-progress'
                      ng-style="{ width: model.power + '%' }">
                 </div>
             </div>
-        </div>    
+        </div>
+
+        <script>
+            angular.element(document).ready(function(){
+                var app = angular.module('MyApp', ['jigna']);
+
+                app.controller('MainCtrl', function($scope){
+                    $scope.install_new_power_thread = function(event) {
+                        jigna.threaded($scope.model, 'install_new_power')
+                        .done(function(){
+                            $(event.target).html("Installed")
+                        })
+                    }
+
+                    $scope.download_new_power_thread = function(event) {
+                        jigna.threaded($scope.model, 'download_new_power')
+                        .fail(function(error){
+                            $(event.target).html("Error!")
+                        })
+                    }
+                })
+
+                angular.bootstrap(document, ['MyApp']);
+            });
+
+        </script>
     </body>
 
 </html>

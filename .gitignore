@@ -5,3 +5,8 @@ jigna.egg-info/
 *.DS_Store
 
 .idea/
+
+jigna/js/node_modules/
+jigna/js/npm-debug.log
+
+docs/build/

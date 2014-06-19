@@ -57,13 +57,7 @@ class Server(HasTraits):
 
         self._register_objects(context)
 
-        event = dict(
-            obj  = 'jigna',
-            name = 'context_updated',
-            data = self._context_ids(context)
-        )
-
-        self.send_event(event)
+        self._send_context_updated_event(context)
 
         return
 
@@ -84,23 +78,24 @@ class Server(HasTraits):
 
         request = json.loads(jsonized_request)
 
-        if request.get("thread"):
-            response = self._handle_request_thread(request)
+        # To dispatch the request we have a method named after each one!
+        method    = getattr(self, request['kind'])
+        exception = None
+        try:
+            result    = method(request)
+        except:
+            exception = traceback.format_exc()
+            result = None
 
-        else:
-            response = self._handle_request(request)
-
-        def default(obj):
-            return repr(type(obj))
-
-        return json.dumps(response, default=default);
+        response = dict(exception=exception, result=result)
+        return json.dumps(response, default=lambda obj: repr(type(obj)));
 
     #### Handlers for each kind of request ####################################
 
-    def get_context(self, request):
-        """ Get the current context """
+    def update_context(self, request):
+        """ Update the context on the JS side """
 
-        return self._context_ids(self.context)
+        return self._send_context_updated_event(self.context)
 
     #### Instances ####
 
@@ -113,6 +108,43 @@ class Server(HasTraits):
         method      = getattr(obj, method_name)
 
         return self._marshal(method(*args))
+
+    def call_instance_method_thread(self, request):
+        """ Call an instance method in a new thread. Returns the id of the
+        Future object which finishes when the method in thread finishes."""
+
+        obj         = self._id_to_object_map[request['id']]
+        method_name = request['method_name']
+        args        = self._unmarshal_all(request['args'])
+        method      = getattr(obj, method_name)
+
+        from jigna.core.concurrent import Future
+        future = Future(method, args=tuple(args),
+                        dispatch=self.trait_change_dispatch)
+
+        def _on_done(result):
+            event = dict(
+                obj  = str(id(future)),
+                name = 'done',
+                data = result
+            )
+            self.send_event(event)
+
+        def _on_error(error):
+            import traceback
+            type, value, tb = error
+            error_msg = '\n'.join(traceback.format_tb(tb))
+            event = dict(
+                obj  = str(id(future)),
+                name = 'error',
+                data = error_msg
+            )
+            self.send_event(event)
+
+        future.on_done(_on_done)
+        future.on_error(_on_error)
+
+        return self._marshal(id(future))
 
     def get_instance_attribute(self, request):
         """ Get the value of an instance attribute. """
@@ -173,56 +205,6 @@ class Server(HasTraits):
             context_ids[obj_name] = self._marshal(obj)
 
         return context_ids
-
-    def _handle_request(self, request):
-        """ Handle a jsonized request from a client. """
-        # To dispatch the request we have a method named after each one!
-        method    = getattr(self, request['kind'])
-        exception = None
-        try:
-            result    = method(request)
-        except:
-            exception = traceback.format_exc()
-            result = None
-
-        return dict(exception=exception, result=result)
-
-    def _handle_request_thread(self, request):
-        """ Handle a jsonized request from a client and fire the method
-        in a thread.
-        """
-
-        from jigna.core.concurrent import Future
-
-        method = getattr(self, request['kind'])
-        future = Future(method, args=(request, ),
-                        dispatch=self.trait_change_dispatch)
-
-        def _on_done(result):
-            event = dict(
-                obj  = str(id(future)),
-                name = 'done',
-                data = result
-            )
-            print "done, send_event:", event
-            self.send_event(event)
-
-        def _on_error(error):
-            import traceback
-            type, value, tb = error
-            error_msg = '\n'.join(traceback.format_tb(tb))
-            event = dict(
-                obj  = str(id(future)),
-                name = 'error',
-                data = error_msg
-            )
-            print "error, send_event:", event
-            self.send_event(event)
-
-        future.on_done(_on_done)
-        future.on_error(_on_error)
-
-        return id(future)
 
     def _get_attribute_names(self, obj):
         """ Get the names of all the attributes on an object.
@@ -403,6 +385,19 @@ class Server(HasTraits):
             # a type/value pair which we need on the client side to determine
             # what (if any) proxy we need to create.
             data        = self._marshal(new)
+        )
+
+        self.send_event(event)
+
+        return
+
+    def _send_context_updated_event(self, context):
+        """ Send a context_updated event. """
+
+        event = dict(
+            obj  = 'jigna',
+            name = 'context_updated',
+            data = self._context_ids(context)
         )
 
         self.send_event(event)
