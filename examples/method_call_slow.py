@@ -6,7 +6,7 @@ Note: It's the user's responsibility to make sure that there aren't thread
 safety related issues with that method.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Int, Str, Instance
 from pyface.qt import QtGui

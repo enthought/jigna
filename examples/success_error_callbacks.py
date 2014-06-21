@@ -2,7 +2,7 @@
 method call.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits
 from pyface.qt import QtGui

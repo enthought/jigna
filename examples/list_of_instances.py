@@ -3,7 +3,7 @@ This example shows two-way data binding for the `List` traits whose items are of
 an instance (non-primitive) type.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Instance, Str, List
 from pyface.qt import QtGui
@@ -18,7 +18,7 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-# Looping over the list of instances here. No surprises here.
+# Looping over the list of instances. No surprises here.
 body_html = """
     <div>
       Name: {{person.name}} <br/>

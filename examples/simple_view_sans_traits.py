@@ -3,7 +3,7 @@ HasTraits objects) in HTML using Jigna. The data binding will only be one-way
 in this case, i.e. from the UI to the model.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from pyface.qt import QtGui
 from jigna.api import View

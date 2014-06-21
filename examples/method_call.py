@@ -4,7 +4,7 @@ traits model from the HTML interface. You can supply primitive arguments and
 also pass instances.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Int, Str, Instance
 from pyface.qt import QtGui

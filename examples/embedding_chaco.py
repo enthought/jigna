@@ -3,7 +3,7 @@ This example shows how to embed a Chaco QWidget inside the jigna view using
 an <object> tag.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, CInt, Instance
 from chaco.api import Plot, ArrayPlotData

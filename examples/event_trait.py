@@ -2,7 +2,7 @@
 This example demonstrates Jigna's ability to respond to `Event` trait firings.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Str, Event, List
 from pyface.qt import QtGui

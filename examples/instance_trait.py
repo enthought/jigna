@@ -2,7 +2,7 @@
 This example shows two-way data binding on an `Instance` trait.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Instance, Str
 from pyface.qt import QtGui

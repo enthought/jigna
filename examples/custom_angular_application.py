@@ -3,7 +3,7 @@ This example shows how to use Jigna alongwith a custom angularjs application. We
 would need a custom angularjs application to add some view related logic.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Enum, Int
 from pyface.qt import QtGui

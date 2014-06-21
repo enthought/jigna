@@ -3,7 +3,7 @@ This example shows two-way data binding for the `List` traits whose items are of
 the primitive type.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Str, List
 from pyface.qt import QtGui

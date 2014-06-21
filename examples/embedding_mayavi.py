@@ -7,7 +7,7 @@ widget so it demonstrates that mouse events are properly forwarded to the
 underlying QWidget when you embed it in jigna view.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Instance, CInt, on_trait_change
 from mayavi.core.api import PipelineBase

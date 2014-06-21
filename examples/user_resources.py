@@ -3,7 +3,7 @@ This example shows how to add additional resources like CSS, javascript
 and image files in your html by specifying a base url.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
 from traits.api import HasTraits, Int, Str
 from pyface.qt import QtGui
