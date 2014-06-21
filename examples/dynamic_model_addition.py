@@ -23,14 +23,21 @@ class Person(HasTraits):
 body_html = """
     <div>
       Person 1:
-      Name: <input ng-model="person1.name">
-      Age: <input ng-model="person1.age" type='number'>
+      <div>
+        Name: <input ng-model="person1.name">
+        Age: <input ng-model="person1.age" type='number'>
+      </div>
 
       <br><br>
 
       Person 2:
-      Name: <input ng-model="person2.name">
-      Age: <input ng-model="person2.age" type='number'>
+
+      <!-- The object 'person2' won't be available to the view's context
+      initially and would be added only dynamically later. -->
+      <div>
+        Name: <input ng-model="person2.name">
+        Age: <input ng-model="person2.age" type='number'>
+      </div>
 
     </div>
 """
