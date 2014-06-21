@@ -1,34 +1,25 @@
 """
-This example shows how to embed a Mayavi QWidget inside Jigna web page using
-the object tag.
+This example shows how to embed a Mayavi QWidget inside the jigna view using
+an <object> tag.
+
+Mayavi widget is different than a Chaco widget since you can interact with the
+widget so it demonstrates that mouse events are properly forwarded to the
+underlying QWidget when you embed it in jigna view.
 """
 
 #### Imports ##################################################################
 
-from numpy import arange, pi, cos, sin
-
-from traits.api import HasTraits, Range, Instance, on_trait_change
-
+from traits.api import HasTraits, Instance, CInt, on_trait_change
 from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import MlabSceneModel
 from pyface.qt import QtGui
 from jigna.api import View
 
+#### Domain model ####
 
-dphi = pi/1000.
-phi = arange(0.0, 2*pi + 0.5*dphi, dphi, 'd')
-
-def curve(n_mer, n_long):
-    mu = phi*n_mer
-    x = cos(mu) * (1 + cos(n_long * mu/n_mer)*0.5)
-    y = sin(mu) * (1 + cos(n_long * mu/n_mer)*0.5)
-    z = 0.5 * sin(n_long*mu/n_mer)
-    t = sin(mu)
-    return x, y, z, t
-
-class MyModel(HasTraits):
-    n_meridional    = Range(0, 30, 6, )
-    n_longitudinal  = Range(0, 30, 11, )
+class SceneController(HasTraits):
+    n_meridional    = CInt
+    n_longitudinal  = CInt
 
     scene = Instance(MlabSceneModel, ())
 
@@ -38,14 +29,35 @@ class MyModel(HasTraits):
     # update the plot.
     @on_trait_change('n_meridional,n_longitudinal,scene.activated')
     def update_plot(self):
-        x, y, z, t = curve(self.n_meridional, self.n_longitudinal)
+        x, y, z, t = self.get_data()
         if self.plot is None:
             self.plot = self.scene.mlab.plot3d(x, y, z, t,
                                 tube_radius=0.025, colormap='Spectral')
         else:
             self.plot.mlab_source.set(x=x, y=y, z=z, scalars=t)
 
-    def create_plot_widget(self):
+    def get_data(self):
+        """ Obtain the x,y,z,t data for the domain equation and given values of
+        n_meridional and n_longitudinal
+        """
+        from numpy import arange, pi, cos, sin
+        phi = arange(0.0, 2*pi + 0.5*pi/1000, pi/1000, 'd')
+
+        mu = phi*self.n_meridional
+        x = cos(mu) * (1 + cos(self.n_longitudinal * mu/self.n_meridional)*0.5)
+        y = sin(mu) * (1 + cos(self.n_longitudinal * mu/self.n_meridional)*0.5)
+        z = 0.5 * sin(self.n_longitudinal*mu/self.n_meridional)
+        t = sin(mu)
+
+        return x, y, z, t
+
+    def create_scene_widget(self):
+        """ Factory method to create the QWidget for the Mayavi scene.
+
+        This follows the same approach as the Chaco example i.e. create a hidden
+        traitsui view based on the mayavi SceneEditor and return it's 'control'
+        to obtain the required QWidget.
+        """
         from traitsui.api import View, Item
         from mayavi.core.ui.api import MayaviScene, SceneEditor
         view = View(Item('scene', show_label=False,
@@ -60,29 +72,36 @@ class MyModel(HasTraits):
 
 body_html = """
     <div>
-      N meridonial: <input type="number" ng-model="model.n_meridional"
+      N meridonial: <input type="number" ng-model="scene_controller.n_meridional"
                        min=0 max=100><br>
-      N longitudinal: <input type="number" ng-model="model.n_longitudinal"
+      N longitudinal: <input type="number" ng-model="scene_controller.n_longitudinal"
                        min=0 max=100><br>
       Plot:<br>
 
       <object type="application/x-qwidget" width="400" height="400"
-              widget-factory="model.create_plot_widget">
+              widget-factory="scene_controller.create_scene_widget">
       </object>
     </div>
 """
 
-plot_view = View(body_html=body_html)
+scene_controller_view = View(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    plot  = MyModel()
-    plot_view.show(model=plot)
+    # Start a QtGui application
+    app = QtGui.QApplication.instance() or QtGui.QApplication([])
+
+    # Instantiate the domain model
+    scene_controller = SceneController()
+
+    # Render the view with the domain model added to the context
+    scene_controller_view.show(scene_controller=scene_controller)
+
+    # Start the event loop
+    app.exec_()
 
 if __name__ == "__main__":
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
     main()
-    app.exec_()
 
 #### EOF ######################################################################
