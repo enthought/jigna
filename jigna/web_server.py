@@ -15,7 +15,6 @@ from os.path import join, dirname
 import traceback
 
 # 3rd party library.
-from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
 
@@ -94,9 +93,6 @@ class WebServer(Server):
         """
         application = self._create_application()
         application.listen(self.port, address=self.address)
-
-        ioloop = IOLoop.instance()
-        ioloop.start()
 
         return
 

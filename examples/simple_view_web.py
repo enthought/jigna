@@ -30,7 +30,8 @@ def main():
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Start serving the view with the domain model added to the context
+    # Start serving the view with the domain model added to the context. This
+    # will start the tornado ioloop.
     #
     # Point your web browser to http://localhost:8888/ to connect to the jigna
     # view. Any operation performed on the view there directly update the model
