@@ -31,7 +31,7 @@ class QtBridge(Bridge):
 
         if self.widget is None:
             raise RuntimeError("Widget does not exist")
-        
+
         else:
             # This looks weird but this is how we fake an event being 'received'
             # on the client side when using the Qt bridge!
@@ -72,12 +72,12 @@ class QtServer(Server):
         widget.load_html(self.html, self.base_url)
 
     #### Private protocol #####################################################
-    
+
     _bridge = Instance(QtBridge)
     def __bridge_default(self):
         return QtBridge()
 
-    _factory = Instance('QtWebPluginFactory')
+    _plugin_factory = Instance('QtWebPluginFactory')
 
     def _enable_qwidget_embedding(self, widget):
         """ Allow generic qwidgets to be embedded in the generated QWebView.
@@ -85,8 +85,8 @@ class QtServer(Server):
         global_settings = QtWebKit.QWebSettings.globalSettings()
         global_settings.setAttribute(QtWebKit.QWebSettings.PluginsEnabled, True)
 
-        self._factory = QtWebPluginFactory(context=self.context)
-        widget.control.page().setPluginFactory(self._factory)
+        self._plugin_factory = QtWebPluginFactory(context=self.context)
+        widget.control.page().setPluginFactory(self._plugin_factory)
 
 
 class QtWebPluginFactory(QtWebKit.QWebPluginFactory):
@@ -113,8 +113,8 @@ class QtWebPluginFactory(QtWebKit.QWebPluginFactory):
             return
 
         args = dict(zip(argNames, argVals))
-        factory = eval(args.get('widget-factory'), self.context)
-        
-        return factory()
+        widget_factory = eval(args.get('widget-factory'), self.context)
+
+        return widget_factory()
 
 #### EOF ######################################################################
