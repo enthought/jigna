@@ -90,7 +90,11 @@ def main():
     plot_controller = PlotController(scaling_factor=0.5)
 
     # Render the view with the domain model added to the context
-    plot_controller_view.show(plot_controller=plot_controller)
+    widget = plot_controller_view.create_widget(
+        context={'plot_controller': plot_controller},
+        size=(600, 600)
+    )
+    widget.show()
 
     # Start the event loop
     app.exec_()

@@ -42,7 +42,8 @@ def main():
     clock = StopWatch()
 
     # Render the view with the domain model added to the context
-    clock_view.show(clock=clock)
+    widget = clock_view.create_widget(context={'clock':clock})
+    widget.show()
 
     # Start the event loop
     app.exec_()

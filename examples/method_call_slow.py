@@ -83,7 +83,10 @@ def main():
     pandas = App(name='Pandas', version='1.0')
 
     # Render the view with the domain models added to the context
-    installer_view.show(installer=installer, new_app=pandas)
+    widget = installer_view.create_widget(
+        context={'installer': installer, 'new_app': pandas}
+    )
+    widget.show()
 
     # Start the event loop
     app.exec_()

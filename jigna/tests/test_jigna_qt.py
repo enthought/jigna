@@ -69,7 +69,8 @@ class TestJignaQt(unittest.TestCase):
         app = QtGui.QApplication.instance() or QtGui.QApplication([])
         person_view = View(body_html=body_html)
         fred = Person(name='Fred', age=42)
-        person_view.show(model=fred)
+        widget = person_view.create_widget(context={'model':fred})
+        widget.show()
         GUI.process_events()
         cls.person_view = person_view
         cls.fred = fred
@@ -204,18 +205,6 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.called_with, [1,2])
         self.execute_js("jigna.models.model.method(jigna.models.model.spouse)")
         self.assertEqual(fred.called_with, wilma)
-
-    def test_update_context_injects_model_in_js(self):
-        self.fred.name = 'Fred'
-        new_model = Person(name='New', age=10)
-        self.assertJSEqual("jigna.models.model.name", 'Fred')
-        self.assertJSEqual("jigna.models.new_model", None)
-        self.person_view.update_context(new_model=new_model)
-        # this sleep is needed because the context is updated in an event listener
-        # so it might take a while
-        time.sleep(0.1)
-        self.assertJSEqual("jigna.models.new_model.name", new_model.name)
-        self.assertJSEqual("$(document.body).scope().new_model.name", new_model.name)
 
     def test_events_js(self):
         # When

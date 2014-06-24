@@ -104,10 +104,10 @@ class View(HasTraits):
     def _set_html(self, html):
         self._html = html
 
-    def show(self, **context):
-        """ Create and show a view of the given context. Returns the HTMLWidget
-        object so that various layout operations can be performed on
-        `widget.control` """
+    def create_widget(self, context={}, parent=None, size=None):
+        """ Create and show a view of the given context. Returns the QWidget
+        object created so that various layout operations can be performed on it.
+        """
 
         # Create the HTMLWidget from where the domain models will be served
         from jigna.core.html_widget import HTMLWidget
@@ -124,13 +124,13 @@ class View(HasTraits):
         self._server.serve()
 
         # Connect the client to the server
-        widget.control.show()
-        widget.control.resize(self.size[0], self.size[1])
+        size = size or self.size
+        widget.control.resize(size[0], size[1])
         widget.load_html(self._server.html, self._server.base_url)
 
-        return widget
+        return widget.control
 
-    def serve(self, port=8888, **context):
+    def create_webapp(self, port=8888, context={}):
         """ Serve the view of the given context on the given port. """
 
         from jigna.web_server import WebServer
@@ -144,12 +144,6 @@ class View(HasTraits):
         self._server.serve()
 
         return
-
-    def update_context(self, **context):
-        """Adds the given models to the context available to the view.
-        """
-        self._server.context.update(context)
-
 
     #### Private protocol #####################################################
 

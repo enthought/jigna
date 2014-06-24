@@ -17,7 +17,7 @@ class TestJignaWebSync(TestJignaQt):
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
         person_view = View(body_html=body_html, async=async)
-        person_view.serve(port, model=fred)
+        person_view.create_webapp(port, context={'model':fred})
 
         # Start the tornado server in a different thread so that we can write
         # test statements here in the main loop

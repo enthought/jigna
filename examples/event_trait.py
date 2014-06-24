@@ -70,7 +70,8 @@ def main():
     downloader = Downloader(file_urls=file_urls)
 
     # Render the view with the domain model added to the context
-    downloader_view.show(downloader=downloader)
+    widget = downloader_view.create_widget(context={'downloader':downloader})
+    widget.show()
 
     # Start the event loop
     app.exec_()

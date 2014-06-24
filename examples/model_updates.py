@@ -37,7 +37,8 @@ def main():
     motd = MOTD(message="Explicit is better than implicit.")
 
     # Render the view with the domain model added to the context
-    motd_view.show(motd=motd)
+    widget = motd_view.create_widget(context={'motd':motd})
+    widget.show()
 
     # Schedule an update to a model variable
     from pyface.timer.api import do_after

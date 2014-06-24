@@ -42,7 +42,8 @@ def main():
     fred = Person(name='Fred', friends=[Person(name='Dino')])
 
     # Render the view with the domain model added to the context
-    person_view.show(person=fred)
+    widget = person_view.create_widget(context={'person':fred})
+    widget.show()
 
     # Schedule some operations on the list
     from pyface.timer.api import do_after

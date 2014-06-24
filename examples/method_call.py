@@ -57,7 +57,8 @@ def main():
     wilma = Person(name='Wilma', age=25)
 
     # Render the view with the domain models added to the context
-    person_view.show(person=fred, spouse=wilma)
+    widget = person_view.create_widget(context={'person':fred, 'spouse':wilma})
+    widget.show()
 
     # Start the event loop
     app.exec_()

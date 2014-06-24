@@ -6,6 +6,7 @@ This example shows how to serve a simple jigna view over the web.
 
 from traits.api import HasTraits, Int, Str
 from jigna.api import View
+from tornado.ioloop import IOLoop
 
 #### Domain model ####
 
@@ -27,6 +28,9 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start the tornado ioloop
+    ioloop = IOLoop.instance()
+
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
@@ -36,10 +40,10 @@ def main():
     # Point your web browser to http://localhost:8888/ to connect to the jigna
     # view. Any operation performed on the view there directly update the model
     # attributes here.
-    person_view.serve(8888, person=fred)
+    person_view.create_webapp(8888, context={'person': fred})
 
-    # Check the values after the UI is closed
-    print fred.name, fred.age
+    # Start the event loop
+    ioloop.start()
 
 if __name__ == "__main__":
     main()

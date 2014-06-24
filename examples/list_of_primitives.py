@@ -52,7 +52,8 @@ def main():
     basket = Basket(fruits=['peach', 'pear'])
 
     # Render the view with the domain model added to the context
-    basket_view.show(basket=basket)
+    widget = basket_view.create_widget(context={'basket':basket})
+    widget.show()
 
     # Schedule some operations on the list
     from pyface.timer.api import do_after

@@ -96,7 +96,10 @@ def main():
     scene_controller = SceneController()
 
     # Render the view with the domain model added to the context
-    scene_controller_view.show(scene_controller=scene_controller)
+    widget = scene_controller_view.create_widget(
+        context={'scene_controller': scene_controller}
+    )
+    widget.show()
 
     # Start the event loop
     app.exec_()

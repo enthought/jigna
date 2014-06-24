@@ -36,7 +36,8 @@ def main():
     worker = Worker()
 
     # Render the view with the domain model added to the context
-    worker_view.show(worker=worker)
+    widget = worker_view.create_widget(context={'worker': worker})
+    widget.show()
 
     # Start the event loop
     app.exec_()

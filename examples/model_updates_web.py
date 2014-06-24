@@ -37,7 +37,7 @@ def main():
     motd = MOTD(message="Explicit is better than implicit.")
 
     # Render the view with the domain model added to the context
-    motd_view.serve(motd=motd)
+    motd_view.create_webapp(context={'motd':motd})
 
     # Schedule an update to a model variable
     import datetime
