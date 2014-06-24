@@ -10,7 +10,7 @@
 
 # Standard library.
 import os
-from os.path import abspath, dirname, join
+from os.path import join
 
 # Enthought library.
 from traits.api import Bool, HasTraits, Instance, Str, Property
@@ -48,8 +48,8 @@ class View(HasTraits):
     #: Should we use the async client or not.
     #:
     #: Async client presents a deferred API and is useful when you want to have
-    #: your View over the web where you don't want to freeze the browser during
-    #: synchronous GET calls from the server.
+    #: your View served over the web where you don't want to freeze the browser
+    #: during synchronous GET calls from the server.
     async = Bool(False)
 
     #: The base url for all resources (relative urls are resolved corresponding
@@ -105,28 +105,22 @@ class View(HasTraits):
         """ Create and show a view of the given context. """
 
         from jigna.core.html_widget import HTMLWidget
-        from jigna.core.wsgi import FileLoader
 
-        widget = HTMLWidget(
-            root_paths = {
-                'jigna': FileLoader(
-                    root = join(abspath(dirname(__file__)), 'js', 'dist')
-                )
-            },
-            open_externally = True,
-            debug = True
-        )
+        widget = HTMLWidget()
 
         from jigna.qt_server import QtServer
 
         self._server = QtServer(
             base_url = join(os.getcwd(), self.base_url),
             context  = context,
-            html     = self.html
+            html     = self.html,
+            widget   = widget
         )
+        self._server.serve()
 
-        self._server.connect(widget)
+        # Now connect the client to the server
         widget.control.show()
+        widget.load_html(self._server.html, self._server.base_url)
 
         return
 

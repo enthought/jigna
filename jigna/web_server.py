@@ -86,28 +86,10 @@ class WebServer(Server):
     #### 'Server' protocol ####################################################
 
     def serve(self):
-        """ Start the server.
-
-        This is a *blocking* call.
-
+        """ Start the server. This simply creates the web application to serve
+        the Python model and the html and registers it to listen to a given
+        port.
         """
-        application = self._create_application()
-        application.listen(self.port, address=self.address)
-
-        return
-
-    #: The trait change dispatch mechanism to use when traits change.
-    trait_change_dispatch = Str('same')
-
-    #### Private protocol #####################################################
-
-    _bridge = Instance(WebBridge)
-    def __bridge_default(self):
-        return WebBridge()
-
-    def _create_application(self):
-        """ Create the Web Application. """
-
         settings = {
             'static_path'       : join(dirname(__file__), 'js', 'dist'),
             'static_url_prefix' : '/jigna/'
@@ -122,7 +104,18 @@ class WebServer(Server):
             **settings
         )
 
-        return application
+        application.listen(self.port, address=self.address)
+
+        return
+
+    #: The trait change dispatch mechanism to use when traits change.
+    trait_change_dispatch = Str('same')
+
+    #### Private protocol #####################################################
+
+    _bridge = Instance(WebBridge)
+    def __bridge_default(self):
+        return WebBridge()
 
 ##### Request handlers ########################################################
 
