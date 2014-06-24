@@ -104,12 +104,12 @@ class View(HasTraits):
     def show(self, **context):
         """ Create and show a view of the given context. """
 
+        # Create the HTMLWidget from where the domain models will be served
         from jigna.core.html_widget import HTMLWidget
-
         widget = HTMLWidget()
 
+        # Set up the QtServer to serve the domain models in context
         from jigna.qt_server import QtServer
-
         self._server = QtServer(
             base_url = join(os.getcwd(), self.base_url),
             context  = context,
@@ -118,7 +118,7 @@ class View(HasTraits):
         )
         self._server.serve()
 
-        # Now connect the client to the server
+        # Connect the client to the server
         widget.control.show()
         widget.load_html(self._server.html, self._server.base_url)
 

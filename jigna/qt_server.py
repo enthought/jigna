@@ -46,7 +46,7 @@ class QtBridge(Bridge):
 
     #### 'QtBridge' protocol ##################################################
 
-    #: The 'HTMLWidget' that contains the QtWebLit malarky.
+    #: The 'HTMLWidget' that contains the QtWebKit malarky.
     widget = Any
 
 
