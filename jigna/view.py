@@ -102,7 +102,9 @@ class View(HasTraits):
         self._html = html
 
     def show(self, **context):
-        """ Create and show a view of the given context. """
+        """ Create and show a view of the given context. Returns the HTMLWidget
+        object so that various layout operations can be performed on
+        `widget.control` """
 
         # Create the HTMLWidget from where the domain models will be served
         from jigna.core.html_widget import HTMLWidget
@@ -122,7 +124,7 @@ class View(HasTraits):
         widget.control.show()
         widget.load_html(self._server.html, self._server.base_url)
 
-        return
+        return widget
 
     def serve(self, port=8888, **context):
         """ Serve the view of the given context on the given port. """
