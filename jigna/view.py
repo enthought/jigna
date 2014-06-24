@@ -13,7 +13,7 @@ import os
 from os.path import join
 
 # Enthought library.
-from traits.api import Bool, HasTraits, Instance, Str, Property
+from traits.api import Bool, HasTraits, Instance, Str, Property, Tuple, Int
 
 # Jigna libary.
 from jigna.server import Server
@@ -75,6 +75,9 @@ class View(HasTraits):
     html = Property(Str)
     _html = Str
 
+    #: Size of the widget (in a (width, height) format)
+    size = Tuple(Int(600), Int(400))
+
     def _get_html(self):
         """ Get the default HTML document for the given model. """
 
@@ -122,6 +125,7 @@ class View(HasTraits):
 
         # Connect the client to the server
         widget.control.show()
+        widget.control.resize(self.size[0], self.size[1])
         widget.load_html(self._server.html, self._server.base_url)
 
         return widget
