@@ -37,10 +37,11 @@ def main():
     # Start serving the view with the domain model added to the context. This
     # will start the tornado ioloop.
     #
-    # Point your web browser to http://localhost:8888/ to connect to the jigna
-    # view. Any operation performed on the view there directly update the model
+    # Point your web browser to http://localhost:8000/ to connect to the jigna
+    # web app. Any operation performed on the view there directly update the model
     # attributes here.
-    person_view.create_webapp(8888, context={'person': fred})
+    application = person_view.create_webapp(context={'person': fred})
+    application.listen(8000)
 
     # Start the event loop
     ioloop.start()

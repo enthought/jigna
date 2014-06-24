@@ -121,7 +121,7 @@ class View(HasTraits):
             html     = self.html,
             widget   = widget
         )
-        self._server.serve()
+        self._server.initialize()
 
         # Connect the client to the server
         size = size or self.size
@@ -130,8 +130,8 @@ class View(HasTraits):
 
         return widget.control
 
-    def create_webapp(self, port=8888, context={}):
-        """ Serve the view of the given context on the given port. """
+    def create_webapp(self, context={}):
+        """ Create the web application serving the given context. """
 
         from jigna.web_server import WebServer
 
@@ -139,11 +139,10 @@ class View(HasTraits):
             base_url = join(os.getcwd(), self.base_url),
             context  = context,
             html     = self.html,
-            port     = port
         )
-        self._server.serve()
+        self._server.initialize()
 
-        return
+        return self._server.application
 
     #### Private protocol #####################################################
 

@@ -61,8 +61,8 @@ class QtServer(Server):
 
     #### 'Server' protocol ####################################################
 
-    def serve(self):
-        """ Start the Qt server. This simply configures the widget to serve
+    def initialize(self):
+        """ Initialize the Qt server. This simply configures the widget to serve
         the Python model.
         """
         self._bridge = QtBridge(widget=self.widget)

@@ -75,27 +75,22 @@ class WebServer(Server):
 
     ### 'WebServer' protocol ##################################################
 
-    #: Port to serve the UI on.
-    #:
-    #: Default to 8888.
-    port = Int(8888)
-
-    #: Address where we listen.  Defaults to localhost.
-    address = Str
+    #: The tornado `Application` object which specifies rules about how to handle
+    #: different requests etc.
+    application = Instance(Application)
 
     #### 'Server' protocol ####################################################
 
-    def serve(self):
-        """ Start the server. This simply creates the web application to serve
-        the Python model and the html and registers it to listen to a given
-        port.
+    def initialize(self):
+        """ Initialize the web server. This simply creates the web application
+        to serve the Python model.
         """
         settings = {
             'static_path'       : join(dirname(__file__), 'js', 'dist'),
             'static_url_prefix' : '/jigna/'
         }
 
-        application = Application(
+        self.application = Application(
             [
                 (r"/_jigna_ws", JignaSocket,   dict(bridge=self._bridge, server=self)),
                 (r"/_jigna",    GetFromBridge, dict(server=self)),
@@ -103,8 +98,6 @@ class WebServer(Server):
             ],
             **settings
         )
-
-        application.listen(self.port, address=self.address)
 
         return
 
