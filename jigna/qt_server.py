@@ -58,6 +58,8 @@ class QtServer(Server):
     #: The `HTMLWidget` object which specifies rules about how to handle
     #: different requests etc.
     widget = Instance(HTMLWidget)
+    def _widget_default(self):
+        return HTMLWidget()
 
     #### 'Server' protocol ####################################################
 

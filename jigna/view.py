@@ -109,21 +109,18 @@ class View(HasTraits):
         object created so that various layout operations can be performed on it.
         """
 
-        # Create the HTMLWidget from where the domain models will be served
-        from jigna.core.html_widget import HTMLWidget
-        widget = HTMLWidget()
-
         # Set up the QtServer to serve the domain models in context
         from jigna.qt_server import QtServer
+
         self._server = QtServer(
             base_url = join(os.getcwd(), self.base_url),
             context  = context,
-            html     = self.html,
-            widget   = widget
+            html     = self.html
         )
         self._server.initialize()
 
         # Connect the client to the server
+        widget = self._server.widget
         size = size or self.size
         widget.control.resize(size[0], size[1])
         widget.load_html(self._server.html, self._server.base_url)
@@ -131,8 +128,10 @@ class View(HasTraits):
         return widget.control
 
     def create_webapp(self, context={}):
-        """ Create the web application serving the given context. """
+        """ Create the web application serving the given context. Returns the
+        tornado application created. """
 
+        # Set up the WebServer to serve the domain models in context
         from jigna.web_server import WebServer
 
         self._server = WebServer(

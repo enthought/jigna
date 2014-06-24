@@ -68,8 +68,9 @@ class Server(HasTraits):
 
         return
 
-    def serve(self):
-        """ Serve the HTML. """
+    def initialize(self):
+        """ Initialize the server with configuration options to specify which
+        URL is handled how. """
 
         raise NotImplementedError
 
