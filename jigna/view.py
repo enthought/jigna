@@ -123,6 +123,7 @@ class View(HasTraits):
         widget = self._server.widget
         size = size or self.size
         widget.control.resize(size[0], size[1])
+        widget.control.setParent(parent)
         widget.load_html(self._server.html, self._server.base_url)
 
         return widget.control
