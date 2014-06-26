@@ -232,7 +232,7 @@ class TestJignaQt(unittest.TestCase):
     def test_threaded_call(self):
         # When
         self.execute_js("""
-            var deferred = jigna.threaded(jigna.models.model, 'method_slow', ['foo', 1]);
+            var deferred = jigna.threaded(jigna.models.model, 'method_slow', 'foo', 1);
             deferred.done(function(){
                 jigna.models.model.method_slow_finished = true;
             })

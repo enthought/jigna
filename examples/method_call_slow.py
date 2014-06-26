@@ -1,130 +1,97 @@
-""" This example demonstrates a progress bar to show how the UI is not
-blocked during a slow method call. This is because the method calls are
-performed in a separate thread.
+""" This example shows how to call slow methods of the application model such
+that the UI doesn't block while the method is executing. We present an API to
+call such methods in a thread.
+
+Note: It's the user's responsibility to make sure that there aren't thread
+safety related issues with that method.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
-from traits.api import HasTraits, Int, Str
+from traits.api import HasTraits, Int, Str, Instance
 from pyface.qt import QtGui
 from jigna.api import View
 import time
 
 #### Domain model ####
 
-class Person(HasTraits):
+class App(HasTraits):
     name = Str
-    age  = Int
+    version = Str
 
-    power = Int
+class Installer(HasTraits):
+    current = Instance('App')
+    progress = Int
 
-    def install_new_power(self):
-        print "Installing new power...."
-
-        while self.power < 100:
+    def install(self, app):
+        self.current = app
+        while self.progress < 100:
             time.sleep(0.5)
-            self.power += 10
-            print "Power increased to: ", self.power
-
-        self.name = 'Batman'
-        self.age = 400
-
-    def download_new_power(self):
-        print "Downloading new power...."
-
-        time.sleep(1)
-
-        import urllib2
-        urllib2.urlopen('http://someboguswebsite.com')
-
-        print "error!"
+            self.progress += 10
 
 #### UI layer ####
 
-html = """
-<html>
+body_html = """
+    <div>
+        <!-- Show a button initially to install in a thread -->
+        <button ng-show="installer.progress==0"
+                ng-click="jigna.threaded(installer, 'install', new_app)">
+            Install {{new_app.name}}-{{new_app.version}}
+        </button>
 
-    <head>
-        <script type='text/javascript' src='/jigna/jigna.js'></script>
-        <script type='text/javascript'>
-            jigna.initialize();
-        </script>
-
-        <style type="text/css">
-            .progress-bar-container {
-                height: 10px;
-                border: solid 1px #999;
-                background-color: white;
-                margin-top: 10px;
-            }
-            .completed-progress {
-                background-color: blue;
-                height: 100%;
-            }
-        </style>
-
-    </head>
-
-    <body>
-        <div ng-controller='MainCtrl'>
-            Name: <input ng-model="model.name">
-            Age: <input ng-model="model.age" type='number'>
-            Power: {{model.power}}
-            <button id="install_btn" ng-click="install_new_power_thread($event)">
-                Install new power!
-            </button>
-
-            <button id="download_btn" ng-click="download_new_power_thread($event)">
-                Download new power!
-            </button>
-
-            <div class='progress-bar-container'>
-                <div class='completed-progress'
-                     ng-style="{ width: model.power + '%' }">
-                </div>
-            </div>
+        <!-- Show an "Installing..." text while progress is between 0 and 100 -->
+        <div ng-show="installer.progress > 0 && installer.progress < 100">
+            Installing {{installer.current.name}}-{{installer.current.version}}...
         </div>
 
-        <script>
-            angular.element(document).ready(function(){
-                var app = angular.module('MyApp', ['jigna']);
+        <!-- Show "Done" when the progress is 100% -->
+        <div ng-show="installer.progress >= 100">
+            Done!
+        </div>
 
-                app.controller('MainCtrl', function($scope){
-                    $scope.install_new_power_thread = function(event) {
-                        jigna.threaded($scope.model, 'install_new_power')
-                        .done(function(){
-                            $(event.target).html("Installed")
-                        })
-                    }
+        <!-- A graphical progress bar -->
+        <div class='progress-bar-container'>
+            <div class='completed-progress'
+                 ng-style="{ width: installer.progress + '%' }">
+            </div>
+        </div>
+    </div>
 
-                    $scope.download_new_power_thread = function(event) {
-                        jigna.threaded($scope.model, 'download_new_power')
-                        .fail(function(error){
-                            $(event.target).html("Error!")
-                        })
-                    }
-                })
-
-                angular.bootstrap(document, ['MyApp']);
-            });
-
-        </script>
-    </body>
-
-</html>
+    <style type="text/css">
+        .progress-bar-container {
+            height: 10px;
+            border: solid 1px gray;
+            margin-top: 10px;
+        }
+        .completed-progress {
+            background-color: blue;
+            height: 100%;
+        }
+    </style>
 """
 
-person_view = View(html=html)
+installer_view = View(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    bruce = Person(name='Bruce', age=30)
-    person_view.show(model=bruce)
+    # Start a QtGui application
+    app = QtGui.QApplication([])
+
+    # Instantiate the domain models
+    installer = Installer()
+    pandas = App(name='Pandas', version='1.0')
+
+    # Render the view with the domain models added to the context
+    installer_view.show(installer=installer, new_app=pandas)
+
+    # Start the event loop
+    app.exec_()
+
+    # Check the final values
+    print installer.current.name, installer.current.version
 
 if __name__ == '__main__':
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
     main()
-    app.exec_()
 
 #### EOF ######################################################################

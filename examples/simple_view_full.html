@@ -1,0 +1,20 @@
+<html>
+    <head>
+        <!-- Load the jigna script. The location of jigna script file would
+        always be '/jigna/jigna.js' -->
+        <script type='text/javascript' src='/jigna/jigna.js'></script>
+
+        <!-- Once jigna is loaded, initialize it. -->
+        <script type='text/javascript'>
+            jigna.initialize();
+        </script>
+    </head>
+
+    <!-- `ng-app='jigna'` attaches the jigna angular application to the current
+    DOM tree. This makes sure that the rootScope has objects
+    which are Javascript proxies for the Python application models. -->
+    <body ng-app='jigna'>
+        Name: <input ng-model="person.name">
+        Age: <input ng-model="person.age" type='number'>
+    </body>
+</html>

@@ -22,7 +22,7 @@ jigna.add_listener('jigna', 'model_added', function(event){
 });
 
 jigna.threaded = function(obj, method_name, args) {
-    args = args || [];
+    args = Array.prototype.slice.call(arguments, 2);
     return this.client.call_instance_method_thread(obj.__id__, method_name, args);
 };
 

@@ -3,12 +3,10 @@ This example shows how to initialize Jigna's HTML interface by reading
 a full html file, rather than specifying body_html and head_html.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
-from os.path import join
 from traits.api import HasTraits, Int, Str
 from pyface.qt import QtGui
-from pyface.timer.api import do_after
 from jigna.api import View
 
 #### Domain model ####
@@ -22,20 +20,27 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-person_view = View(html_file=join('data', 'test.html'))
+person_view = View(html_file='simple_view_full.html')
 
 #### Entry point ####
 
 def main():
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
+    # Start a QtGui application
+    app = QtGui.QApplication([])
 
-    fred  = Person(name='Fred', age=42)
-    person_view.show(fred=fred)
-    do_after(2000, fred.update_name, "Freddie")
+    # Instantiate the domain model
+    fred = Person(name='Fred', age=42)
 
+    # Render the view with the domain model added to the context
+    person_view.show(person=fred)
+
+    # Start the event loop
     app.exec_()
-    
+
+    # Check the values after the UI is closed
+    print fred.name, fred.age
+
 if __name__ == "__main__":
-    main()    
+    main()
 
 #### EOF ######################################################################

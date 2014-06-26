@@ -1,57 +1,78 @@
 """
-This example demonstrates Jigna's ability to respond to traits Event updates.
+This example demonstrates Jigna's ability to respond to `Event` trait firings.
 """
 
-#### Imports ##################################################################
+#### Imports ####
 
-from traits.api import HasTraits, Int, Str, Event
+from traits.api import HasTraits, Str, Event, List
 from pyface.qt import QtGui
 from jigna.api import View
-
 import time
 
 #### Domain model ####
 
-class Person(HasTraits):
-    name = Str
-    age  = Int(25)
+class Downloader(HasTraits):
 
-    status = Event
+    file_urls = List(Str)
+    file_downloaded = Event
 
-    def grow_old(self, max_age=100):
-        while self.age < max_age:
-            time.sleep(0.1)
-            self.age += 1
-            print "Age increased to:", self.age
-            if self.age == 60:
-                self.status = "Retired due to old age"
-        self.status = "Dead"
+    def download_files(self):
+        """ Download the files specified by the file_urls. Fire a
+        `file_downloaded` event with each file download. """
+
+        for file_url in self.file_urls:
+            # Simulate downloading the file
+            time.sleep(1)
+
+            # This will fire the `file_downloaded` event and make `file_url` as
+            # the event payload
+            self.file_downloaded = file_url
 
 #### UI layer ####
 
 body_html = """
     <div>
-         Name: {{person.name}}<br>
-         Age:  {{person.age}}
+         <!-- Start the download of files in a thread -->
+         <button ng-click="jigna.threaded(downloader, 'download_files')">
+            Download files
+         </button>
 
-         <button ng-click="jigna.threaded(person, 'grow_old')">Grow old</button><br>
-
+         <!-- Custom javascript to attach event handlers -->
          <script type='text/javascript'>
-            jigna.add_listener(jigna.models.person, 'status', function(event){
-                alert(event.data.value);
-            })
-        </script>
+
+            // Show a "Download complete" dialog with every file download.
+            var on_file_downloaded = function(event){
+                var file_url = event.data.value;
+                alert("Download complete: " + file_url);
+            };
+
+            // A proxy for the Python model `downloader` is available inside
+            // jigna.models
+            var downloader = jigna.models['downloader'];
+
+            // Attach the event listener
+            jigna.add_listener(downloader, 'file_downloaded', on_file_downloaded)
+
+         </script>
     </div>
 """
 
-person_view = View(body_html=body_html)
+downloader_view = View(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    fred = Person(name='Fred')
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-    person_view.show(person=fred)
+    # Start a QtGui application
+    app = QtGui.QApplication([])
+
+    # Instantiate the domain model
+    file_urls = ['images/lena.png', 'videos/big-buck-bunny.mp4']
+    downloader = Downloader(file_urls=file_urls)
+
+    # Render the view with the domain model added to the context
+    downloader_view.show(downloader=downloader)
+
+    # Start the event loop
     app.exec_()
 
 if __name__ == "__main__":
