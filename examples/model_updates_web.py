@@ -1,5 +1,5 @@
 """
-This example demonstrates how to schedule updates to the application model's in
+This example demonstrates how to schedule updates to the application model in
 the web version.
 """
 
