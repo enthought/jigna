@@ -51,23 +51,24 @@ class View(HasTraits):
     #: your View served over the web where you don't want to freeze the browser
     #: during synchronous GET calls from the server.
     #:
-    #: NOTE: When you're specifying the full HTML, the option to start an async
-    #: client is specified at the Javascript level using the Javascript
-    #: statement: `jigna.initialize({async: true})`. In that case, the value of
-    #: this trait becomes moot.
+    #: NOTE: When you're specifying the full HTML for the View, the option to
+    #: start an async client is specified at the Javascript level instead of
+    #: here, using the Javascript statement: `jigna.initialize({async: true})`.
+    #: In that case, the value of this trait becomes moot.
     async = Bool(False)
 
     #: The base url for all resources (relative urls are resolved corresponding
     #: to the current working directory).
     base_url = Str
 
-    #: The HTML for the *body* of the view's document.
+    #: The inner HTML for the *body* of the view's document.
     body_html = Str
 
-    #: The HTML for the *head* of the view's document.
+    #: The inner HTML for the *head* of the view's document.
     head_html = Str
 
-    #: The file which contains the html
+    #: The file which contains the html. `html_file` takes precedence over
+    #: `body_html` and `head_html`.
     html_file = Str
 
     #: The HTML for the entire document.
