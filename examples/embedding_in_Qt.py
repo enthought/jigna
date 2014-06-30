@@ -27,20 +27,8 @@ person_view = View(body_html=body_html)
 
 #### Entry point ####
 
-def embed_jigna_view(layout):
-    """ Create a jigna widget and embed it to the given QLayout """
-    # Instantiate the domain model
-    fred = Person(name='Fred', age=42)
-
-    # Render the view with the domain model added to the context
-    jigna_widget = person_view.create_widget(context={'person': fred})
-
-    # Add the jigna widget to the layout
-    layout.addWidget(jigna_widget)
-
-def main():
-    # Create the QtGui application object
-    app = QtGui.QApplication([])
+def create_embedded_window(widget):
+    """ Create a QMainWindow which embeds the given widget on a button click """
 
     # Define a new QMainWindow
     window = QtGui.QMainWindow()
@@ -51,16 +39,33 @@ def main():
     window.setCentralWidget(QtGui.QWidget())
     window.centralWidget().setLayout(layout)
 
-    # Add a button to the layout which embeds the jigna widget on click.
-    button = QtGui.QPushButton("I'm a QPushButton. Press me to embed a jigna widget")
-    button.clicked.connect(lambda : embed_jigna_view(layout))
+    # Add a button to the layout which embeds the supplied widget on click.
+    button = QtGui.QPushButton("I'm a QPushButton. Press me to embed a widget")
+    button.clicked.connect(lambda : layout.addWidget(widget))
     layout.addWidget(button)
 
-    # Show the window
+    return window
+
+def main():
+    # Start a QtGui application
+    app = QtGui.QApplication([])
+
+    # Instantiate the domain model
+    fred = Person(name='Fred', age=42)
+
+    # Create a QWidget which renders the HTML view with the domain
+    # models added to its context.
+    widget = person_view.create_widget(context={'person': fred})
+
+    # Embed the widget created above to another Qt window.
+    window = create_embedded_window(widget)
     window.show()
 
     # Start the event loop
     app.exec_()
+
+    # Check the values after the UI is closed
+    print fred.name, fred.age
 
 if __name__ == "__main__":
     main()
