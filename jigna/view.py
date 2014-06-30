@@ -50,6 +50,11 @@ class View(HasTraits):
     #: Async client presents a deferred API and is useful when you want to have
     #: your View served over the web where you don't want to freeze the browser
     #: during synchronous GET calls from the server.
+    #:
+    #: NOTE: When you're specifying the full HTML, the option to start an async
+    #: client is specified at the Javascript level using the Javascript
+    #: statement: `jigna.initialize({async: true})`. In that case, the value of
+    #: this trait becomes moot.
     async = Bool(False)
 
     #: The base url for all resources (relative urls are resolved corresponding
