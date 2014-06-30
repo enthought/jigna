@@ -1,4 +1,4 @@
-from jigna.api import View
+from jigna.api import Template, WebAppView
 from threading import Thread
 import unittest
 import time
@@ -16,8 +16,9 @@ class TestJignaWebSync(TestJignaQt):
     def setUpClass(cls, port=8888, async=False):
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
-        person_view = View(body_html=body_html, async=async)
-        application = person_view.create_webapp(context={'model':fred})
+        template = Template(body_html=body_html, async=async)
+        view = WebAppView(template=template, context={'model':fred})
+        application = view.create_web_app()
         application.listen(port)
 
         # Start the tornado server in a different thread so that we can write
@@ -28,7 +29,7 @@ class TestJignaWebSync(TestJignaQt):
 
         browser = webdriver.Firefox()
         browser.get('http://localhost:%d'%port)
-        cls.person_view = person_view
+        cls.view = view
         cls.fred = fred
         cls.browser = browser
 
@@ -41,7 +42,7 @@ class TestJignaWebSync(TestJignaQt):
 
     def setUp(self):
         cls = self.__class__
-        self.person_view = cls.person_view
+        self.view = cls.view
         self.browser = cls.browser
         self.fred = cls.fred
         self.fred.spouse = None
