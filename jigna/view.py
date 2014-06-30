@@ -75,8 +75,8 @@ class View(HasTraits):
     html = Property(Str)
     _html = Str
 
-    #: Size of the widget (in a (width, height) format)
-    size = Tuple(Int(600), Int(400))
+    #: Default size of the widget (in a (width, height) format)
+    default_size = Tuple(Int(600), Int(400))
 
     def _get_html(self):
         """ Get the default HTML document for the given model. """
@@ -120,7 +120,7 @@ class View(HasTraits):
 
         # Set up the client
         widget = self._server.widget
-        size = size or self.size
+        size = size or self.default_size
         widget.control.resize(size[0], size[1])
         widget.control.setParent(parent)
 
