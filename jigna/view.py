@@ -111,7 +111,6 @@ class View(HasTraits):
 
         # Set up the QtServer to serve the domain models in context
         from jigna.qt_server import QtServer
-
         self._server = QtServer(
             base_url = join(os.getcwd(), self.base_url),
             context  = context,
@@ -119,11 +118,13 @@ class View(HasTraits):
         )
         self._server.initialize()
 
-        # Connect the client to the server
+        # Set up the client
         widget = self._server.widget
         size = size or self.size
         widget.control.resize(size[0], size[1])
         widget.control.setParent(parent)
+
+        # Connect the client to the server
         widget.load_html(self._server.html, self._server.base_url)
 
         return widget.control
@@ -134,7 +135,6 @@ class View(HasTraits):
 
         # Set up the WebServer to serve the domain models in context
         from jigna.web_server import WebServer
-
         self._server = WebServer(
             base_url = join(os.getcwd(), self.base_url),
             context  = context,
