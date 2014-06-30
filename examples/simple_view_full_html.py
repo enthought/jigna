@@ -25,13 +25,14 @@ person_view = View(html_file='simple_view_full.html')
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # model added to its context.
     widget = person_view.create_widget(context={'person': fred})
     widget.show()
 

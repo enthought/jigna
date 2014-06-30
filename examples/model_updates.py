@@ -30,17 +30,19 @@ motd_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
     motd = MOTD(message="Explicit is better than implicit.")
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # model added to its context.
     widget = motd_view.create_widget(context={'motd':motd})
     widget.show()
 
-    # Schedule an update to a model variable
+    # Schedule an update to a model variable after 2.5 seconds. This update
+    # will be reflected in the UI immediately.
     from pyface.timer.api import do_after
     do_after(2500, motd.update_message, "Flat is better than nested.")
 

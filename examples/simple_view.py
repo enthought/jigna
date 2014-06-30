@@ -35,7 +35,7 @@ def main():
     fred = Person(name='Fred', age=42)
 
     # Create and show a QWidget which renders the HTML view with the domain
-    # model added to the context.
+    # model added to its context.
     widget = person_view.create_widget(context={'person': fred})
     widget.show()
 
