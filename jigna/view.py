@@ -34,11 +34,12 @@ class QtView(HasTraits):
 
     def start(self):
         """
-        Start showing the view. This is a *blocking* call.
+        Create the view's control and start the Qt event loop. This is a
+        *blocking* call.
         """
         app = QtGui.QApplication.instance() or QtGui.QApplication([])
 
-        self.control = self.create(parent=self.parent)
+        self.create_control()
         self.control.show()
 
         app.exec_()
@@ -53,8 +54,8 @@ class QtView(HasTraits):
     def _size_default(self):
         return self.template.recommended_size
 
-    def create(self, parent):
-        """ Create and show a view of the given context. Returns the QWidget
+    def create_control(self):
+        """ Create and show the control of the given context. Returns the QWidget
         object created so that various layout operations can be performed on it.
         """
 
@@ -69,13 +70,15 @@ class QtView(HasTraits):
 
         # Set up the client
         widget = self._server.widget
-        widget.create(parent=parent)
+        widget.create(parent=self.parent)
         widget.control.resize(self.size[0], self.size[1])
 
         # Connect the client to the server
         self._server.connect(widget)
 
-        return widget.control
+        self.control = widget.control
+
+        return self.control
 
     #### Private protocol #####################################################
 
