@@ -126,12 +126,12 @@ class View(HasTraits):
 
         # Set up the client
         widget = self._server.widget
+        widget.create(parent=parent)
         size = size or self.default_size
         widget.control.resize(size[0], size[1])
-        widget.control.setParent(parent)
 
         # Connect the client to the server
-        widget.load_html(self._server.html, self._server.base_url)
+        self._server.connect(widget)
 
         return widget.control
 

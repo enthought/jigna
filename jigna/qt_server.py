@@ -80,14 +80,22 @@ class QtServer(Server):
             callbacks = [('handle_request', self.handle_request)],
             python_namespace = 'qt_bridge'
         )
-        self.widget.create()
-
-        self._enable_qwidget_embedding(self.widget)
 
         return
 
     #: The trait change dispatch mechanism to use when traits change.
     trait_change_dispatch = Str('ui')
+
+    #### 'QtServer' protocol ##################################################
+
+    def connect(self, widget):
+        """ Connect the given widget to the server. This includes loading the
+        html and also enabling custom widget embedding etc. The widget must be
+        created already to use this method.
+        """
+        widget.load_html(self.html, self.base_url)
+
+        self._enable_qwidget_embedding(widget)
 
     #### Private protocol #####################################################
 
