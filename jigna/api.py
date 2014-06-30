@@ -1,3 +1,3 @@
 from template import Template
-from view import QtView, WebAppView
+from qt_view import QtView
 from core.concurrent import Future
