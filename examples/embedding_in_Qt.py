@@ -39,7 +39,7 @@ def embed_jigna_view(layout):
     layout.addWidget(jigna_widget)
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Define a new QMainWindow
@@ -51,8 +51,8 @@ def main():
     window.setCentralWidget(QtGui.QWidget())
     window.centralWidget().setLayout(layout)
 
-    # Add a button to the layout which embeds the jigna view on click.
-    button = QtGui.QPushButton("I'm a QPushButton. Press me to embed a jigna view")
+    # Add a button to the layout which embeds the jigna widget on click.
+    button = QtGui.QPushButton("I'm a QPushButton. Press me to embed a jigna widget")
     button.clicked.connect(lambda : embed_jigna_view(layout))
     layout.addWidget(button)
 

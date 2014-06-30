@@ -62,14 +62,19 @@ downloader_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
     file_urls = ['images/lena.png', 'videos/big-buck-bunny.mp4']
     downloader = Downloader(file_urls=file_urls)
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
+    #
+    # Clicking on the button in the UI will call the `download_files` method in
+    # a thread. After each file is "downloaded", a Javascript alert should come
+    # up. This is in response to a Python event on each file download.
     widget = downloader_view.create_widget(context={'downloader':downloader})
     widget.show()
 

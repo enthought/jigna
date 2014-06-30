@@ -83,13 +83,18 @@ plot_controller_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
 
     # Instantiate the domain model
     plot_controller = PlotController(scaling_factor=0.5)
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
+    #
+    # The widget contains an embedded Chaco QWidget showing a 2D plot of
+    # the domain model. Moving the slider on the UI changes the domain model
+    # and hence the Chaco plot.
     widget = plot_controller_view.create_widget(
         context={'plot_controller': plot_controller},
         size=(600, 600)

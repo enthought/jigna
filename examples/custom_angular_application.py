@@ -35,13 +35,18 @@ clock_view = View(html_file='custom_angular_application.html')
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
     clock = StopWatch()
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
+    #
+    # The operations on the clock can be controlled from the UI. The view
+    # related logic is such that it always displays the integer time of the
+    # domain model in a proper hh:mm:ss format.
     widget = clock_view.create_widget(context={'clock':clock})
     widget.show()
 

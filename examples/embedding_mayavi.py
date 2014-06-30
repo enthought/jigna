@@ -89,13 +89,18 @@ scene_controller_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
 
     # Instantiate the domain model
     scene_controller = SceneController()
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
+    #
+    # The widget contains an embedded Mayavi QWidget showing a visualization of
+    # the domain model. Moving the sliders on the UI changes the domain model and
+    # hence the Mayavi visualization.
     widget = scene_controller_view.create_widget(
         context={'scene_controller': scene_controller}
     )
