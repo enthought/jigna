@@ -35,17 +35,21 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
     fred = Person(name='Fred', friends=[Person(name='Dino')])
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
     widget = person_view.create_widget(context={'person':fred})
     widget.show()
 
-    # Schedule some operations on the list
+    # Schedule some operations on the list.
+    #
+    # We're trying to append and insert instances in the list in the future.
+    # This should be reflected in the UI.
     from pyface.timer.api import do_after
     do_after(2500, fred.friends.append, Person(name='Wilma'))
     do_after(5000, fred.friends.insert, 0, Person(name='Barney'))

@@ -29,13 +29,18 @@ worker_view = View(html_file='success_error_callbacks.html')
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain models
     worker = Worker()
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # model added to its context.
+    #
+    # The view related code is such that clicking on the buttons in the UI will
+    # call methods on the domain model and do something when the method call
+    # succeeded or failed.
     widget = worker_view.create_widget(context={'worker': worker})
     widget.show()
 

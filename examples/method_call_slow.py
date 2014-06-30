@@ -75,14 +75,19 @@ installer_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain models
     installer = Installer()
     pandas = App(name='Pandas', version='1.0')
 
-    # Render the view with the domain models added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
+    #
+    # Clicking on the button in the UI will call the `install` method in a
+    # thread so that the UI is still responsive while the method is executing.
+    # The progress bar is also updated as the method progresses.
     widget = installer_view.create_widget(
         context={'installer': installer, 'new_app': pandas}
     )

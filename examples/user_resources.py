@@ -36,13 +36,18 @@ person_view = View(body_html=body_html, base_url='user_resources_data/')
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
     lena = Person(name='Lena', age=28)
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # model added to its context.
+    #
+    # You should see that user resources like CSS, images and custom JS are
+    # pulled in properly from the `user_resources_data` directory and displayed
+    # in the view.
     widget = person_view.create_widget(context={'person':lena}, size=(600, 600))
     widget.show()
 

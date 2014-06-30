@@ -45,17 +45,21 @@ basket_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
     basket = Basket(fruits=['peach', 'pear'])
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
     widget = basket_view.create_widget(context={'basket':basket})
     widget.show()
 
-    # Schedule some operations on the list
+    # Schedule some operations on the list.
+    #
+    # We're trying to append and insert primitives to the list in the future.
+    # This should be reflected in the UI.
     from pyface.timer.api import do_after
     do_after(2500, basket.fruits.append, 'mango')
     do_after(5000, basket.fruits.insert, 0, 'banana')

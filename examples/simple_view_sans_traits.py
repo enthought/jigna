@@ -37,6 +37,9 @@ def main():
 
     # Create and show a QWidget which renders the HTML view with the domain
     # model added to its context.
+    #
+    # This will behave as a static page since we don't have the traits
+    # machinery here to reflect model updates in the view.
     widget = person_view.create_widget(context={'person': fred})
     widget.show()
 

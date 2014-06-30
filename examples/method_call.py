@@ -49,21 +49,26 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain models
     fred = Person(name='Fred', age=14)
     wilma = Person(name='Wilma', age=25)
 
-    # Render the view with the domain models added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
+    #
+    # Clicking on the buttons in the UI will make blocking calls to the
+    # corresponding methods on the domain model. You can supply primitive as
+    # well as instance objects as arguments of the method.
     widget = person_view.create_widget(context={'person':fred, 'spouse':wilma})
     widget.show()
 
     # Start the event loop
     app.exec_()
 
-    # Check the final values
+    # Check the final values after the UI is closed
     print fred.name, fred.age, fred.spouse.name
 
 if __name__ == '__main__':

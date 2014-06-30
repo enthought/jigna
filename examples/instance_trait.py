@@ -34,18 +34,25 @@ person_view = View(body_html=body_html)
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
+    # Create the QtGui application object
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
     fred = Person(name='Fred')
     wilma = Person(name='Wilma')
 
-    # Render the view with the domain model added to the context
+    # Create and show a QWidget which renders the HTML view with the domain
+    # models added to its context.
+    #
+    # Initially, the `spouse` field of the person is empty, so the fields
+    # related to the spouse should be empty in the UI.
     widget = person_view.create_widget(context={'person':fred})
     widget.show()
 
-    # Schedule some operations on the domain model
+    # Schedule some operations on the domain model.
+    #
+    # The operation should fill in the `spouse` field of the person and this
+    # should be reflected in the UI.
     from pyface.timer.api import do_after
     do_after(2500, fred.marry, wilma)
 

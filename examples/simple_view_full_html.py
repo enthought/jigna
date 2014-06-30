@@ -33,6 +33,8 @@ def main():
 
     # Create and show a QWidget which renders the HTML view with the domain
     # model added to its context.
+    #
+    # The HTML content is obtained from the file `simple_view_full.html`.
     widget = person_view.create_widget(context={'person': fred})
     widget.show()
 
