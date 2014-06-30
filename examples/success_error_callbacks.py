@@ -32,13 +32,13 @@ def main():
     worker = Worker()
 
     # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'worker': worker})
+
+    # Start the event loop.
     #
     # The view related code is such that clicking on the buttons in the UI will
     # call methods on the domain model and do something when the method call
     # succeeded or failed.
-    view = QtView(template=template, context={'worker': worker})
-
-    # Start the event loop
     view.start()
 
 if __name__ == '__main__':
