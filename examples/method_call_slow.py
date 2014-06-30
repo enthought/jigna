@@ -9,8 +9,7 @@ safety related issues with that method.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str, Instance
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 import time
 
 #### Domain model ####
@@ -70,31 +69,27 @@ body_html = """
     </style>
 """
 
-installer_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Create the QtGui application object
-    app = QtGui.QApplication([])
-
     # Instantiate the domain models
     installer = Installer()
     pandas = App(name='Pandas', version='1.0')
 
-    # Create and show a QWidget which renders the HTML view with the domain
-    # models added to its context.
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(
+        template=template,
+        context={'installer': installer, 'new_app': pandas}
+    )
+
+    # Start the event loop.
     #
     # Clicking on the button in the UI will call the `install` method in a
     # thread so that the UI is still responsive while the method is executing.
     # The progress bar is also updated as the method progresses.
-    widget = installer_view.create_widget(
-        context={'installer': installer, 'new_app': pandas}
-    )
-    widget.show()
-
-    # Start the event loop
-    app.exec_()
+    view.start()
 
     # Check the final values
     print installer.current.name, installer.current.version

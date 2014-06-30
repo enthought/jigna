@@ -30,8 +30,7 @@ def main():
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create the Qt view which renders the HTML view with the domain model added
-    # to its context.
+    # Create a QtView to render the HTML template with the given context.
     view = QtView(template=template, context={'person': fred})
 
     # Start the event loop

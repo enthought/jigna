@@ -31,14 +31,14 @@ def main():
     fred = Person(name='Fred', age=42)
 
     # Create a web app serving the view with the domain model added to its
-    # context. Start listening on port 8000.
-    #
-    # Point your web browser to http://localhost:8000/ to connect to the jigna
-    # web app. Any operation performed on the view there directly update the
-    # model attributes here.
+    # context.
     view = WebAppView(template=template, context={'person': fred}, port=8000)
 
-    # Start the tornado ioloop
+    # Start serving the web app on port 8000.
+    #
+    # Point your web browser to http://localhost:8000/ to connect to this jigna
+    # web app. Any operation performed on the client directly update the
+    # model attributes on the server.
     view.start()
 
 if __name__ == "__main__":

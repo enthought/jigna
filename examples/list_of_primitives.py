@@ -6,8 +6,7 @@ the primitive type.
 #### Imports ####
 
 from traits.api import HasTraits, Str, List
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -40,21 +39,16 @@ body_html = """
     </div>
 """
 
-basket_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Create the QtGui application object
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     basket = Basket(fruits=['peach', 'pear'])
 
-    # Create and show a QWidget which renders the HTML view with the domain
-    # models added to its context.
-    widget = basket_view.create_widget(context={'basket':basket})
-    widget.show()
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'basket':basket})
 
     # Schedule some operations on the list.
     #
@@ -65,7 +59,7 @@ def main():
     do_after(5000, basket.fruits.insert, 0, 'banana')
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
     # Check the final values of the list attribute
     print basket.fruits

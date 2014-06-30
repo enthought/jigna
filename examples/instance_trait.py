@@ -5,8 +5,7 @@ This example shows two-way data binding on an `Instance` trait.
 #### Imports ####
 
 from traits.api import HasTraits, Instance, Str
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -28,26 +27,18 @@ body_html = """
     </div>
 """
 
-person_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 
 #### Entry point ####
 
 def main():
-    # Create the QtGui application object
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     fred = Person(name='Fred')
     wilma = Person(name='Wilma')
 
-    # Create and show a QWidget which renders the HTML view with the domain
-    # models added to its context.
-    #
-    # Initially, the `spouse` field of the person is empty, so the fields
-    # related to the spouse should be empty in the UI.
-    widget = person_view.create_widget(context={'person':fred})
-    widget.show()
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'person':fred})
 
     # Schedule some operations on the domain model.
     #
@@ -56,8 +47,11 @@ def main():
     from pyface.timer.api import do_after
     do_after(2500, fred.marry, wilma)
 
-    # Start the event loop
-    app.exec_()
+    # Start the event loop.
+    #
+    # Initially, the `spouse` field of the person is empty, so the fields
+    # related to the spouse should be empty in the UI.
+    view.start()
 
     # Check the final values of the instance
     print fred.name, fred.spouse.name, wilma.name

@@ -6,8 +6,7 @@ a full html file, rather than specifying body_html and head_html.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -20,26 +19,19 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-person_view = View(html_file='simple_view_full.html')
+template = Template(html_file='simple_view_full.html')
 
 #### Entry point ####
 
 def main():
-    # Create the QtGui application object
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create and show a QWidget which renders the HTML view with the domain
-    # model added to its context.
-    #
-    # The HTML content is obtained from the file `simple_view_full.html`.
-    widget = person_view.create_widget(context={'person': fred})
-    widget.show()
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'person': fred})
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
     # Check the values after the UI is closed
     print fred.name, fred.age

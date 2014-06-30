@@ -7,7 +7,7 @@ the web version.
 
 from traits.api import HasTraits, Str
 from tornado.ioloop import IOLoop
-from jigna.api import View
+from jigna.api import Template, WebAppView
 import datetime
 
 #### Domain model ####
@@ -26,21 +26,20 @@ body_html = """
     </div>
 """
 
-motd_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Create the tornado ioloop object
+    # Obtain the tornado ioloop object
     ioloop = IOLoop.instance()
 
     # Instantiate the domain model
     motd = MOTD(message="Explicit is better than implicit.")
 
     # Create a web app serving the view with the domain model added to its
-    # context. Start listening on port 8000.
-    application = motd_view.create_webapp(context={'motd':motd})
-    application.listen(8000)
+    # context.
+    webapp_view = WebAppView(template=template, context={'motd':motd}, port=8000)
 
     # Schedule an update to a model variable after 10 seconds. If the user's
     # browser is connected to the web app before 10 seconds, it will see the
@@ -55,8 +54,8 @@ def main():
         lambda : motd.update_message("Flat is better than nested.")
     )
 
-    # Start the event loop
-    ioloop.start()
+    # Start serving the web app on port 8000.
+    webapp_view.start()
 
 if __name__ == "__main__":
     main()

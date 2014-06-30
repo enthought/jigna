@@ -5,8 +5,7 @@ This example shows how to embed a jigna view to an existing QWidget framework.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -23,12 +22,16 @@ body_html = """
     </div>
 """
 
-person_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
-def create_embedded_window(widget):
-    """ Create a QMainWindow which embeds the given widget on a button click """
+def show_embedded_window(widget):
+    """ Create and show a QMainWindow which embeds the given widget on a button
+    click. This is a *blocking* call.
+    """
+    from pyface.qt import QtGui
+    app = QtGui.QApplication.instance() or QtGui.QApplication([])
 
     # Define a new QMainWindow
     window = QtGui.QMainWindow()
@@ -44,25 +47,23 @@ def create_embedded_window(widget):
     button.clicked.connect(lambda : layout.addWidget(widget))
     layout.addWidget(button)
 
-    return window
+    # Show the window
+    window.show()
+
+    app.exec_()
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create a QWidget which renders the HTML view with the domain
-    # models added to its context.
-    widget = person_view.create_widget(context={'person': fred})
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'person': fred})
+
+    # Create the control from the QtView
+    widget = view.create_control()
 
     # Embed the widget created above to another Qt window.
-    window = create_embedded_window(widget)
-    window.show()
-
-    # Start the event loop
-    app.exec_()
+    show_embedded_window(widget)
 
     # Check the values after the UI is closed
     print fred.name, fred.age
