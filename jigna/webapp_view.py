@@ -28,7 +28,7 @@ class WebAppView(View):
 
     def start(self):
         """
-        Create the view's control and start the web server's event loop. This
+        Create the web app and start the web server's event loop. This
         is a *blocking* call.
         """
         ioloop = IOLoop.instance()

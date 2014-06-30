@@ -31,7 +31,9 @@ DOCUMENT_HTML_TEMPLATE = """
 """
 
 class Template(HasTraits):
-    """ A template for the HTML/AngularJS based user interfaces. """
+    """ Encapsulation of the HTML/AngularJS template which can be rendered by
+    jigna.
+    """
 
     #### 'Template' protocol ##################################################
 

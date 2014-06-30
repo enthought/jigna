@@ -30,7 +30,9 @@ body_html = """
 
 # The base_url field specifies where to look when trying to get external
 # resources(defaults to an empty string, i.e. the current directory)
-template = Template(body_html=body_html, base_url='user_resources_data/')
+template = Template(body_html=body_html, base_url='user_resources_data/',
+    recommended_size=(600, 600)
+)
 
 #### Entry point ####
 
@@ -38,8 +40,8 @@ def main():
     # Instantiate the domain model
     lena = Person(name='Lena', age=28)
 
-    # Create a QtView to render the HTML template with the given context..
-    view = QtView(template=template, context={'person':lena}, size=(600, 600))
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'person':lena})
 
     # Start the event loop.
     #
