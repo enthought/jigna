@@ -5,8 +5,7 @@ This example is the simplest example which shows how to start a jigna view.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -23,24 +22,20 @@ body_html = """
     </div>
 """
 
-person_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Create the QtGui application object
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create and show a QWidget which renders the HTML view with the domain
-    # model added to its context.
-    widget = person_view.create_widget(context={'person': fred})
-    widget.show()
+    # Create the Qt view which renders the HTML view with the domain model added
+    # to its context.
+    view = QtView(template=template, context={'person': fred})
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
     # Check the values after the UI is closed
     print fred.name, fred.age
