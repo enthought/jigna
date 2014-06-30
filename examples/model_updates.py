@@ -6,8 +6,7 @@ reflected in the HTML view.
 #### Imports ####
 
 from traits.api import HasTraits, Str
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -25,26 +24,24 @@ body_html = """
     </div>
 """
 
-motd_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     motd = MOTD(message="Explicit is better than implicit.")
 
-    # Render the view with the domain model added to the context
-    motd_view.show(motd=motd)
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'motd':motd})
 
-    # Schedule an update to a model variable
+    # Schedule an update to a model variable after 2.5 seconds. This update
+    # will be reflected in the UI immediately.
     from pyface.timer.api import do_after
     do_after(2500, motd.update_message, "Flat is better than nested.")
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
 if __name__ == "__main__":
     main()

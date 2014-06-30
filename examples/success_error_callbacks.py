@@ -5,8 +5,7 @@ method call.
 #### Imports ####
 
 from traits.api import HasTraits
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 import time
 
 #### Domain model ####
@@ -24,22 +23,23 @@ class Worker(HasTraits):
 
 #### UI layer ####
 
-worker_view = View(html_file='success_error_callbacks.html')
+template = Template(html_file='success_error_callbacks.html')
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication([])
-
     # Instantiate the domain models
     worker = Worker()
 
-    # Render the view with the domain model added to the context
-    worker_view.show(worker=worker)
+    # Create a QtView to render the HTML template with the given context.
+    #
+    # The view related code is such that clicking on the buttons in the UI will
+    # call methods on the domain model and do something when the method call
+    # succeeded or failed.
+    view = QtView(template=template, context={'worker': worker})
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
 if __name__ == '__main__':
     main()

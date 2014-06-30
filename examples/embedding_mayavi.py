@@ -12,8 +12,7 @@ underlying QWidget when you embed it in jigna view.
 from traits.api import HasTraits, Instance, CInt, on_trait_change
 from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import MlabSceneModel
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -63,7 +62,7 @@ class SceneController(HasTraits):
         view = View(Item('scene', show_label=False,
                          editor=SceneEditor(scene_class=MayaviScene)),
                          resizable=True)
-        ui = self.edit_traits(view=view, parent=QtGui.QWidget(), kind='subpanel')
+        ui = self.edit_traits(view=view, parent=None, kind='subpanel')
 
         return ui.control
 
@@ -84,22 +83,23 @@ body_html = """
     </div>
 """
 
-scene_controller_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-
     # Instantiate the domain model
     scene_controller = SceneController()
 
-    # Render the view with the domain model added to the context
-    scene_controller_view.show(scene_controller=scene_controller)
+    # Create a QtView to render the HTML template with the given context.
+    #
+    # The view contains an embedded Mayavi QWidget showing a visualization of
+    # the domain model. Moving the sliders on the UI changes the domain model and
+    # hence the Mayavi visualization.
+    view = QtView(template=template, context={'scene_controller': scene_controller})
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
 if __name__ == "__main__":
     main()

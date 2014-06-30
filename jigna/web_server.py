@@ -15,7 +15,6 @@ from os.path import join, dirname
 import traceback
 
 # 3rd party library.
-from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
 
@@ -76,27 +75,29 @@ class WebServer(Server):
 
     ### 'WebServer' protocol ##################################################
 
-    #: Port to serve the UI on.
-    #:
-    #: Default to 8888.
-    port = Int(8888)
-
-    #: Address where we listen.  Defaults to localhost.
-    address = Str
+    #: The tornado `Application` object which specifies rules about how to handle
+    #: different requests etc.
+    application = Instance(Application)
 
     #### 'Server' protocol ####################################################
 
-    def serve(self):
-        """ Start the server.
-
-        This is a *blocking* call.
-
+    def initialize(self):
+        """ Initialize the web server. This simply creates the web application
+        to serve the Python model.
         """
-        application = self._create_application()
-        application.listen(self.port, address=self.address)
+        settings = {
+            'static_path'       : join(dirname(__file__), 'js', 'dist'),
+            'static_url_prefix' : '/jigna/'
+        }
 
-        ioloop = IOLoop.instance()
-        ioloop.start()
+        self.application = Application(
+            [
+                (r"/_jigna_ws", JignaSocket,   dict(bridge=self._bridge, server=self)),
+                (r"/_jigna",    GetFromBridge, dict(server=self)),
+                (r".*",         MainHandler,   dict(server=self)),
+            ],
+            **settings
+        )
 
         return
 
@@ -108,25 +109,6 @@ class WebServer(Server):
     _bridge = Instance(WebBridge)
     def __bridge_default(self):
         return WebBridge()
-
-    def _create_application(self):
-        """ Create the Web Application. """
-
-        settings = {
-            'static_path'       : join(dirname(__file__), 'js', 'dist'),
-            'static_url_prefix' : '/jigna/'
-        }
-
-        application = Application(
-            [
-                (r"/_jigna_ws", JignaSocket,   dict(bridge=self._bridge, server=self)),
-                (r"/_jigna",    GetFromBridge, dict(server=self)),
-                (r".*",         MainHandler,   dict(server=self)),
-            ],
-            **settings
-        )
-
-        return application
 
 ##### Request handlers ########################################################
 

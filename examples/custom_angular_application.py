@@ -6,8 +6,7 @@ would need a custom angularjs application to add some view related logic.
 #### Imports ####
 
 from traits.api import HasTraits, Enum, Int
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 import time
 
 #### Domain model ####
@@ -30,22 +29,23 @@ class StopWatch(HasTraits):
 
 #### UI layer ####
 
-clock_view = View(html_file='custom_angular_application.html')
+template = Template(html_file='custom_angular_application.html')
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     clock = StopWatch()
 
-    # Render the view with the domain model added to the context
-    clock_view.show(clock=clock)
+    # Create a QtView to render the HTML template with the given context.
+    #
+    # The operations on the clock can be controlled from the UI. The view
+    # related logic is such that it always displays the integer time of the
+    # domain model in a proper hh:mm:ss format.
+    view = QtView(template=template, context={'clock':clock})
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
     # Check the values after the UI is closed
     print clock.time, "seconds"

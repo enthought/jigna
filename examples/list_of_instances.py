@@ -6,8 +6,7 @@ an instance (non-primitive) type.
 #### Imports ####
 
 from traits.api import HasTraits, Instance, Str, List
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -30,27 +29,27 @@ body_html = """
     </div>
 """
 
-person_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     fred = Person(name='Fred', friends=[Person(name='Dino')])
 
-    # Render the view with the domain model added to the context
-    person_view.show(person=fred)
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'person':fred})
 
-    # Schedule some operations on the list
+    # Schedule some operations on the list.
+    #
+    # We're trying to append and insert instances in the list in the future.
+    # This should be reflected in the UI.
     from pyface.timer.api import do_after
     do_after(2500, fred.friends.append, Person(name='Wilma'))
     do_after(5000, fred.friends.insert, 0, Person(name='Barney'))
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
     # Check the final values of the list attribute
     print [friend.name for friend in fred.friends]

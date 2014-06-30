@@ -11,12 +11,15 @@
 
 # Standard library.
 import json
+from os.path import abspath, dirname, join
 
 # Enthought library.
 from traits.api import Any, Str, Instance
 from pyface.qt import QtWebKit
 
 # Jigna libary.
+from jigna.core.html_widget import HTMLWidget
+from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
 
 class QtBridge(Bridge):
@@ -31,7 +34,7 @@ class QtBridge(Bridge):
 
         if self.widget is None:
             raise RuntimeError("Widget does not exist")
-        
+
         else:
             # This looks weird but this is how we fake an event being 'received'
             # on the client side when using the Qt bridge!
@@ -43,41 +46,62 @@ class QtBridge(Bridge):
 
     #### 'QtBridge' protocol ##################################################
 
-    #: The 'HTMLWidget' that contains the QtWebLit malarky.
+    #: The 'HTMLWidget' that contains the QtWebKit malarky.
     widget = Any
 
 
 class QtServer(Server):
     """ Qt (via QWebkit) server implementation. """
 
-    #: The trait change dispatch mechanism to use when traits change.
-    trait_change_dispatch = Str('ui')
+    ### 'QtServer' protocol ##################################################
 
-    def connect(self, widget):
-        """ Connect the supplied widget to the server by attaching necessary
-        callbacks and loading the html in it.
+    #: The `HTMLWidget` object which specifies rules about how to handle
+    #: different requests etc.
+    widget = Instance(HTMLWidget)
+    def _widget_default(self):
+        return HTMLWidget()
+
+    #### 'Server' protocol ####################################################
+
+    def initialize(self):
+        """ Initialize the Qt server. This simply configures the widget to serve
+        the Python model.
         """
+        self._bridge = QtBridge(widget=self.widget)
 
-        self._bridge.widget = widget
-
-        widget.trait_set(
+        self.widget.trait_set(
+            root_paths = {
+                'jigna': FileLoader(
+                    root = join(abspath(dirname(__file__)), 'js', 'dist')
+                )
+            },
+            open_externally = True,
+            debug = True,
             callbacks = [('handle_request', self.handle_request)],
             python_namespace = 'qt_bridge'
         )
 
-        widget.create()
+        return
+
+    #: The trait change dispatch mechanism to use when traits change.
+    trait_change_dispatch = Str('ui')
+
+    #### 'QtServer' protocol ##################################################
+
+    def connect(self, widget):
+        """ Connect the given widget to the server. This includes loading the
+        html and also enabling custom widget embedding etc. The widget must be
+        created already to use this method.
+        """
+        widget.load_html(self.html, self.base_url)
 
         self._enable_qwidget_embedding(widget)
 
-        widget.load_html(self.html, self.base_url)
-
     #### Private protocol #####################################################
-    
-    _bridge = Instance(QtBridge)
-    def __bridge_default(self):
-        return QtBridge()
 
-    _factory = Instance('QtWebPluginFactory')
+    _bridge = Instance(QtBridge)
+
+    _plugin_factory = Instance('QtWebPluginFactory')
 
     def _enable_qwidget_embedding(self, widget):
         """ Allow generic qwidgets to be embedded in the generated QWebView.
@@ -85,8 +109,8 @@ class QtServer(Server):
         global_settings = QtWebKit.QWebSettings.globalSettings()
         global_settings.setAttribute(QtWebKit.QWebSettings.PluginsEnabled, True)
 
-        self._factory = QtWebPluginFactory(context=self.context)
-        widget.control.page().setPluginFactory(self._factory)
+        self._plugin_factory = QtWebPluginFactory(context=self.context)
+        widget.control.page().setPluginFactory(self._plugin_factory)
 
 
 class QtWebPluginFactory(QtWebKit.QWebPluginFactory):
@@ -113,8 +137,8 @@ class QtWebPluginFactory(QtWebKit.QWebPluginFactory):
             return
 
         args = dict(zip(argNames, argVals))
-        factory = eval(args.get('widget-factory'), self.context)
-        
-        return factory()
+        widget_factory = eval(args.get('widget-factory'), self.context)
+
+        return widget_factory()
 
 #### EOF ######################################################################

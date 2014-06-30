@@ -7,8 +7,7 @@ an <object> tag.
 
 from traits.api import HasTraits, CInt, Instance
 from chaco.api import Plot, ArrayPlotData
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -53,7 +52,7 @@ class PlotController(HasTraits):
         from enable.api import ComponentEditor
 
         view = View(Item('plot', editor=ComponentEditor(), show_label=False))
-        ui = self.edit_traits(view=view, parent=QtGui.QWidget(), kind='subpanel')
+        ui = self.edit_traits(view=view, parent=None, kind='subpanel')
 
         return ui.control
 
@@ -78,22 +77,23 @@ body_html = """
     </div>
 """
 
-plot_controller_view = View(body_html=body_html)
+template = Template(body_html=body_html, recommended_size=(600, 600))
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
-
     # Instantiate the domain model
     plot_controller = PlotController(scaling_factor=0.5)
 
-    # Render the view with the domain model added to the context
-    plot_controller_view.show(plot_controller=plot_controller)
+    # Create a QtView to render the HTML template with the given context.
+    #
+    # The widget contains an embedded Chaco QWidget showing a 2D plot of
+    # the domain model. Moving the slider on the UI changes the domain model
+    # and hence the Chaco plot.
+    view = QtView(template=template, context={'plot_controller': plot_controller})
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
 if __name__ == "__main__":
     main()

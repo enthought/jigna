@@ -7,8 +7,7 @@ also pass instances.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str, Instance
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -44,25 +43,26 @@ body_html = """
     </div>
 """
 
-person_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication([])
-
     # Instantiate the domain models
     fred = Person(name='Fred', age=14)
     wilma = Person(name='Wilma', age=25)
 
-    # Render the view with the domain models added to the context
-    person_view.show(person=fred, spouse=wilma)
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'person':fred, 'spouse':wilma})
 
-    # Start the event loop
-    app.exec_()
+    # Start the event loop.
+    #
+    # Clicking on the buttons in the UI will make blocking calls to the
+    # corresponding methods on the domain model. You can supply primitive as
+    # well as instance objects as arguments of the method.
+    view.start()
 
-    # Check the final values
+    # Check the final values after the UI is closed
     print fred.name, fred.age, fred.spouse.name
 
 if __name__ == '__main__':

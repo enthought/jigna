@@ -6,8 +6,7 @@ the primitive type.
 #### Imports ####
 
 from traits.api import HasTraits, Str, List
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -40,27 +39,27 @@ body_html = """
     </div>
 """
 
-basket_view = View(body_html=body_html)
+template = Template(body_html=body_html)
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     basket = Basket(fruits=['peach', 'pear'])
 
-    # Render the view with the domain model added to the context
-    basket_view.show(basket=basket)
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'basket':basket})
 
-    # Schedule some operations on the list
+    # Schedule some operations on the list.
+    #
+    # We're trying to append and insert primitives to the list in the future.
+    # This should be reflected in the UI.
     from pyface.timer.api import do_after
     do_after(2500, basket.fruits.append, 'mango')
     do_after(5000, basket.fruits.insert, 0, 'banana')
 
     # Start the event loop
-    app.exec_()
+    view.start()
 
     # Check the final values of the list attribute
     print basket.fruits

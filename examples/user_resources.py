@@ -6,8 +6,7 @@ and image files in your html by specifying a base url.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
-from pyface.qt import QtGui
-from jigna.api import View
+from jigna.api import Template, QtView
 
 #### Domain model ####
 
@@ -31,22 +30,25 @@ body_html = """
 
 # The base_url field specifies where to look when trying to get external
 # resources(defaults to an empty string, i.e. the current directory)
-person_view = View(body_html=body_html, base_url='user_resources_data/')
+template = Template(body_html=body_html, base_url='user_resources_data/',
+    recommended_size=(600, 600)
+)
 
 #### Entry point ####
 
 def main():
-    # Start a QtGui application
-    app = QtGui.QApplication([])
-
     # Instantiate the domain model
     lena = Person(name='Lena', age=28)
 
-    # Render the view with the domain model added to the context
-    person_view.show(person=lena)
+    # Create a QtView to render the HTML template with the given context.
+    view = QtView(template=template, context={'person':lena})
 
-    # Start the event loop
-    app.exec_()
+    # Start the event loop.
+    #
+    # You should see that user resources like CSS, images and custom JS are
+    # pulled in properly from the `user_resources_data` directory and displayed
+    # in the view.
+    view.start()
 
 if __name__ == "__main__":
     main()
