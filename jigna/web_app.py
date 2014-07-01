@@ -19,17 +19,18 @@ from tornado.ioloop import IOLoop
 from tornado import web
 
 # Local Library
-from view import View
+from app import App
 
-class WebAppView(View):
-    """ A web based View to serve the jigna template of a given context. """
+class WebApp(App):
+    """ A web based App to serve the jigna template with a given context over
+    the web where it can be viewed using a regular web browser. """
 
-    #### 'View' protocol ######################################################
+    #### 'App' protocol ######################################################
 
     def start(self):
         """
-        Create the web app and start the web server's event loop. This
-        is a *blocking* call.
+        Create the web app to serve jigna and start the web server's event loop.
+        This is a *blocking* call.
         """
         ioloop = IOLoop.instance()
 
@@ -38,10 +39,14 @@ class WebAppView(View):
 
         ioloop.start()
 
-    #### 'WebAppView' protocol ################################################
+    #### 'WebApp' protocol ####################################################
 
+    #: The tornado web application which serves the jigna application models
+    #: through the web server. Clients connect to this application to populate
+    #: their views.
     web_app = Instance(web.Application)
 
+    #: Port at which the web application is to be run.
     port = Int(8000)
 
     def create_web_app(self):

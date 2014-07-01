@@ -14,10 +14,10 @@ from traits.api import HasTraits, Instance, Dict
 from jigna.api import Template
 from jigna.server import Server
 
-class View(HasTraits):
-    """ An abstract class to represent a jigna view. """
+class App(HasTraits):
+    """ An abstract class to represent a jigna app. """
 
-    #### 'View' protocol ######################################################
+    #### 'App' protocol ######################################################
 
     #: The jigna template object which contains the HTML template and the JS
     #: code to bind it to Python domain models.
@@ -30,7 +30,7 @@ class View(HasTraits):
 
     def start(self):
         """
-        The (usually) blocking call to start the view.
+        The (usually) blocking call to start the app.
         """
         raise NotImplementedError
 
