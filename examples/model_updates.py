@@ -6,7 +6,7 @@ reflected in the HTML view.
 #### Imports ####
 
 from traits.api import HasTraits, Str
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -32,8 +32,8 @@ def main():
     # Instantiate the domain model
     motd = MOTD(message="Explicit is better than implicit.")
 
-    # Create a QtView to render the HTML template with the given context.
-    view = QtView(template=template, context={'motd':motd})
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(template=template, context={'motd':motd})
 
     # Schedule an update to a model variable after 2.5 seconds. This update
     # will be reflected in the UI immediately.
@@ -41,7 +41,7 @@ def main():
     do_after(2500, motd.update_message, "Flat is better than nested.")
 
     # Start the event loop
-    view.start()
+    app.start()
 
 if __name__ == "__main__":
     main()

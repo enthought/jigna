@@ -6,7 +6,7 @@ a full html file, rather than specifying body_html and head_html.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -27,11 +27,11 @@ def main():
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create a QtView to render the HTML template with the given context.
-    view = QtView(template=template, context={'person': fred})
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(template=template, context={'person': fred})
 
     # Start the event loop
-    view.start()
+    app.start()
 
     # Check the values after the UI is closed
     print fred.name, fred.age

@@ -5,7 +5,7 @@ This example shows how to serve a simple jigna view over the web.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
-from jigna.api import Template, WebAppView
+from jigna.api import Template, WebApp
 
 #### Domain model ####
 
@@ -32,14 +32,14 @@ def main():
 
     # Create a web app serving the view with the domain model added to its
     # context.
-    view = WebAppView(template=template, context={'person': fred}, port=8000)
+    app = WebApp(template=template, context={'person': fred}, port=8000)
 
     # Start serving the web app on port 8000.
     #
     # Point your web browser to http://localhost:8000/ to connect to this jigna
     # web app. Any operation performed on the client directly update the
     # model attributes on the server.
-    view.start()
+    app.start()
 
 if __name__ == "__main__":
     main()

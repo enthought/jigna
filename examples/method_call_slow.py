@@ -9,21 +9,21 @@ safety related issues with that method.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str, Instance
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 import time
 
 #### Domain model ####
 
-class App(HasTraits):
+class Package(HasTraits):
     name = Str
     version = Str
 
 class Installer(HasTraits):
-    current = Instance('App')
+    current = Instance('Package')
     progress = Int
 
-    def install(self, app):
-        self.current = app
+    def install(self, package):
+        self.current = package
         while self.progress < 100:
             time.sleep(0.5)
             self.progress += 10
@@ -34,8 +34,8 @@ body_html = """
     <div>
         <!-- Show a button initially to install in a thread -->
         <button ng-show="installer.progress==0"
-                ng-click="jigna.threaded(installer, 'install', new_app)">
-            Install {{new_app.name}}-{{new_app.version}}
+                ng-click="jigna.threaded(installer, 'install', new_package)">
+            Install {{new_package.name}}-{{new_package.version}}
         </button>
 
         <!-- Show an "Installing..." text while progress is between 0 and 100 -->
@@ -76,12 +76,12 @@ template = Template(body_html=body_html)
 def main():
     # Instantiate the domain models
     installer = Installer()
-    pandas = App(name='Pandas', version='1.0')
+    pandas = Package(name='Pandas', version='1.0')
 
-    # Create a QtView to render the HTML template with the given context.
-    view = QtView(
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(
         template=template,
-        context={'installer': installer, 'new_app': pandas}
+        context={'installer': installer, 'new_package': pandas}
     )
 
     # Start the event loop.
@@ -89,7 +89,7 @@ def main():
     # Clicking on the button in the UI will call the `install` method in a
     # thread so that the UI is still responsive while the method is executing.
     # The progress bar is also updated as the method progresses.
-    view.start()
+    app.start()
 
     # Check the final values
     print installer.current.name, installer.current.version

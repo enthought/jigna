@@ -6,7 +6,7 @@ would need a custom angularjs application to add some view related logic.
 #### Imports ####
 
 from traits.api import HasTraits, Enum, Int
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 import time
 
 #### Domain model ####
@@ -37,15 +37,15 @@ def main():
     # Instantiate the domain model
     clock = StopWatch()
 
-    # Create a QtView to render the HTML template with the given context.
+    # Create a QtApp to render the HTML template with the given context.
     #
     # The operations on the clock can be controlled from the UI. The view
     # related logic is such that it always displays the integer time of the
     # domain model in a proper hh:mm:ss format.
-    view = QtView(template=template, context={'clock':clock})
+    app = QtApp(template=template, context={'clock':clock})
 
     # Start the event loop
-    view.start()
+    app.start()
 
     # Check the values after the UI is closed
     print clock.time, "seconds"

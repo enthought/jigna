@@ -6,7 +6,7 @@ the primitive type.
 #### Imports ####
 
 from traits.api import HasTraits, Str, List
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -47,8 +47,8 @@ def main():
     # Instantiate the domain model
     basket = Basket(fruits=['peach', 'pear'])
 
-    # Create a QtView to render the HTML template with the given context.
-    view = QtView(template=template, context={'basket':basket})
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(template=template, context={'basket':basket})
 
     # Schedule some operations on the list.
     #
@@ -59,7 +59,7 @@ def main():
     do_after(5000, basket.fruits.insert, 0, 'banana')
 
     # Start the event loop
-    view.start()
+    app.start()
 
     # Check the final values of the list attribute
     print basket.fruits

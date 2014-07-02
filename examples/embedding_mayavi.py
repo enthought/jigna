@@ -12,7 +12,7 @@ underlying QWidget when you embed it in jigna view.
 from traits.api import HasTraits, Instance, CInt, on_trait_change
 from mayavi.core.api import PipelineBase
 from mayavi.core.ui.api import MlabSceneModel
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -91,15 +91,15 @@ def main():
     # Instantiate the domain model
     scene_controller = SceneController()
 
-    # Create a QtView to render the HTML template with the given context.
+    # Create a QtApp to render the HTML template with the given context.
     #
     # The view contains an embedded Mayavi QWidget showing a visualization of
     # the domain model. Moving the sliders on the UI changes the domain model and
     # hence the Mayavi visualization.
-    view = QtView(template=template, context={'scene_controller': scene_controller})
+    app = QtApp(template=template, context={'scene_controller': scene_controller})
 
     # Start the event loop
-    view.start()
+    app.start()
 
 if __name__ == "__main__":
     main()

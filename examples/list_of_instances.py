@@ -6,7 +6,7 @@ an instance (non-primitive) type.
 #### Imports ####
 
 from traits.api import HasTraits, Instance, Str, List
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -37,8 +37,8 @@ def main():
     # Instantiate the domain model
     fred = Person(name='Fred', friends=[Person(name='Dino')])
 
-    # Create a QtView to render the HTML template with the given context.
-    view = QtView(template=template, context={'person':fred})
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(template=template, context={'person':fred})
 
     # Schedule some operations on the list.
     #
@@ -49,7 +49,7 @@ def main():
     do_after(5000, fred.friends.insert, 0, Person(name='Barney'))
 
     # Start the event loop
-    view.start()
+    app.start()
 
     # Check the final values of the list attribute
     print [friend.name for friend in fred.friends]

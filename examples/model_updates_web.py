@@ -7,7 +7,7 @@ the web version.
 
 from traits.api import HasTraits, Str
 from tornado.ioloop import IOLoop
-from jigna.api import Template, WebAppView
+from jigna.api import Template, WebApp
 import datetime
 
 #### Domain model ####
@@ -39,7 +39,7 @@ def main():
 
     # Create a web app serving the view with the domain model added to its
     # context.
-    webapp_view = WebAppView(template=template, context={'motd':motd}, port=8000)
+    web_app = WebApp(template=template, context={'motd':motd}, port=8000)
 
     # Schedule an update to a model variable after 10 seconds. If the user's
     # browser is connected to the web app before 10 seconds, it will see the
@@ -55,7 +55,7 @@ def main():
     )
 
     # Start serving the web app on port 8000.
-    webapp_view.start()
+    web_app.start()
 
 if __name__ == "__main__":
     main()

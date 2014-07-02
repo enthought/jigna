@@ -7,7 +7,7 @@ also pass instances.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str, Instance
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -52,15 +52,15 @@ def main():
     fred = Person(name='Fred', age=14)
     wilma = Person(name='Wilma', age=25)
 
-    # Create a QtView to render the HTML template with the given context.
-    view = QtView(template=template, context={'person':fred, 'spouse':wilma})
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(template=template, context={'person':fred, 'spouse':wilma})
 
     # Start the event loop.
     #
     # Clicking on the buttons in the UI will make blocking calls to the
     # corresponding methods on the domain model. You can supply primitive as
     # well as instance objects as arguments of the method.
-    view.start()
+    app.start()
 
     # Check the final values after the UI is closed
     print fred.name, fred.age, fred.spouse.name

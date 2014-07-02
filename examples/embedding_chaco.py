@@ -7,7 +7,7 @@ an <object> tag.
 
 from traits.api import HasTraits, CInt, Instance
 from chaco.api import Plot, ArrayPlotData
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -85,15 +85,15 @@ def main():
     # Instantiate the domain model
     plot_controller = PlotController(scaling_factor=0.5)
 
-    # Create a QtView to render the HTML template with the given context.
+    # Create a QtApp to render the HTML template with the given context.
     #
     # The widget contains an embedded Chaco QWidget showing a 2D plot of
     # the domain model. Moving the slider on the UI changes the domain model
     # and hence the Chaco plot.
-    view = QtView(template=template, context={'plot_controller': plot_controller})
+    app = QtApp(template=template, context={'plot_controller': plot_controller})
 
     # Start the event loop
-    view.start()
+    app.start()
 
 if __name__ == "__main__":
     main()

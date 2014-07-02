@@ -5,7 +5,7 @@ This example shows two-way data binding on an `Instance` trait.
 #### Imports ####
 
 from traits.api import HasTraits, Instance, Str
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -37,8 +37,8 @@ def main():
     fred = Person(name='Fred')
     wilma = Person(name='Wilma')
 
-    # Create a QtView to render the HTML template with the given context.
-    view = QtView(template=template, context={'person':fred})
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(template=template, context={'person':fred})
 
     # Schedule some operations on the domain model.
     #
@@ -51,7 +51,7 @@ def main():
     #
     # Initially, the `spouse` field of the person is empty, so the fields
     # related to the spouse should be empty in the UI.
-    view.start()
+    app.start()
 
     # Check the final values of the instance
     print fred.name, fred.spouse.name, wilma.name

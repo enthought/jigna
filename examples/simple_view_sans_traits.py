@@ -5,7 +5,7 @@ in this case, i.e. from the UI to the model.
 
 #### Imports ####
 
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -31,14 +31,14 @@ def main():
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create a QtView to render the HTML template with the given context.
+    # Create a QtApp to render the HTML template with the given context.
     #
     # This will behave as a static page since we don't have the traits
     # machinery here to reflect model updates in the view.
-    view = QtView(template=template, context={'person': fred})
+    app = QtApp(template=template, context={'person': fred})
 
     # Start the event loop
-    view.start()
+    app.start()
 
     # Check the values after the UI is closed
     print fred.name, fred.age

@@ -6,7 +6,7 @@ and image files in your html by specifying a base url.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -40,15 +40,15 @@ def main():
     # Instantiate the domain model
     lena = Person(name='Lena', age=28)
 
-    # Create a QtView to render the HTML template with the given context.
-    view = QtView(template=template, context={'person':lena})
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(template=template, context={'person':lena})
 
     # Start the event loop.
     #
     # You should see that user resources like CSS, images and custom JS are
     # pulled in properly from the `user_resources_data` directory and displayed
     # in the view.
-    view.start()
+    app.start()
 
 if __name__ == "__main__":
     main()
