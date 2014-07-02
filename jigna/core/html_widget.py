@@ -1,10 +1,8 @@
 #
 # Jigna product code
 #
-# (C) Copyright 2013 Enthought, Inc., Austin, TX  
-# All right reserved.  
-#
-# This file is confidential and NOT open source.  Do not distribute.
+# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# All right reserved.
 #
 
 # Standard library imports.
@@ -132,7 +130,7 @@ class HTMLWidget(Widget):
             control.pageAction(action).setVisible(False)
 
         # Install the access manager.
-        self._network_access = ProxyAccessManager(root_paths=self.root_paths, 
+        self._network_access = ProxyAccessManager(root_paths=self.root_paths,
                                                   hosts=self.hosts)
         self._network_access.inject(control)
 
@@ -202,7 +200,7 @@ class HTMLWidget(Widget):
         """ Navigate forward in history.
         """
         self.control.forward()
-        
+
     def reload(self):
         """ Reload the current web page.
         """

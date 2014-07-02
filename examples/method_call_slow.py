@@ -1,4 +1,5 @@
-""" This example shows how to call slow methods of the application model such
+"""
+This example shows how to call slow methods of the application model such
 that the UI doesn't block while the method is executing. We present an API to
 call such methods in a thread.
 

@@ -1,10 +1,8 @@
 #
 # Jigna product code
 #
-# (C) Copyright 2013 Enthought, Inc., Austin, TX  
-# All right reserved.  
-#
-# This file is confidential and NOT open source.  Do not distribute.
+# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# All right reserved.
 #
 
 # Enthought library imports.
@@ -19,7 +17,7 @@ class IHTMLWidget(IWidget):
     The widget has support for HTML rendering, URL navigation, and
     Python-Javascript interoperation.
     """
-    
+
     #### 'IHTMLWidget' interface ##############################################
 
     # The URL for the current page. Read only.
@@ -71,7 +69,7 @@ class IHTMLWidget(IWidget):
     click_schemes = Dict(Str, Callable)
 
     # A list of hosts and wsgi apps to handle them
-    # (http://www.python.org/dev/peps/pep-3333/), e.g., 
+    # (http://www.python.org/dev/peps/pep-3333/), e.g.,
     #
     #     ('doc.jigna', doc_url_to_html)
     #
@@ -90,7 +88,7 @@ class IHTMLWidget(IWidget):
     # The name of the Javascript object that will contain the registered
     # callbacks and properties.
     python_namespace = Str('python')
-    
+
     ###########################################################################
     # 'IHTMLWidget' interface.
     ###########################################################################
@@ -135,11 +133,11 @@ class IHTMLWidget(IWidget):
     def forward(self):
         """ Navigate forward in history.
         """
-        
+
     def reload(self):
         """ Reload the current web page.
         """
-        
+
     def stop(self):
         """ Stop loading the curent web page.
         """

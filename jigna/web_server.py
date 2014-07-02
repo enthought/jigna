@@ -4,8 +4,7 @@
 # (C) Copyright 2013 Enthought, Inc., Austin, TX
 # All right reserved.
 #
-# This file is confidential and NOT open source.  Do not distribute.
-#
+
 """ Web implementations of the Jigna Server and Bridge. """
 
 
@@ -19,7 +18,7 @@ from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler
 
 # Enthought library.
-from traits.api import List, Str, Int, Instance
+from traits.api import List, Str, Instance
 
 # Jigna library.
 from jigna.server import Bridge, Server

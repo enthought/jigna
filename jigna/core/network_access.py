@@ -4,8 +4,6 @@
 # (C) Copyright 2013 Enthought, Inc., Austin, TX
 # All right reserved.
 #
-# This file is confidential and NOT open source.  Do not distribute.
-#
 
 # Standard library imports.
 import logging
@@ -35,7 +33,7 @@ class ProxyAccessManager(QNetworkAccessManager):
         self.hosts = hosts
 
     def get_url_handler(self, url):
-        """ Returns the WSGI callable to be used for specified url. 
+        """ Returns the WSGI callable to be used for specified url.
         """
         handler = self.hosts.get(url.host())
 
@@ -73,7 +71,7 @@ class ProxyAccessManager(QNetworkAccessManager):
             logger.debug('Proxying request to %s' % str_url)
             data_str = data and data.readAll() or ''
             return ProxyReply(self, url, operation, request, data_str, handler)
-        
+
         # Default case, let superclass handle normal web access
         return super(ProxyAccessManager, self).createRequest(
             operation, request, data)

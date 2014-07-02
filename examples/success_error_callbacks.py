@@ -1,4 +1,5 @@
-""" This example shows how to attach 'done' and 'error' callbacks to a slow
+"""
+This example shows how to attach 'done' and 'error' callbacks to a slow
 method call.
 """
 

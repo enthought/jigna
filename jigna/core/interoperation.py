@@ -1,10 +1,8 @@
 #
 # Jigna product code
 #
-# (C) Copyright 2013 Enthought, Inc., Austin, TX  
-# All right reserved.  
-#
-# This file is confidential and NOT open source.  Do not distribute.
+# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# All right reserved.
 #
 
 # Standard library imports.
@@ -122,7 +120,7 @@ def wrap_func(func, name=None):
         args = inspect.getargspec(func).args
     except TypeError:
         return None
-        
+
     if args and args[0] in ('self', 'cls'):
         args.pop(0)
     types = ['QVariant'] * len(args)
