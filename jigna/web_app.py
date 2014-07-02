@@ -32,22 +32,22 @@ class WebApp(App):
         """
         ioloop = IOLoop.instance()
 
-        self.create_web_app()
-        self.web_app.listen(self.port)
+        self.create_application()
+        self.application.listen(self.port)
 
         ioloop.start()
 
     #### 'WebApp' protocol ####################################################
 
-    #: The tornado web application which serves the jigna application models
-    #: through the web server. Clients connect to this application to populate
-    #: their views.
-    web_app = Instance(web.Application)
+    #: The tornado web Application object which serves through a web server the
+    #: jigna template rendered with the context. Clients connect to this
+    #: application to populate their views.
+    application = Instance(web.Application)
 
     #: Port at which the web application is to be run.
     port = Int(8000)
 
-    def create_web_app(self):
+    def create_application(self):
         """ Create the web application serving the given context. Returns the
         tornado application created. """
 
@@ -60,6 +60,6 @@ class WebApp(App):
         )
         self._server.initialize()
 
-        self.web_app = self._server.application
+        self.application = self._server.application
 
-        return self.web_app
+        return self.application

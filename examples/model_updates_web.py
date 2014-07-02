@@ -39,7 +39,7 @@ def main():
 
     # Create a web app serving the view with the domain model added to its
     # context.
-    web_app = WebApp(template=template, context={'motd':motd}, port=8000)
+    app = WebApp(template=template, context={'motd':motd}, port=8000)
 
     # Schedule an update to a model variable after 10 seconds. If the user's
     # browser is connected to the web app before 10 seconds, it will see the
@@ -55,7 +55,7 @@ def main():
     )
 
     # Start serving the web app on port 8000.
-    web_app.start()
+    app.start()
 
 if __name__ == "__main__":
     main()
