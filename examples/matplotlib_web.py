@@ -1,86 +1,101 @@
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
-from StringIO import StringIO
-from traits.api import HasTraits, CInt, Str
+#### Imports ####
 
-def get_svg_plot():
-    """Return SVG string of a matplotlib plot.
+from traits.api import HasTraits, CInt, Str, Property, Array, Instance, on_trait_change
+from numpy import linspace, sin, pi
+from jigna.api import Template, WebApp
+
+#### Domain model ####
+
+class DomainModel(HasTraits):
     """
-    stream = StringIO()
-    plt.savefig(stream, format='svg')
-    stream.seek(0)
-    return stream.buf
-
-def get_png_plot():
-    """Return PNG string of a matplotlib plot after base64 encoding it.
+    The algorithmic domain model which specifies the mathematical relationship
+    between x and y.
     """
-    stream = StringIO()
-    plt.savefig(stream, format='png')
-    stream.seek(0)
-    return stream.buf.encode('base64')
+
+    #: Independent variable of the domain equation
+    x = Array
+    def _x_default(self):
+        return linspace(-2*pi, 2*pi, 200)
+
+    #: Dependent variable of the domain equation
+    y = Property(Array, depends_on=['x', 'scaling_factor'])
+    def _get_y(self):
+        return sin(self.scaling_factor * self.x) / self.x
+
+    #: A scaling factor to tune the output
+    scaling_factor = CInt
 
 
-class Model(HasTraits):
-    scaling_factor = CInt(1)
+#### Controller layer ####
 
-    plot_output = Str
+class PlotController(HasTraits):
+    """
+    A Controller class which creates a matplotlib plot object (in the form of a
+    png image bytestream) for the given domain model.
+    """
 
-    def _make_plot(self):
-        x = np.linspace(-2*np.pi, 2*np.pi, 200)
-        y = np.sin(self.scaling_factor*x)/x
-        plt.clf()
-        plt.plot(x, y)
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.title("sin(%s x)/x"%self.scaling_factor)
+    #: Instance of the domain model which is being displayed by this controller
+    domain_model = Instance(DomainModel)
 
-    def _scaling_factor_changed(self, value):
-        self._make_plot()
-        self.plot_output = self.get_plot()
+    #: The 'png' bytestream representation of the matplotlib plot object
+    plot = Str
 
-    def _plot_output_default(self):
-        self._make_plot()
-        return self.get_plot()
+    @on_trait_change('domain_model.scaling_factor')
+    def update_plot(self):
+        # Use the Agg backend to generate images without making the window appear
+        import matplotlib
+        matplotlib.use('Agg')
 
-    def get_plot(self):
-        return get_png_plot()
+        # Generate the plot
+        from matplotlib import pyplot
+        pyplot.clf()
+        pyplot.plot(self.domain_model.x, self.domain_model.y)
 
-    def get_html(self):
-        return self._get_png_html()
+        # Generate image data in png format
+        from StringIO import StringIO
+        stream = StringIO()
+        pyplot.savefig(stream, format='png')
+        stream.seek(0)
+        self.plot = stream.buf.encode('base64')
 
-    def _get_svg_html(self):
-        body_html = """
-            <div>
-            Scaling factor: <input type="range" ng-model="model.scaling_factor"
-                            min=0 max=30><br>
-            Plot:<br>
-            <div ng-bind-html-unsafe="model.plot_output">{{model.plot_output}}</div>
-            </div>
-        """
-        return body_html
+#### UI layer ####
 
-    def _get_png_html(self):
-        body_html = """
-                <div>
-                Scaling factor: <input type="range" ng-model="model.scaling_factor"
-                                min=0 max=30><br>
-                Plot:<br>
-                <div>
-                <img src="data:image/png;base64,{{model.plot_output}}">
-                </div>
-                </div>
-            """
-        return body_html
+body_html = """
+   <div>
+        Scaling factor: <input type="range" ng-model="domain_model.scaling_factor"
+                        min=0 max=30><br>
+        Plot:<br>
+        <img ng-src="data:image/png;base64,{{plot_controller.plot}}">
+    </div>
+"""
 
+template = Template(body_html=body_html)
 
-def test_standalone():
-    model = Model()
-    from jigna.api import View
-    v = View(body_html=model.get_html())
-    v.serve(model=model)
+#### Entry point ####
 
+def main():
+    # Instantiate the domain model and the plot controller
+    domain_model = DomainModel(scaling_factor=0.5)
+    plot_controller = PlotController(domain_model=domain_model)
 
-if __name__ == '__main__':
-    test_standalone()
+    # Create a WebApp to render the HTML template with the given context.
+    #
+    # The web app shows a matplotlib plot in a browser by displaying the png
+    # image of the plot. Moving the HTML slider on the UI changes the domain
+    # model and hence the plot image.
+    app = WebApp(
+        template=template,
+        context={
+            'domain_model': domain_model,
+            'plot_controller': plot_controller
+        },
+        port=8000
+    )
+
+    # Start the event loop
+    app.start()
+
+if __name__ == "__main__":
+    main()
+
+#### EOF ######################################################################

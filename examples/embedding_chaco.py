@@ -39,7 +39,7 @@ class PlotController(HasTraits):
     model.
     """
 
-    #: Instance of the domain model which is being governed by this controller
+    #: Instance of the domain model which is being displayed by this controller
     domain_model = Instance(DomainModel)
 
     # The Chaco Plot object. This is the object which is usually visualized via
@@ -106,7 +106,8 @@ def main():
     # The widget contains an embedded Chaco QWidget showing a 2D plot of
     # the domain model. Moving the slider on the UI changes the domain model
     # and hence the Chaco plot.
-    app = QtApp(template=template,
+    app = QtApp(
+        template=template,
         context={
             'domain_model': domain_model,
             'plot_controller': plot_controller

@@ -34,12 +34,13 @@ class WebBridge(Bridge):
 
         try:
             jsonized_event = json.dumps(event)
-            message_id = -1
-            data = json.dumps([message_id, jsonized_event])
-            for socket in self._active_sockets:
-                socket.write_message(data)
-        except:
-            traceback.print_exc()
+        except TypeError:
+            return
+
+        message_id = -1
+        data = json.dumps([message_id, jsonized_event])
+        for socket in self._active_sockets:
+            socket.write_message(data)
 
         return
 
