@@ -98,7 +98,7 @@ template = Template(body_html=body_html, recommended_size=(600, 600))
 
 def main():
     # Instantiate the domain model and the plot controller
-    domain_model = DomainModel(scaling_factor=0.5)
+    domain_model = DomainModel(scaling_factor=50)
     plot_controller = PlotController(domain_model=domain_model)
 
     # Create a QtApp to render the HTML template with the given context.

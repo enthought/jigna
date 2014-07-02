@@ -25,7 +25,6 @@ class DomainModel(HasTraits):
     #: A scaling factor to tune the output
     scaling_factor = CInt
 
-
 #### Controller layer ####
 
 class PlotController(HasTraits):
@@ -75,7 +74,7 @@ template = Template(body_html=body_html)
 
 def main():
     # Instantiate the domain model and the plot controller
-    domain_model = DomainModel(scaling_factor=0.5)
+    domain_model = DomainModel(scaling_factor=15)
     plot_controller = PlotController(domain_model=domain_model)
 
     # Create a WebApp to render the HTML template with the given context.
