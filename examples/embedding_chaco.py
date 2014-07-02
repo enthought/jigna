@@ -5,40 +5,42 @@ an <object> tag.
 
 #### Imports ####
 
-from traits.api import HasTraits, CInt, Instance
+from traits.api import HasTraits, CInt, Instance, Array, Property, on_trait_change
+from numpy import linspace, sin
 from chaco.api import Plot, ArrayPlotData
 from jigna.api import Template, QtApp
 
 #### Domain model ####
 
+class DomainModel(HasTraits):
+
+    x = Array
+    def _x_default(self):
+        return linspace(-14, 14, 1000)
+
+    y = Property(Array, depends_on=['x', 'scaling_factor'])
+    def _get_y(self):
+        return sin(self.scaling_factor * self.x) * self.x**3
+
+    scaling_factor = CInt
+
 class PlotController(HasTraits):
 
-    # A scaling factor which governs how the plot will look. Whenever the scaling
-    # factor changes, we get the data again and update the plot.
-    scaling_factor = CInt
-    def _scaling_factor_changed(self):
-        x, y = self.get_data()
-        self.plot.data.set_data('y', y)
+    domain_model = Instance(DomainModel)
 
     # The Chaco Plot object. This is the object which is usually visualized via
     # traitsui using the enable ComponentEditor
     plot  = Instance(Plot)
     def _plot_default(self):
-        x, y = self.get_data()
-
-        plot = Plot(ArrayPlotData(x=x, y=y))
+        plot = Plot(ArrayPlotData(x=self.domain_model.x, y=self.domain_model.y))
         plot.plot(("x", "y"), type="line", color="blue")
 
         return plot
 
-    def get_data(self):
-        """ Obtain the x,y data for the domain equation and given scaling factor
-        """
-        from numpy import linspace, sin
-        x = linspace(-14, 14, 1000)
-        y = sin(self.scaling_factor * x) * x**3
-
-        return x, y
+    @on_trait_change('domain_model.scaling_factor')
+    def update_plot(self):
+        self.plot.data.set_data('x', self.domain_model.x)
+        self.plot.data.set_data('y', self.domain_model.y)
 
     def create_plot_widget(self):
         """ This method is used as a factory to create the QWidget for the Chaco
@@ -56,12 +58,11 @@ class PlotController(HasTraits):
 
         return ui.control
 
-
 #### UI layer ####
 
 body_html = """
     <div>
-      Scaling factor: <input type="range" ng-model="plot_controller.scaling_factor"
+      Scaling factor: <input type="range" ng-model="domain_model.scaling_factor"
                        min=0 max=100><br>
       Plot:<br>
 
@@ -82,15 +83,21 @@ template = Template(body_html=body_html, recommended_size=(600, 600))
 #### Entry point ####
 
 def main():
-    # Instantiate the domain model
-    plot_controller = PlotController(scaling_factor=0.5)
+    # Instantiate the domain model and the plot controller
+    domain_model = DomainModel(scaling_factor=0.5)
+    plot_controller = PlotController(domain_model=domain_model)
 
     # Create a QtApp to render the HTML template with the given context.
     #
     # The widget contains an embedded Chaco QWidget showing a 2D plot of
     # the domain model. Moving the slider on the UI changes the domain model
     # and hence the Chaco plot.
-    app = QtApp(template=template, context={'plot_controller': plot_controller})
+    app = QtApp(template=template,
+        context={
+            'domain_model': domain_model,
+            'plot_controller': plot_controller
+        }
+    )
 
     # Start the event loop
     app.start()
