@@ -29,7 +29,10 @@ class QtBridge(Bridge):
     def send_event(self, event):
         """ Send an event. """
 
-        jsonized_event = json.dumps(event)
+        try:
+            jsonized_event = json.dumps(event)
+        except TypeError:
+            return
 
         if self.widget is None:
             raise RuntimeError("Widget does not exist")

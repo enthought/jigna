@@ -13,19 +13,33 @@ from jigna.api import Template, QtApp
 #### Domain model ####
 
 class DomainModel(HasTraits):
+    """
+    The algorithmic domain model which specifies the mathematical relationship
+    between x and y.
+    """
 
+    #: Independent variable of the domain equation
     x = Array
     def _x_default(self):
         return linspace(-14, 14, 1000)
 
+    #: Dependent variable of the domain equation
     y = Property(Array, depends_on=['x', 'scaling_factor'])
     def _get_y(self):
         return sin(self.scaling_factor * self.x) * self.x**3
 
+    #: A scaling factor to tune the output
     scaling_factor = CInt
 
-class PlotController(HasTraits):
+#### Controller layer ####
 
+class PlotController(HasTraits):
+    """
+    A Controller class which creates a Chaco plot object for the given domain
+    model.
+    """
+
+    #: Instance of the domain model which is being governed by this controller
     domain_model = Instance(DomainModel)
 
     # The Chaco Plot object. This is the object which is usually visualized via
