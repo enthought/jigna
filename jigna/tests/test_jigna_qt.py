@@ -1,5 +1,5 @@
 from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
-from jigna.api import Template, QtView
+from jigna.api import Template, QtApp
 from pyface.gui import GUI
 from pyface.qt import QtGui
 
@@ -66,21 +66,19 @@ class TestJignaQt(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = QtGui.QApplication.instance() or QtGui.QApplication([])
+        qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
         template = Template(body_html=body_html)
         fred = Person(name='Fred', age=42)
-        view = QtView(template=template, context={'model':fred})
-        widget = view.create_control()
+        app = QtApp(template=template, context={'model':fred})
+        widget = app.create_widget()
         GUI.process_events()
-        cls.view = view
-        cls.fred = fred
         cls.app = app
+        cls.fred = fred
 
     def setUp(self):
         cls = self.__class__
         self.app = cls.app
-        self.view = cls.view
-        self.bridge = self.view._server._bridge
+        self.bridge = self.app._server._bridge
         self.fred = cls.fred
         self.fred.spouse = None
         self.fred.fruits = []
