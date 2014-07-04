@@ -24,8 +24,6 @@ body_html = """
 
 template = Template(body_html=body_html)
 
-#### Entry point ####
-
 def show_embedded_window(widget):
     """ Create and show a QMainWindow which embeds the given widget on a button
     click. This is a *blocking* call.
@@ -51,6 +49,8 @@ def show_embedded_window(widget):
     window.show()
 
     app.exec_()
+
+#### Entry point ####
 
 def main():
     # Instantiate the domain model
