@@ -60,7 +60,7 @@ def main():
     app = QtApp(template=template, context={'person': fred})
 
     # Create the control from the QtApp
-    widget = app.create_control()
+    widget = app.create_widget()
 
     # Embed the widget created above to another Qt window.
     show_embedded_window(widget)
