@@ -10,6 +10,7 @@
 
 # Standard library.
 import json
+import mimetypes
 from os.path import join, dirname
 import traceback
 
@@ -123,6 +124,8 @@ class MainHandler(RequestHandler):
         if not len(path):
             self.write(self.server.html)
         else:
+            mime_type, _ = mimetypes.guess_type(path)
+            self.set_header('Content-Type', mime_type)
             self.write(open(join(self.server.base_url, path)).read())
 
         return
