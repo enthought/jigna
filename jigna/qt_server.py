@@ -77,7 +77,7 @@ class QtServer(Server):
                     root = join(abspath(dirname(__file__)), 'js', 'dist')
                 )
             },
-            open_externally = True,
+            open_externally = False,
             debug = True,
             callbacks = [('handle_request', self.handle_request)],
             python_namespace = 'qt_bridge'
