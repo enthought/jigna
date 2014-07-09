@@ -590,7 +590,7 @@ function isDate(value) {
  * @returns {boolean} True if `value` is an `Array`.
  */
 function isArray(value) {
-  return toString.call(value) === '[object Array]';
+  return value instanceof Array;
 }
 
 
