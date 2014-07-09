@@ -41,7 +41,7 @@ concatenate({
     src: [
         // External dependencies
         'external/jquery.min.js',
-        'external/angular.min.js',
+        'external/angular.js',
 
         // Internal dependencies
         'app/event_target.js',
