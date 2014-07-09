@@ -19,13 +19,16 @@ var makeSubArray = (function(){
 
         for (var prop in object) {
 
+            // int conversion of the property
+            int_prop = ToUint32(prop);
+
             isValidProperty = (
-                String(ToUint32(prop)) === prop &&
-                ToUint32(prop) !== MAX_SIGNED_INT_VALUE &&
+                String(int_prop) === prop &&
+                int_prop !== MAX_SIGNED_INT_VALUE &&
                 hasOwnProperty.call(object, prop)
             );
 
-            if (isValidProperty && prop > maxIndex) {
+            if (isValidProperty && int_prop > maxIndex) {
                 maxIndex = prop;
             }
         }
