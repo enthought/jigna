@@ -17,8 +17,8 @@ from jigna.api import Template, QtApp
 #### Domain model ####
 
 class SceneController(HasTraits):
-    n_meridional    = CInt
-    n_longitudinal  = CInt
+    n_meridional    = CInt(10)
+    n_longitudinal  = CInt(10)
 
     scene = Instance(MlabSceneModel, ())
 
@@ -71,10 +71,10 @@ class SceneController(HasTraits):
 
 body_html = """
     <div>
-      N meridonial: <input type="number" ng-model="scene_controller.n_meridional"
-                       min=0 max=100><br>
-      N longitudinal: <input type="number" ng-model="scene_controller.n_longitudinal"
-                       min=0 max=100><br>
+      N meridonial: <input type="range" ng-model="scene_controller.n_meridional"
+                       min=0 max=30><br>
+      N longitudinal: <input type="range" ng-model="scene_controller.n_longitudinal"
+                       min=0 max=30><br>
       Plot:<br>
 
       <object type="application/x-qwidget" width="400" height="400"
