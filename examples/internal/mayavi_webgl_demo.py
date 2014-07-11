@@ -213,12 +213,11 @@ Number of contours: <input type="number" ng-model="model.n_contour" min="1" max=
 """
 
 def main():
-    import webbrowser
-    from jigna.api import View
+    from jigna.api import Template, WebApp
     model = Model3D()
-    view = View(body_html=body_html)
-    webbrowser.open_new('http://localhost:8888')
-    view.serve(model=model)
+    template = Template(body_html=body_html)
+    app = WebApp(template=template, context={'model': model}, port=8888)
+    app.start()
 
 if __name__ == '__main__':
     main()
