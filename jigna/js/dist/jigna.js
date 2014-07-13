@@ -22093,6 +22093,10 @@ jigna.Client.prototype._marshal_all = function(objs) {
 
 jigna.Client.prototype._unmarshal = function(obj) {
 
+    if (obj === null) {
+        return null;
+    }
+
     if (obj.type === 'primitive') {
         return obj.value;
     } else {
