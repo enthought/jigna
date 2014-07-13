@@ -9,16 +9,23 @@ from jigna.api import Template, QtApp
 
 #### Domain model ####
 
-class Person(HasTraits):
+class Employee(HasTraits):
     name = Str
-    age  = Int
+    salary = Int
+
+    def update_salary(self):
+        self.salary += int(0.2*self.salary)
 
 #### UI layer ####
 
 body_html = """
     <div>
-      Name: <input ng-model="person.name"><br>
-      Age: <input ng-model="person.age" type='number'>
+      Employee name is {{employee.name}}<br/>
+      Salary is ${{employee.salary}}<br/>
+
+      <button ng-click='employee.update_salary()'>
+        Update salary
+      </button>
     </div>
 """
 
@@ -54,10 +61,10 @@ def show_embedded_window(widget):
 
 def main():
     # Instantiate the domain model
-    fred = Person(name='Fred', age=42)
+    tom = Employee(name='Tom', salary=2000)
 
     # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'person': fred})
+    app = QtApp(template=template, context={'employee': tom})
 
     # Create the control from the QtApp
     widget = app.create_widget()
@@ -66,7 +73,7 @@ def main():
     show_embedded_window(widget)
 
     # Check the values after the UI is closed
-    print fred.name, fred.age
+    print tom.name, tom.salary
 
 if __name__ == "__main__":
     main()
