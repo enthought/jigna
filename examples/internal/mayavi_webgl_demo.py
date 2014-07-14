@@ -5,6 +5,8 @@ from mayavi.core.api import PipelineBase
 from traits.api import HasTraits, Instance, Int, Str
 from tvtk.api import tvtk
 
+from jigna.api import Template, WebApp
+
 mlab.options.offscreen = True
 mlab.options.backend = 'test'
 
@@ -211,11 +213,10 @@ Number of contours: <input type="number" ng-model="model.n_contour" min="1" max=
 </div>
 </div>
 """
+template = Template(body_html=body_html)
 
 def main():
-    from jigna.api import Template, WebApp
     model = Model3D()
-    template = Template(body_html=body_html)
     app = WebApp(template=template, context={'model': model}, port=8888)
     app.start()
 
