@@ -22694,20 +22694,6 @@ jigna.angular.app.run(['$rootScope', '$compile', function($rootScope, $compile){
 
 }]);
 
-// Dynamically compile a given HTML string against the root scope
-
-jigna.angular.compile = function(element) {
-    var injector = angular.injector(['ng', 'jigna']);
-    var $compile = injector.get('$compile');
-    var $rootScope = injector.get('$rootScope');
-
-    var element = $compile(element)($rootScope);
-
-    $rootScope.$digest();
-
-    return element;
-};
-
 
 window.$ = $;
 window.angular = angular;
