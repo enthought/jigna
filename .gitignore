@@ -10,3 +10,6 @@ jigna/js/node_modules/
 jigna/js/npm-debug.log
 
 docs/build/
+build/
+dist/
+examples/.ipynb_checkpoints/

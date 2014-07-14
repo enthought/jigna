@@ -40,8 +40,8 @@ concatenate({
     base_url: 'src/',
     src: [
         // External dependencies
-        'external/jquery.min.js',
-        'external/angular.js',
+        // 'external/jquery.min.js',
+        'external/angular.min.js',
 
         // Internal dependencies
         'app/event_target.js',
@@ -63,7 +63,7 @@ concatenate({
     dest: 'dist/jigna.js',
     wrap: true,
     exports: [
-        '$',
+        // '$',
         'angular',
         'jigna'
     ]

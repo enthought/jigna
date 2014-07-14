@@ -35,6 +35,7 @@ class WebApp(App):
         self.create_application()
         self.application.listen(self.port)
 
+        print 'listening on port %s ...' % self.port
         ioloop.start()
 
     #### 'WebApp' protocol ####################################################
