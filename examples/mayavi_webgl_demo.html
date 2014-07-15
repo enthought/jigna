@@ -47,20 +47,13 @@
                         return;
                     };
 
-                    console.log('data changed', data.filedata.length);
                     if (data.filedata.length > 0) {
                         var array = strtobuf(data.filedata);
                         mesh.filedata = array;
 
                         var parser = new X.parserVTK();
                         parser.parse(mesh, mesh, array, null);
-                    } else {
-                        mesh.points = array_to_triplets(data.points);
-                        if (data.normals.length > 0) {
-                            mesh.normals = array_to_triplets(data.normals);
-                        }
-                        mesh.type = data.type;
-                    };
+                    }
 
                     if (data.colors.length > 0) {
                         mesh.colors = array_to_triplets(data.colors);

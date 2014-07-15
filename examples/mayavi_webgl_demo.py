@@ -5,11 +5,10 @@ backend for VTK.
 #### Imports ####
 
 import json
-import tempfile
 import numpy as np
 from mayavi import mlab
-from mayavi.core.api import PipelineBase, ModuleManager
-from traits.api import HasTraits, Instance, Int, Str, Property
+from mayavi.core.api import PipelineBase
+from traits.api import HasTraits, Instance, Int, Str
 from tvtk.api import tvtk
 from jigna.api import Template, WebApp
 
@@ -20,53 +19,61 @@ mlab.options.backend = 'test'
 
 class MeshData(HasTraits):
 
-    dataset = Instance(tvtk.PolyData)
-
-    module_manager = Instance(ModuleManager)
-
     # Data in the format of an old style VTK file.
-    filedata = Property(Str, depends_on='dataset')
-    def _get_filedata(self):
-        f = tempfile.NamedTemporaryFile(suffix='.vtk')
-        print f.name
-        from IPython.core.debugger import Tracer; Tracer()()
-        writer = tvtk.PolyDataWriter(
-            input=self.dataset,
-            file_name=f.name
-        )
-        writer.write()
-        return f.read()
+    filedata = Str
 
     # The colors to use for the points, in json format.
-    colors = Property(Str, depends_on='dataset')
-    def _get_colors(self):
-        scm = self.module_manager.scalar_lut_manager
-        scalars = self.dataset.point_data.scalars
-
-        colors = scm.lut.map_scalars(scalars, 0, -1).to_array()/255.0
-        colors_on_points = colors[self._point_indices()]
-
-        return json.dumps(colors_on_points.tolist())
+    colors = Str
 
     # The type of the mesh, for now only polygons are supported.
     type = Str("POLYGONS")
 
+    @classmethod
+    def from_dataset(cls, dataset, module_manager):
+        filedata = cls._dataset_to_string(dataset)
+        colors = cls._dataset_to_colors(dataset, module_manager)
+
+        return MeshData(filedata=filedata, colors=colors)
+
     #### Private protocol #####################################################
 
-    def _point_indices(self):
+    @classmethod
+    def _dataset_to_string(cls, dataset):
+        """
+        Convert the dataset to a vtk filedata string.
+        """
+        writer = tvtk.PolyDataWriter(
+            input=dataset,
+            write_to_output_string=True
+        )
+        writer.write()
+        return writer.output_string
+
+    @classmethod
+    def _dataset_to_colors(cls, dataset, module_manager):
+        """
+        Given the dataset, extract the colors array in a jsonized format.
+        """
+        scm = module_manager.scalar_lut_manager
+        scalars = dataset.point_data.scalars
+
+        colors = scm.lut.map_scalars(scalars, 0, -1).to_array()/255.0
+        colors_on_points = colors[cls._point_indices(dataset)]
+
+        return json.dumps(colors_on_points.tolist())
+
+    @classmethod
+    def _point_indices(cls, dataset):
         """
         Given the dataset, obtain the polygon connectivity array and generate
         the indices of the points in the polygon.
         """
-        conn = self.dataset.polys.to_array()
+        conn = dataset.polys.to_array()
         npoly = conn.size / 4
         choice = np.zeros(npoly*3, dtype=int)
         for start in (1, 2, 3):
             choice[start-1::3] = np.arange(start, npoly*4, step=4)
         return conn[choice]
-
-
-#### Controller layer ####
 
 class Plotter3D(HasTraits):
 
@@ -101,14 +108,14 @@ class Plotter3D(HasTraits):
     plot = Instance(PipelineBase)
 
     mesh_data = Instance(MeshData, ())
-    def _mesh_data_default(self):
-        return MeshData(
-            dataset=self.plot.contour.outputs[0],
-            module_manager=self.plot.module_manager
-        )
 
     def _update_mesh_data(self):
-        self.mesh_data.dataset = self.plot.contour.outputs[0]
+        self.mesh_data.copy_traits(
+            MeshData.from_dataset(
+                dataset=self.plot.contour.outputs[0],
+                module_manager=self.plot.module_manager
+            )
+        )
 
 #### UI layer ####
 
@@ -118,7 +125,7 @@ template = Template(html_file='mayavi_webgl_demo.html')
 
 def main():
     plotter = Plotter3D(expression="x*x*0.5 + y*y + z*z*2.0", n_contour=4)
-    app = WebApp(template=template, context={'plotter': plotter}, port=8888)
+    app = WebApp(template=template, context={'plotter': plotter}, port=8001)
     app.start()
 
 if __name__ == '__main__':
