@@ -1,0 +1,94 @@
+<html>
+    <head>
+        <script type='text/javascript' src='http://get.goXTK.com/xtk.js'></script>
+
+        <script type='text/javascript' src='/jigna/jigna.js'></script>
+        <script type='text/javascript'>
+            jigna.initialize();
+        </script>
+
+        <script type='text/javascript'>
+            var app = angular.module('XTKApp', ['jigna']);
+
+            app.directive('xtkRenderer', function(){
+
+                var init_renderer = function(elem, mesh) {
+                    // initialize the X renderer on the element
+                    var renderer = new X.renderer3D();
+                    renderer.container = elem;
+                    renderer.init();
+
+                    // add the mesh object to the renderer and render it
+                    renderer.add(mesh);
+                    renderer.render()
+
+                    return renderer;
+                };
+
+                var strtobuf = function(str){
+                    var buf = new Uint8Array(str.length);
+                    for (var i=0; i<str.length; i++) {
+                        buf[i] = str.charCodeAt(i);
+                    }
+                    return buf;
+                };
+
+                var array_to_triplets = function(json_data){
+                    var data = JSON.parse(json_data);
+                    var triplets = new X.triplets(4*3*data.length);
+                    for (var i=0; i<data.length; i++) {
+                        triplets.add(data[i][0], data[i][1], data[i][2]);
+                    }
+                    return triplets;
+                };
+
+                var on_data_changed = function(data, mesh) {
+                    if (!data) {
+                        return;
+                    };
+
+                    if (data.filedata.length > 0) {
+                        var array = strtobuf(data.filedata);
+                        mesh.filedata = array;
+
+                        var parser = new X.parserVTK();
+                        parser.parse(mesh, mesh, array, null);
+                    } else {
+                        mesh.points = array_to_triplets(data.points);
+                        if (data.normals.length > 0) {
+                            mesh.normals = array_to_triplets(data.normals);
+                        }
+                        mesh.type = data.type;
+                    };
+
+                    if (data.colors.length > 0) {
+                        mesh.colors = array_to_triplets(data.colors);
+                    };
+                    mesh.modified();
+                };
+
+                return function(scope, element, attrs){
+
+                    var mesh = new X.mesh();
+                    init_renderer(element[0], mesh);
+
+                    scope.$watch(attrs.xtkRenderer, function(data){
+                        on_data_changed(data, mesh);
+                    }, true);
+                };
+            });
+        </script>
+
+    </head>
+
+    <body ng-app='XTKApp'>
+        Expression: <input ng-model='model.expression' /><br/>
+
+        Number of contours: <input type='number' ng-model='model.n_contour'
+                             min='1' max='10'/>
+
+        <div xtk-renderer='model.plot_output'
+             style='background-color: #000; height: 80%;'>
+        </div>
+    </body>
+</html>
