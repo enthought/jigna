@@ -35,6 +35,7 @@ class WebApp(App):
         self.create_application()
         self.application.listen(self.port)
 
+        print 'listening on port %s ...' % self.port
         ioloop.start()
 
     #### 'WebApp' protocol ####################################################
@@ -48,8 +49,10 @@ class WebApp(App):
     port = Int(8000)
 
     def create_application(self):
-        """ Create the web application serving the given context. Returns the
-        tornado application created. """
+        """
+        Create the web application serving the given context. Returns the
+        tornado application created.
+        """
 
         # Set up the WebServer to serve the domain models in context
         from jigna.web_server import WebServer
@@ -63,3 +66,10 @@ class WebApp(App):
         self.application = self._server.application
 
         return self.application
+
+    def update_context(self, context={}):
+        """
+        Dynamically update the context of the serving application. This will add
+        the given models but not remove anything.
+        """
+        self._server.context.update(context)
