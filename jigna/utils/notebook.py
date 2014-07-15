@@ -5,7 +5,7 @@ Utility methods for the IPython notebook
 from jigna.api import WebApp
 from IPython.display import HTML
 
-def display_jigna(context, template):
+def display_jigna(context, template, size=None):
     """
     A `display_html` style method to show rich jigna display for the objects
     within the context.
@@ -16,7 +16,7 @@ def display_jigna(context, template):
     application = app.create_application()
     application.listen(app.port)
 
-    width, height = template.recommended_size
+    width, height = size or template.recommended_size
     html = ('<iframe src="http://localhost:%s" width=%s height=%s></iframe>'
             % (PORT, width, height))
 
