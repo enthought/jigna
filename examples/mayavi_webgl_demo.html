@@ -47,6 +47,7 @@
                         return;
                     };
 
+                    console.log('data changed', data.filedata.length);
                     if (data.filedata.length > 0) {
                         var array = strtobuf(data.filedata);
                         mesh.filedata = array;
@@ -82,12 +83,12 @@
     </head>
 
     <body ng-app='XTKApp'>
-        Expression: <input ng-model='model.expression' /><br/>
+        Expression: <input ng-model='plotter.expression' /><br/>
 
-        Number of contours: <input type='number' ng-model='model.n_contour'
+        Number of contours: <input type='number' ng-model='plotter.n_contour'
                              min='1' max='10'/>
 
-        <div xtk-renderer='model.plot_output'
+        <div xtk-renderer='plotter.mesh_data'
              style='background-color: #000; height: 80%;'>
         </div>
     </body>
