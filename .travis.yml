@@ -4,9 +4,7 @@ python:
 virtualenv:
   system_site_packages: true
 env:
-  - ETS_TOOLKIT=qt4
-  - QT_API=pyqt
-  - DISPLAY=:99.0
+  - ETS_TOOLKIT=qt4 QT_API=pyqt DISPLAY=:99.0
 before_install:
   - sudo apt-get update
   - sudo apt-get install python-qt4 python-qt4-dev python-sip python-qt4-gl libqt4-scripttools
