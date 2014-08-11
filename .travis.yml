@@ -12,6 +12,7 @@ before_install:
   - sudo apt-get install python-qt4 python-qt4-dev python-sip python-qt4-gl libqt4-scripttools
 install:
   - pip install -r requirements.txt
+  - python -c 'from pyface.qt import QtCore, QtGui'
   - pip install -r dev_requirements.txt
   - python setup.py develop
 script:
