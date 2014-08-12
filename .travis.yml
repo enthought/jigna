@@ -14,4 +14,6 @@ install:
   - pip install -r dev_requirements.txt
   - python setup.py develop
 script:
-  - python -m nose.core
+  - coverage run -m unittest discover
+after_script
+  - coverage report
