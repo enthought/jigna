@@ -1,4 +1,4 @@
 traits
+traitsui
 pyface
 tornado
-PySide

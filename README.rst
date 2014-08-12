@@ -34,6 +34,9 @@ You can install this either via pip::
 or the usual means::
 
     python setup.py install
+
+or::
+
     python setup.py develop
 
 
