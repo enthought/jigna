@@ -32,14 +32,24 @@ class TestQtApp(unittest.TestCase):
         self.assertGreater(len(frame.toHtml()), 0)
 
     def test_created_widget_can_access_jigna(self):
-        # Create a widget and execute a js to determine whether jigna is
-        # available in the Javascript console or not
+        # Create a widget
         qwidget = self.app.create_widget()
         GUI.process_events()
 
-        # Check if the widget was created
+        # Check if `jigna` was loaded on the JS side
         jigna = self.app.execute_js("jigna");
         self.assertIsNotNone(jigna)
+
+    def test_jigna_was_initialized(self):
+        # Create a widget
+        qwidget = self.app.create_widget()
+        GUI.process_events()
+
+        # Check if `jigna` was initialised on the JS side
+        client = self.app.execute_js("jigna.client");
+        self.assertIsNotNone(client)
+
+
 
 if __name__ == "__main__":
     unittest.main()
