@@ -17,3 +17,5 @@ script:
   - coverage run -m unittest discover
 after_script:
   - coverage report
+notifications:
+  email: false
