@@ -4,13 +4,20 @@ from jigna.api import Template
 from pyface.qt import QtWebKit, QtGui
 from pyface.gui import GUI
 
+from traits.api import HasTraits, Str, Int
+
 import unittest
+
+class MyModel(HasTraits):
+    attr1 = Str
+    attr2 = Int
 
 class TestQtApp(unittest.TestCase):
 
     def setUp(self):
         self.template = Template(body_html="")
-        self.app = QtApp(template=self.template, context={})
+        self.model = MyModel(attr1="Attr1", attr2=2)
+        self.app = QtApp(template=self.template, context={'model': self.model})
 
     def test_widget_is_created(self):
         # Create a widget
@@ -49,7 +56,17 @@ class TestQtApp(unittest.TestCase):
         client = self.app.execute_js("jigna.client");
         self.assertIsNotNone(client)
 
+    def test_jigna_was_initialized_with_python_models(self):
+        # Create a widget
+        qwidget = self.app.create_widget()
+        GUI.process_events()
 
+        # Check if `jigna` was initialised with the correct python models
+        # (check by making sure that primitive variables are the same)
+        attr1 = self.app.execute_js("jigna.models.model.attr1")
+        attr2 = self.app.execute_js("jigna.models.model.attr2")
+        self.assertEqual(attr1, self.model.attr1)
+        self.assertEqual(attr2, self.model.attr2)
 
 if __name__ == "__main__":
     unittest.main()
