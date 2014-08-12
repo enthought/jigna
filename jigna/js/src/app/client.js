@@ -114,6 +114,16 @@ jigna.Client.prototype.get_attribute = function(proxy, attribute) {
     return result;
 };
 
+jigna.Client.prototype.print_JS_message = function(message) {
+    var request = {
+        kind: 'print_JS_message',
+        value: message
+    };
+
+    this.send_request(request);
+};
+
+
 jigna.Client.prototype.set_instance_attribute = function(id, attribute_name, value) {
     var request = {
         kind           : 'set_instance_attribute',
