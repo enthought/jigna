@@ -14,7 +14,7 @@ from os.path import abspath, dirname, join
 
 # Enthought library.
 from traits.api import Any, Str, Instance
-from pyface.qt import QtWebKit
+from pyface.qt import QtWebKit, QtGui
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
@@ -96,6 +96,9 @@ class QtServer(Server):
         created already to use this method.
         """
         widget.load_html(self.html, self.base_url)
+
+        while widget.loading:
+            QtGui.QApplication.processEvents()
 
         self._enable_qwidget_embedding(widget)
 

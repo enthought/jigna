@@ -173,6 +173,7 @@ class HTMLWidget(Widget):
     def load_html(self, html, base_url=None):
         """ Loads raw HTML into the widget.
         """
+        self.loading = True
         if base_url:
             url = base_url
             if not url.endswith('/'):
