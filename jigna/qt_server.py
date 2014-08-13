@@ -97,6 +97,11 @@ class QtServer(Server):
         """
         widget.load_html(self.html, self.base_url)
 
+        # Wait till the page is ready (DOM ready)
+        #
+        # fixme: this is currently a very performance intensive code and needs
+        # to be replaced with something much smarter like:
+        # http://doc.qt.digia.com/qq/qq27-responsive-guis.html#waitinginalocaleventloop
         while widget.loading:
             QtGui.QApplication.processEvents()
 
