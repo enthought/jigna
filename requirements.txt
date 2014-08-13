@@ -1,3 +1,4 @@
 traits
+traitsui
 pyface
 tornado
