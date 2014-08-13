@@ -6,7 +6,7 @@ from test_jigna_web import TestJignaWebSync, Person
 class TestJignaWebAsync(TestJignaWebSync):
     @classmethod
     def setUpClass(cls):
-        super(TestJignaWebAsync, cls).setUpClass(port=8889, async=True)
+        super(TestJignaWebAsync, cls).setUpClass(async=True)
 
     def test_callable(self):
         fred = self.fred

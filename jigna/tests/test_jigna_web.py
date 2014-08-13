@@ -8,15 +8,17 @@ from tornado.ioloop import IOLoop
 from selenium import webdriver
 
 # Local imports.
+from jigna.utils.web import get_free_port
 from test_jigna_qt import TestJignaQt, Person, body_html
 
 
 class TestJignaWebSync(TestJignaQt):
     @classmethod
-    def setUpClass(cls, port=8888, async=False):
+    def setUpClass(cls, async=False):
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
         template = Template(body_html=body_html, async=async)
+        port = get_free_port()
         app = WebApp(template=template, context={'model':fred}, port=port)
         application = app.create_application()
         application.listen(port)
