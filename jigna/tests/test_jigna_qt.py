@@ -91,8 +91,6 @@ class TestJignaQt(unittest.TestCase):
         GUI.process_events()
         result = self.bridge.widget.execute_js(js)
         GUI.process_events()
-        if self._is_none(result):
-            result = None
         return result
 
     def assertJSEqual(self, js, value):
@@ -244,16 +242,6 @@ class TestJignaQt(unittest.TestCase):
                 pass
         else:
             raise AssertionError("Async method not finished")
-
-    def _is_none(self, obj):
-        """ Checks if the object is None or not. We need this because NoneType
-        objects coming from PyQt are of a `QPyNullVariant` type, not None. This
-        method makes sure that None type checking is transparent.
-        """
-        if isinstance(obj, getattr(QtCore, 'QPyNullVariant', NoneType)):
-            return True
-
-        return False
 
 if __name__ == "__main__":
     unittest.main()

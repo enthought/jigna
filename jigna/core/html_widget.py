@@ -9,6 +9,7 @@
 import sys
 import webbrowser
 import logging
+from types import NoneType
 
 # System library imports.
 from pyface.qt import QtCore, QtGui, QtWebKit, QtNetwork
@@ -168,7 +169,10 @@ class HTMLWidget(Widget):
         """ Execute JavaScript synchronously.
         """
         frame = self.control.page().mainFrame()
-        return frame.evaluateJavaScript(js)
+        result = frame.evaluateJavaScript(js)
+        result = self._apply_null_fix(result)
+
+        return result
 
     def load_html(self, html, base_url=None):
         """ Loads raw HTML into the widget.
@@ -354,6 +358,18 @@ class HTMLWidget(Widget):
     def _on_js_console_msg(self, msg, lineno, sourceid):
         """ Log the javascript console messages. """
         logger.debug('JS: <%s>:%s(%s) %s', self.url, lineno, sourceid, msg)
+
+    def _apply_null_fix(self, obj):
+        """ Makes sure that None objects coming from Qt bridge are actually None.
+
+        We need this because NoneType objects coming from PyQt are of a
+        `QPyNullVariant` type, not None. This method converts such objects to
+        the standard None type.
+        """
+        if isinstance(obj, getattr(QtCore, 'QPyNullVariant', NoneType)):
+            return None
+
+        return obj
 
     def default_context_menu(self):
         """ Return the default context menu (pyface). """
