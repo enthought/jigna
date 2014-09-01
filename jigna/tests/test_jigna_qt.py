@@ -91,6 +91,8 @@ class TestJignaQt(unittest.TestCase):
         GUI.process_events()
         result = self.bridge.widget.execute_js(js)
         GUI.process_events()
+        if self._is_none(result):
+            result = None
         return result
 
     def assertJSEqual(self, js, value):
@@ -105,8 +107,6 @@ class TestJignaQt(unittest.TestCase):
                 msg = "%s[%s] != %s, got %s"%(js, index, expect, got)
                 self.assertEqual(expect, got, msg)
         else:
-            if self._is_none(result):
-                result = None
             msg = "%s != %s, got %s"%(js, value, result)
             self.assertEqual(value, result, msg)
 
@@ -145,7 +145,7 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.phonebook, {'alan' : 987})
 
     def test_instance_trait(self):
-        self.assertJSEqual("jigna.models.model.spouse", '')
+        self.assertIn(self.execute_js("jigna.models.model.spouse"), ['', None])
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
         self.assertJSEqual("jigna.models.model.spouse.name", 'Wilma')
