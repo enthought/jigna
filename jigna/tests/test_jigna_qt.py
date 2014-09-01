@@ -1,10 +1,11 @@
 from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
 from jigna.api import Template, QtApp
 from pyface.gui import GUI
-from pyface.qt import QtGui
+from pyface.qt import QtGui, QtCore
 
 import unittest
 import time
+from types import NoneType
 
 #### Test model ####
 
@@ -104,6 +105,8 @@ class TestJignaQt(unittest.TestCase):
                 msg = "%s[%s] != %s, got %s"%(js, index, expect, got)
                 self.assertEqual(expect, got, msg)
         else:
+            if self._is_none(result):
+                result = None
             msg = "%s != %s, got %s"%(js, value, result)
             self.assertEqual(value, result, msg)
 
@@ -241,6 +244,16 @@ class TestJignaQt(unittest.TestCase):
                 pass
         else:
             raise AssertionError("Async method not finished")
+
+    def _is_none(self, obj):
+        """ Checks if the object is None or not. We need this because NoneType
+        objects coming from PyQt are of a `QPyNullVariant` type, not None. This
+        method makes sure that None type checking is transparent.
+        """
+        if isinstance(obj, getattr(QtCore, 'QPyNullVariant', NoneType)):
+            return True
+
+        return False
 
 if __name__ == "__main__":
     unittest.main()
