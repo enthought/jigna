@@ -16,7 +16,7 @@ from pyface.qt import QtCore, QtGui, QtWebKit, QtNetwork
 from pyface.qt.QtWebKit import QWebPage
 
 # Enthought library imports.
-from pyface.ui.qt4.widget import Widget
+from pyface.widget import Widget
 from traits.api import ( HasTraits, Any, Bool, Callable, Dict, Either, Event,
     Instance, List, Property, Str, Tuple, Unicode, implements, on_trait_change,
     Float )
