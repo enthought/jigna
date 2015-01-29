@@ -3,6 +3,24 @@ import json
 
 # Enthought library imports
 from traits.api import Instance, on_trait_change, HasTraits
+
+# FIXME: Importing NullEditor here is really a big hack! We used to import
+# Menu from traitsui.api which imported a whole bunch of stuff including numpy
+# etc. and slowed down the app startup time. One of the things it imported was
+# the traitsui editors. Somehow, importing an editor is required otherwise
+# it causes a weird traits notification error like this:
+#
+# Traceback (most recent call last):
+#   File "/Users/prash/Library/canopyr/osx-64/runtimes/dashboard/lib/python2.7/site-packages/traits/trait_notifiers.py", line 520, in _dispatch_change_event
+#     self.dispatch( handler, *args )
+#   File "/Users/prash/Library/canopyr/osx-64/runtimes/dashboard/lib/python2.7/site-packages/traits/trait_notifiers.py", line 617, in dispatch
+#     ui_handler( handler, *args )
+# TypeError: 'NoneType' object is not callable
+#
+# I am not sure why this error goes away if you import *any* editor here, but
+# it does. So keeping it like this for the speed up in startup time that it
+# provides.
+from traitsui.editors.null_editor import NullEditor
 from traitsui.menu import Menu
 
 from pyface.action.api import Action, Separator, Group
