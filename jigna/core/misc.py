@@ -3,7 +3,7 @@ import json
 
 # Enthought library imports
 from traits.api import Instance, on_trait_change, HasTraits
-from traitsui.api import Menu
+from traitsui.menu import Menu
 from pyface.action.api import Action, Separator, Group
 from pyface.qt import QtGui
 
