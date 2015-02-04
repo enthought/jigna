@@ -11,12 +11,16 @@
 # Standard library.
 import inspect
 import json
+import logging
 import traceback
 
 # Enthought library.
 from traits.api import (
     Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent, Event
 )
+
+# Logging.
+logger = logging.getLogger(__name__)
 
 
 class Bridge(HasTraits):
@@ -85,6 +89,7 @@ class Server(HasTraits):
             result    = method(request)
         except:
             exception = traceback.format_exc()
+            logger.exception(exception)
             result = None
 
         response = dict(exception=exception, result=result)
@@ -131,9 +136,11 @@ class Server(HasTraits):
             self.send_event(event)
 
         def _on_error(error):
-            import traceback
             type, value, tb = error
-            error_msg = '\n'.join(traceback.format_tb(tb))
+            error_msg = ''.join(traceback.format_tb(tb))
+
+            logger.error(error_msg)
+
             event = dict(
                 obj  = str(id(future)),
                 name = 'error',
