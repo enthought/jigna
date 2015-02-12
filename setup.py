@@ -19,7 +19,9 @@ setup(
     url='https://github.com/enthought/jigna',
     description='HTML frontend for Traits models.',
     long_description=open('README.rst').read(),
-    install_requires=['distribute', 'traits', 'pyface', 'tornado', 'PySide'],
+    install_requires=[
+        'distribute', 'traits', 'traitsui', 'pyface', 'tornado', 'PySide'
+    ],
     packages=find_packages(),
     package_dir={'jigna':'jigna'},
     include_package_data=True,
