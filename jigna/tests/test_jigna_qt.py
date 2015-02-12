@@ -1,10 +1,11 @@
 from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
 from jigna.api import Template, QtApp
 from pyface.gui import GUI
-from pyface.qt import QtGui
+from pyface.qt import QtGui, QtCore
 
 import unittest
 import time
+from types import NoneType
 
 #### Test model ####
 
@@ -142,7 +143,7 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(fred.phonebook, {'alan' : 987})
 
     def test_instance_trait(self):
-        self.assertJSEqual("jigna.models.model.spouse", '')
+        self.assertIn(self.execute_js("jigna.models.model.spouse"), ['', None])
         wilma = Person(name='Wilma', age=40)
         self.fred.spouse = wilma
         self.assertJSEqual("jigna.models.model.spouse.name", 'Wilma')

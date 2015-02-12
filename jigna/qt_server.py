@@ -14,7 +14,7 @@ from os.path import abspath, dirname, join
 
 # Enthought library.
 from traits.api import Any, Str, Instance
-from pyface.qt import QtWebKit
+from pyface.qt import QtWebKit, QtGui
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
@@ -96,6 +96,14 @@ class QtServer(Server):
         created already to use this method.
         """
         widget.load_html(self.html, self.base_url)
+
+        # Wait till the page is ready (DOM ready)
+        #
+        # fixme: this is currently a very performance intensive code and needs
+        # to be replaced with something much smarter like:
+        # http://doc.qt.digia.com/qq/qq27-responsive-guis.html#waitinginalocaleventloop
+        while widget.loading:
+            QtGui.QApplication.processEvents()
 
         self._enable_qwidget_embedding(widget)
 

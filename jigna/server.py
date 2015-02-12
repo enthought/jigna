@@ -102,6 +102,13 @@ class Server(HasTraits):
 
         return self._send_context_updated_event(self.context)
 
+    def print_JS_message(self, request):
+        """ Prints a message coming from the JS client for testing purposes """
+
+        print "JS: " + request['value']
+
+        return
+
     #### Instances ####
 
     def call_instance_method(self, request):

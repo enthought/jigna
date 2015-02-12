@@ -68,3 +68,9 @@ class QtApp(App):
         self.widget = widget.control
 
         return self.widget
+
+    def execute_js(self, js):
+        """ Try to execute the given js string on the client. If the app hasn't
+        been started yet, this results in an error.
+        """
+        return self._server.widget.execute_js(js)
