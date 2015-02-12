@@ -1,8 +1,10 @@
 
 import unittest
+from unittest import skip
 
 from test_jigna_web import TestJignaWebSync, Person
 
+@skip("Ignoring web tests for now")
 class TestJignaWebAsync(TestJignaWebSync):
     @classmethod
     def setUpClass(cls):

@@ -1,6 +1,7 @@
 from jigna.api import Template, WebApp
 from threading import Thread
 import unittest
+from unittest import skip
 import time
 
 from tornado.ioloop import IOLoop
@@ -11,7 +12,7 @@ from selenium import webdriver
 from jigna.utils.web import get_free_port
 from test_jigna_qt import TestJignaQt, Person, body_html
 
-
+@skip("Ignoring web tests for now")
 class TestJignaWebSync(TestJignaQt):
     @classmethod
     def setUpClass(cls, async=False):
