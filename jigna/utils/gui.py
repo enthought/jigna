@@ -5,9 +5,11 @@ def ui_handler(handler, *args, **kw):
     """ Handles UI notification handler requests that occur on a thread other
     than the UI thread.
     """
-    _CallAfter(handler, *args, **kw)
+    _FutureCall(0, handler, *args, **kw)
 
 def set_trait_later(obj, trait_name, value):
+    """ Set the given trait name on the given object in the GUI thread.
+    """
     invoke_later(setattr, obj, trait_name, value)
 
 def invoke_later(callable, *args, **kw):
@@ -16,74 +18,16 @@ def invoke_later(callable, *args, **kw):
     do_after(0, callable, *args, **kw)
 
 def do_after(ms, callable, *args, **kw):
+    """ Invoke the callable after the given number of milliseconds.
+    """
     _FutureCall(ms, callable, *args, **kw)
 
 #### Private protocol #########################################################
 
-class _CallAfter(QtCore.QObject):
-    """ This class dispatches a handler so that it executes in the main GUI
-    thread (similar to the wx function).
-    """
-
-    # The list of pending calls.
-    _calls = []
-
-    # The mutex around the list of pending calls.
-    _calls_mutex = QtCore.QMutex()
-
-    # A new Qt event type for _CallAfters
-    _QT_TRAITS_EVENT = QtCore.QEvent.Type(QtCore.QEvent.registerEventType())
-
-    def __init__(self, handler, *args, **kwds):
-        """ Initialise the call.
-        """
-        QtCore.QObject.__init__(self)
-
-        # Save the details of the call.
-        self._handler = handler
-        self._args = args
-        self._kwds = kwds
-
-        # Add this to the list.
-        self._calls_mutex.lock()
-        self._calls.append(self)
-        self._calls_mutex.unlock()
-
-        # Move to the main GUI thread.
-        self.moveToThread(QtGui.QApplication.instance().thread())
-
-        # Post an event to be dispatched on the main GUI thread. Note that
-        # we do not call QTimer.singleShot, which would be simpler, because
-        # that only works on QThreads. We want regular Python threads to work.
-        event = QtCore.QEvent(self._QT_TRAITS_EVENT)
-        QtGui.QApplication.instance().postEvent(self, event)
-
-    def event(self, event):
-        """ QObject event handler.
-        """
-        if event.type() == self._QT_TRAITS_EVENT:
-            # Invoke the handler
-            self._handler(*self._args, **self._kwds)
-
-            # We cannot remove from self._calls here. QObjects don't like being
-            # garbage collected during event handlers (there are tracebacks,
-            # plus maybe a memory leak, I think).
-            QtCore.QTimer.singleShot(0, self._finished)
-
-            return True
-        else:
-            return QtCore.QObject.event(self, event)
-
-    def _finished(self):
-        """ Remove the call from the list, so it can be garbage collected.
-        """
-        self._calls_mutex.lock()
-        del self._calls[self._calls.index(self)]
-        self._calls_mutex.unlock()
-
-
 class _FutureCall(QtCore.QObject):
-    """ This is a helper class that is similar to the wx FutureCall class. """
+    """ This is a helper class to facilitate execution of a function in the
+    future (after all events are finished processing) in the GUI thread.
+    """
 
     # Keep a list of references so that they don't get garbage collected.
     _calls = []
