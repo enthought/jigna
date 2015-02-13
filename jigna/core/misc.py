@@ -24,7 +24,7 @@ def get_value(obj, extended_trait_name):
 
 def ui_handler(handler, *args, **kwds):
     """ Handles UI notification handler requests that occur on a thread other
-        than the UI thread.
+    than the UI thread.
     """
     _CallAfter(handler, *args, **kwds)
 
