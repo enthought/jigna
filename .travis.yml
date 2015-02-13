@@ -4,17 +4,23 @@ python:
   - "2.7"
 
 env:
-  - DISPLAY=:99.0
+  - DISPLAY=:99.0 MASTER=master_2.7.3_2.1.0.dev1773-afa28b9_rh5-64.sh TARGET=`pwd`/target
 
 before_install:
   - echo "EPD_auth = 'dGVzdC5mcmVlQGZha2UuZG9tYWluOnRlc3Q9MTIzNA=='" > ${HOME}/.enstaller4rc
-  - pip install enstaller
+  - wget https://s3.amazonaws.com/enstaller-assets/masters/rh5-64/2.7.3/$MASTER
+  - bash $MASTER -bp $TARGET
+  - sudo apt-get install firefox
   - sh -e /etc/init.d/xvfb start
 
 install:
-  - pip install -r requirements_test.txt
-  - sudo apt-get install firefox
-  - enpkg traits pyside tornado
+  - source $TARGET/bin/activate
+  - which python
+  - wget https://s3.amazonaws.com/enstaller-assets/enstaller/bootstrap.py
+  - python `pwd`/bootstrap.py
+  - enpkg distribute traits tornado pyside
+  - enpkg pip
+  - pip install nose selenium coverage
   - python setup.py develop
 
 script:
