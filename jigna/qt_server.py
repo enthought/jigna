@@ -14,9 +14,11 @@ from os.path import abspath, dirname, join
 
 # Enthought library.
 from traits.api import Any, Str, Instance
+from traits.trait_notifiers import set_ui_handler
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
+from jigna.core.misc import ui_handler
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
 from jigna.qt import QtWebKit, QtGui
@@ -82,6 +84,10 @@ class QtServer(Server):
             callbacks = [('handle_request', self.handle_request)],
             python_namespace = 'qt_bridge'
         )
+
+        # This statement makes sure that when we dispatch traits events on the
+        # 'ui' thread, it passes on those events though the Qt layer.
+        set_ui_handler(ui_handler)
 
         return
 

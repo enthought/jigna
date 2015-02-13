@@ -2,29 +2,11 @@
 import json
 
 # Enthought library imports
-from traits.api import Instance, on_trait_change, HasTraits
-
-# FIXME: Importing NullEditor here is really a big hack! We used to import
-# Menu from traitsui.api which imported a whole bunch of stuff including numpy
-# etc. and slowed down the app startup time. One of the things it imported was
-# the traitsui editors. Somehow, importing an editor is required otherwise
-# it causes a weird traits notification error like this:
-#
-# Traceback (most recent call last):
-#   File "/Users/prash/Library/canopyr/osx-64/runtimes/dashboard/lib/python2.7/site-packages/traits/trait_notifiers.py", line 520, in _dispatch_change_event
-#     self.dispatch( handler, *args )
-#   File "/Users/prash/Library/canopyr/osx-64/runtimes/dashboard/lib/python2.7/site-packages/traits/trait_notifiers.py", line 617, in dispatch
-#     ui_handler( handler, *args )
-# TypeError: 'NoneType' object is not callable
-#
-# I am not sure why this error goes away if you import *any* editor here, but
-# it does. So keeping it like this for the speed up in startup time that it
-# provides.
-from traitsui.editors.null_editor import NullEditor
+from traits.api import Instance, on_trait_change
 from traitsui.menu import Menu
 
 from pyface.action.api import Action, Separator, Group
-from pyface.qt import QtGui
+from ..qt import QtGui, QtCore
 
 def serialize(obj):
     """ Convert a python object to JS by serialization/deserialization. If one
@@ -105,3 +87,74 @@ def Menu_from_QMenu(qmenu):
     # destroyed then the menu is deleted.
     menu._qmenu = qmenu
     return menu
+
+#-------------------------------------------------------------------------------
+#  Handles UI notification handler requests that occur on a thread other than
+#  the UI thread:
+#-------------------------------------------------------------------------------
+
+_QT_TRAITS_EVENT = QtCore.QEvent.Type(QtCore.QEvent.registerEventType())
+
+class _CallAfter(QtCore.QObject):
+    """ This class dispatches a handler so that it executes in the main GUI
+        thread (similar to the wx function).
+    """
+
+    # The list of pending calls.
+    _calls = []
+
+    # The mutex around the list of pending calls.
+    _calls_mutex = QtCore.QMutex()
+
+    def __init__(self, handler, *args, **kwds):
+        """ Initialise the call.
+        """
+        QtCore.QObject.__init__(self)
+
+        # Save the details of the call.
+        self._handler = handler
+        self._args = args
+        self._kwds = kwds
+
+        # Add this to the list.
+        self._calls_mutex.lock()
+        self._calls.append(self)
+        self._calls_mutex.unlock()
+
+        # Move to the main GUI thread.
+        self.moveToThread(QtGui.QApplication.instance().thread())
+
+        # Post an event to be dispatched on the main GUI thread. Note that
+        # we do not call QTimer.singleShot, which would be simpler, because
+        # that only works on QThreads. We want regular Python threads to work.
+        event = QtCore.QEvent(_QT_TRAITS_EVENT)
+        QtGui.QApplication.instance().postEvent(self, event)
+
+    def event(self, event):
+        """ QObject event handler.
+        """
+        if event.type() == _QT_TRAITS_EVENT:
+            # Invoke the handler
+            self._handler(*self._args, **self._kwds)
+
+            # We cannot remove from self._calls here. QObjects don't like being
+            # garbage collected during event handlers (there are tracebacks,
+            # plus maybe a memory leak, I think).
+            QtCore.QTimer.singleShot(0, self._finished)
+
+            return True
+        else:
+            return QtCore.QObject.event(self, event)
+
+    def _finished(self):
+        """ Remove the call from the list, so it can be garbage collected.
+        """
+        self._calls_mutex.lock()
+        del self._calls[self._calls.index(self)]
+        self._calls_mutex.unlock()
+
+def ui_handler(handler, *args, **kwds):
+    """ Handles UI notification handler requests that occur on a thread other
+        than the UI thread.
+    """
+    _CallAfter(handler, *args, **kwds)
