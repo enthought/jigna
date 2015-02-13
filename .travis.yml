@@ -1,21 +1,27 @@
 language: python
+
 python:
   - "2.7"
-virtualenv:
-  system_site_packages: true
+
 env:
-  - ETS_TOOLKIT=qt4 QT_API=pyqt DISPLAY=:99.0
+  - DISPLAY=:99.0
+
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install python-qt4 python-qt4-dev python-sip python-qt4-gl libqt4-scripttools python-numpy firefox
+  - echo "EPD_auth = 'dGVzdC5mcmVlQGZha2UuZG9tYWluOnRlc3Q9MTIzNA=='" > ${HOME}/.enstaller4rc
   - sh -e /etc/init.d/xvfb start
+
 install:
-  - pip install -r requirements.txt
-  - pip install -r dev_requirements.txt
+  - pip install enstaller selenium
+  - sudo apt-get install firefox
+  - enpkg requirements.txt
+  - enpkg optional_requirements.txt
   - python setup.py develop
+
 script:
   - coverage run -m unittest discover
+
 after_script:
   - coverage report
+
 notifications:
   email: false

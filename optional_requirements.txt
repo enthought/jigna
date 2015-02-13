@@ -1,2 +1,4 @@
+nose
 selenium
 coverage
+tornado
