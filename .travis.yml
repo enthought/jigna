@@ -7,23 +7,42 @@ env:
   - DISPLAY=:99.0 MASTER=master_2.7.3_2.1.0.dev1773-afa28b9_rh5-64.sh TARGET=`pwd`/target
 
 before_install:
-  - echo "EPD_auth = 'dGVzdC5mcmVlQGZha2UuZG9tYWluOnRlc3Q9MTIzNA=='" > ${HOME}/.enstaller4rc
+
+  # Prepare a Python environment with enpkg installed in it.
   - wget https://s3.amazonaws.com/enstaller-assets/masters/rh5-64/2.7.3/$MASTER
   - bash $MASTER -bp $TARGET
-  - sudo apt-get install firefox
-  - sh -e /etc/init.d/xvfb start
-
-install:
   - source $TARGET/bin/activate
-  - which python
   - wget https://s3.amazonaws.com/enstaller-assets/enstaller/bootstrap.py
   - python `pwd`/bootstrap.py
-  - enpkg distribute traits tornado pyside
+
+  # At this point, enpkg is installed - provide auth info now.
+  - echo "EPD_auth = 'dGVzdC5mcmVlQGZha2UuZG9tYWluOnRlc3Q9MTIzNA=='" > ${HOME}/.enstaller4rc
+
+  # Install pip
   - enpkg pip
+
+  # Make sure you have a web browser installed (for the web tests)
+  - sudo apt-get install firefox
+
+
+install:
+  # Install the standard dependencies (PySide based install)
+  - enpkg distribute traits pyside
+
+  # Install the web dependencies
+  - enpkg tornado
+
+  # Install the test dependencies
   - pip install nose selenium coverage
-  - python setup.py develop
+
+  # Install the current project source
+  - python setup.py install
 
 script:
+  # Start the X Server
+  - sh -e /etc/init.d/xvfb start
+
+  # Run the tests
   - coverage run -m unittest discover
 
 after_script:
