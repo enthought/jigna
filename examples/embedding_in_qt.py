@@ -35,7 +35,7 @@ def show_embedded_window(widget):
     """ Create and show a QMainWindow which embeds the given widget on a button
     click. This is a *blocking* call.
     """
-    from pyface.qt import QtGui
+    from jigna.qt import QtGui
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
 
     # Define a new QMainWindow

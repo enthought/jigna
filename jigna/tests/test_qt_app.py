@@ -1,7 +1,6 @@
 from jigna.api import QtApp
 from jigna.api import Template
-
-from pyface.qt import QtWebKit, QtGui
+from jigna.qt import QtWebKit, QtGui
 
 from traits.api import HasTraits, Str, Int
 

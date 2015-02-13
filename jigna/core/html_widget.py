@@ -374,7 +374,7 @@ class HTMLWidget(HasTraits):
         return obj
 
     def default_context_menu(self):
-        """ Return the default context menu (pyface). """
+        """ Return the default context menu. """
         if self.control is None:
             return None
 

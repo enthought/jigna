@@ -13,3 +13,6 @@ docs/build/
 build/
 dist/
 examples/.ipynb_checkpoints/
+
+*.sublime-workspace
+*.sublime-project
