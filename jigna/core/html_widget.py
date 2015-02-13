@@ -11,12 +11,7 @@ import webbrowser
 import logging
 from types import NoneType
 
-# System library imports.
-from pyface.qt import QtCore, QtGui, QtWebKit, QtNetwork
-from pyface.qt.QtWebKit import QWebPage
-
 # Enthought library imports.
-from pyface.widget import Widget
 from traits.api import ( HasTraits, Any, Bool, Callable, Dict, Either, Event,
     Instance, List, Property, Str, Tuple, Unicode, implements, on_trait_change,
     Float )
@@ -25,16 +20,23 @@ from traits.api import ( HasTraits, Any, Bool, Callable, Dict, Either, Event,
 from jigna.core.i_html_widget import IHTMLWidget
 from jigna.core.interoperation import create_js_object_wrapper
 from jigna.core.network_access import ProxyAccessManager
+from jigna.qt import QtCore, QtGui, QtWebKit, QtNetwork
 
 logger = logging.getLogger(__name__)
 
 
-class HTMLWidget(Widget):
+class HTMLWidget(HasTraits):
     """ A widget for displaying web content.
 
     See ``IHTMLWidget`` for detailed documentation.
     """
     implements(IHTMLWidget)
+
+    #### 'IWidget' interface ##################################################
+
+    control = Any
+
+    parent = Any
 
     #### 'IHTMLWidget' interface ##############################################
 
@@ -152,7 +154,10 @@ class HTMLWidget(Widget):
         self._network_access.deleteLater()
         self.control.page().deleteLater()
 
-        super(HTMLWidget, self).destroy()
+        if self.control is not None:
+            self.control.hide()
+            self.control.deleteLater()
+            self.control = None
 
     ###########################################################################
     # 'IHTMLWidget' interface.
@@ -220,32 +225,32 @@ class HTMLWidget(Widget):
     def undo(self):
         """ Performs an undo action in the underlying widget.
         """
-        self.control.page().triggerAction(QWebPage.Undo)
+        self.control.page().triggerAction(QtWebKit.QWebPage.Undo)
 
     def redo(self):
         """ Performs a redo action in the underlying widget.
         """
-        self.control.page().triggerAction(QWebPage.Redo)
+        self.control.page().triggerAction(QtWebKit.QWebPage.Redo)
 
     def cut(self):
         """ Performs a cut action in the underlying widget.
         """
-        self.control.page().triggerAction(QWebPage.Cut)
+        self.control.page().triggerAction(QtWebKit.QWebPage.Cut)
 
     def copy(self):
         """ Performs a copy action in the underlying widget.
         """
-        self.control.page().triggerAction(QWebPage.Copy)
+        self.control.page().triggerAction(QtWebKit.QWebPage.Copy)
 
     def paste(self):
         """ Performs a paste action in the underlying widget.
         """
-        self.control.page().triggerAction(QWebPage.Paste)
+        self.control.page().triggerAction(QtWebKit.QWebPage.Paste)
 
     def select_all(self):
         """ Performs a select all action in the underlying widget.
         """
-        self.control.page().triggerAction(QWebPage.SelectAll)
+        self.control.page().triggerAction(QtWebKit.QWebPage.SelectAll)
 
     ###########################################################################
     # Private interface.
@@ -282,11 +287,11 @@ class HTMLWidget(Widget):
     #### Trait initializers ###################################################
 
     def __disabled_actions_default(self):
-        return [QWebPage.OpenLinkInNewWindow,
-                QWebPage.DownloadLinkToDisk,
-                QWebPage.OpenImageInNewWindow,
-                QWebPage.OpenFrameInNewWindow,
-                QWebPage.DownloadImageToDisk]
+        return [QtWebKit.QWebPage.OpenLinkInNewWindow,
+                QtWebKit.QWebPage.DownloadLinkToDisk,
+                QtWebKit.QWebPage.OpenImageInNewWindow,
+                QtWebKit.QWebPage.OpenFrameInNewWindow,
+                QtWebKit.QWebPage.DownloadImageToDisk]
 
     #### Signal handlers ######################################################
 
