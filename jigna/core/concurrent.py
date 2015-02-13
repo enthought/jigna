@@ -16,6 +16,9 @@ from functools import wraps
 from traits.api import (HasTraits, Any, Range, Undefined, Instance, Str,
     Property, Enum, ReadOnly, DelegatesTo, Event)
 
+# Local imports.
+from ..utils.gui import invoke_later, set_trait_later
+
 ################################################################################
 # `Signal` class.
 ################################################################################
@@ -55,8 +58,7 @@ def do_callback(dispatch, callback, *args):
     """Invoke the callback with a suitable dispatch.
     """
     if dispatch == 'ui':
-        from pyface.gui import GUI
-        GUI.invoke_later(callback, *args)
+        invoke_later(callback, *args)
     else:
         callback(*args)
 
@@ -225,11 +227,10 @@ class Deferred(HasTraits):
             and set the progress to 1.0
         """
         if self.dispatch == 'ui':
-            from pyface.gui import GUI
             promise = self.promise
-            GUI.set_trait_later(promise, '_result', value)
-            GUI.set_trait_later(promise, '_progress', 1.0)
-            GUI.set_trait_later(promise, '_status', 'done')
+            set_trait_later(promise, '_result', value)
+            set_trait_later(promise, '_progress', 1.0)
+            set_trait_later(promise, '_status', 'done')
         else:
             with self.promise._lock:
                 self.promise._result = value
@@ -239,10 +240,9 @@ class Deferred(HasTraits):
     def error(self, value):
         """ Complete the deferred with failure and specified result. """
         if self.dispatch == 'ui':
-            from pyface.gui import GUI
             promise = self.promise
-            GUI.set_trait_later(promise, '_error', value)
-            GUI.set_trait_later(promise, '_status', 'error')
+            set_trait_later(promise, '_error', value)
+            set_trait_later(promise, '_status', 'error')
         else:
             with self.promise._lock:
                 self.promise._error = value
@@ -251,8 +251,7 @@ class Deferred(HasTraits):
     def progress(self, value):
         """ Set the progress of the operation (0 <= value <= 1). """
         if self.dispatch == 'ui':
-            from pyface.gui import GUI
-            GUI.set_trait_later(self.promise, '_progress', value)
+            set_trait_later(self.promise, '_progress', value)
         else:
             with self.promise._lock:
                 self.promise._progress = value

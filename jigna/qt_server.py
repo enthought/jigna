@@ -18,10 +18,10 @@ from traits.trait_notifiers import set_ui_handler
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
-from jigna.core.misc import ui_handler
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
 from jigna.qt import QtWebKit, QtGui
+from jigna.utils.gui import ui_handler
 
 class QtBridge(Bridge):
     """ Qt (via QWebkit) bridge implementation. """
