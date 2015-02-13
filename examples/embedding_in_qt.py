@@ -6,6 +6,7 @@ This example shows how to embed a jigna view to an existing QWidget framework.
 
 from traits.api import HasTraits, Int, Str
 from jigna.api import Template, QtApp
+from jigna.qt import QtGui
 
 #### Domain model ####
 
@@ -31,11 +32,27 @@ body_html = """
 
 template = Template(body_html=body_html)
 
-def show_embedded_window(widget):
-    """ Create and show a QMainWindow which embeds the given widget on a button
-    click. This is a *blocking* call.
+def create_jigna_widget():
+    """ Create a jigna based HTML widget. This widget is embedded in a QtGui
+    application.
+
     """
-    from jigna.qt import QtGui
+    # Instantiate the domain model
+    tom = Employee(name='Tom', salary=2000)
+
+    # Create a QtApp to render the HTML template with the given context.
+    app = QtApp(template=template, context={'employee': tom})
+
+    # Create the control from the QtApp
+    return app.create_widget()
+
+#### Entry point ####
+
+def main():
+    """ Create and show a QMainWindow which embeds the given widget on a button
+    click.
+
+    """
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
 
     # Define a new QMainWindow
@@ -49,31 +66,13 @@ def show_embedded_window(widget):
 
     # Add a button to the layout which embeds the supplied widget on click.
     button = QtGui.QPushButton("I'm a QPushButton. Press me to embed a widget")
-    button.clicked.connect(lambda : layout.addWidget(widget))
+    button.clicked.connect(lambda : layout.addWidget(create_jigna_widget()))
     layout.addWidget(button)
 
     # Show the window
     window.show()
 
     app.exec_()
-
-#### Entry point ####
-
-def main():
-    # Instantiate the domain model
-    tom = Employee(name='Tom', salary=2000)
-
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'employee': tom})
-
-    # Create the control from the QtApp
-    widget = app.create_widget()
-
-    # Embed the widget created above to another Qt window.
-    show_embedded_window(widget)
-
-    # Check the values after the UI is closed
-    print tom.name, tom.salary
 
 if __name__ == "__main__":
     main()
