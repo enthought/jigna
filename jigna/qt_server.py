@@ -14,12 +14,12 @@ from os.path import abspath, dirname, join
 
 # Enthought library.
 from traits.api import Any, Str, Instance
-from pyface.qt import QtWebKit, QtGui
 
 # Jigna libary.
 from jigna.core.html_widget import HTMLWidget
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
+from jigna.qt import QtWebKit, QtGui
 
 class QtBridge(Bridge):
     """ Qt (via QWebkit) bridge implementation. """
