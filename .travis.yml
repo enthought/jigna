@@ -4,14 +4,14 @@ python:
   - "2.7"
 
 env:
-  - DISPLAY=:99.0 MASTER=master_2.7.3_2.1.0.dev1773-afa28b9_rh5-64.sh TARGET=`pwd`/target
+  - DISPLAY=:99.0 MASTER=master_2.7.3_2.1.0.dev1773-afa28b9_rh5-64.sh RUNTIME=`pwd`/runtime
 
 before_install:
 
   # Prepare a Python environment with enpkg installed in it.
   - wget https://s3.amazonaws.com/enstaller-assets/masters/rh5-64/2.7.3/$MASTER
-  - bash $MASTER -bp $TARGET
-  - source $TARGET/bin/activate
+  - bash $MASTER -bp $RUNTIME
+  - source $RUNTIME/bin/activate
   - wget https://s3.amazonaws.com/enstaller-assets/enstaller/bootstrap.py
   - python `pwd`/bootstrap.py
 
@@ -25,8 +25,6 @@ before_install:
   # server is running
   - sudo apt-get install firefox
   - sh -e /etc/init.d/xvfb start
-
-
 
 install:
   # Install the standard dependencies (PySide based install)
