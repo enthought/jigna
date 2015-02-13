@@ -19,7 +19,7 @@ setup(
     url='https://github.com/enthought/jigna',
     description='HTML frontend for Traits models.',
     long_description=open('README.rst').read(),
-    install_requires=open('requirements.txt').read().split('\n'),
+    install_requires=open('requirements_qt.txt').read().split('\n'),
     packages=find_packages(),
     package_dir={'jigna':'jigna'},
     include_package_data=True,

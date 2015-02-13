@@ -8,13 +8,13 @@ env:
 
 before_install:
   - echo "EPD_auth = 'dGVzdC5mcmVlQGZha2UuZG9tYWluOnRlc3Q9MTIzNA=='" > ${HOME}/.enstaller4rc
+  - pip install enstaller
   - sh -e /etc/init.d/xvfb start
 
 install:
-  - pip install enstaller selenium
+  - pip install -r requirements_test.txt
   - sudo apt-get install firefox
-  - enpkg requirements.txt
-  - enpkg optional_requirements.txt
+  - enpkg traits pyside tornado
   - python setup.py develop
 
 script:
