@@ -22,6 +22,11 @@ def do_after(ms, callable, *args, **kw):
     """
     _FutureCall(ms, callable, *args, **kw)
 
+def process_events():
+    """ Process all events.
+    """
+    QtCore.QCoreApplication.processEvents(QtCore.QEventLoop.AllEvents)
+
 #### Private protocol #########################################################
 
 class _FutureCall(QtCore.QObject):
