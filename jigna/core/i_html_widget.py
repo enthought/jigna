@@ -6,12 +6,11 @@
 #
 
 # Enthought library imports.
-from pyface.i_widget import IWidget
 from traits.api import HasTraits, Bool, Callable, Dict, Either, Event, \
-    Instance, List, Str, Tuple, Unicode, Float, Any
+    Instance, List, Str, Tuple, Unicode, Float, Any, Interface
 
 
-class IHTMLWidget(IWidget):
+class IHTMLWidget(Interface):
     """ A widget for displaying web content.
 
     The widget has support for HTML rendering, URL navigation, and
@@ -19,6 +18,10 @@ class IHTMLWidget(IWidget):
     """
 
     #### 'IHTMLWidget' interface ##############################################
+
+    control = Any
+
+    parent = Any
 
     # The URL for the current page. Read only.
     url = Str

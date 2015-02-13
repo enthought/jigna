@@ -32,13 +32,11 @@ class HTMLWidget(HasTraits):
     """
     implements(IHTMLWidget)
 
-    #### 'IWidget' interface ##################################################
+    #### 'IHTMLWidget' interface ##############################################
 
     control = Any
 
     parent = Any
-
-    #### 'IHTMLWidget' interface ##############################################
 
     # The URL for the current page. Read only.
     url = Str
