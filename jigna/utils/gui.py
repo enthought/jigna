@@ -1,3 +1,6 @@
+# Standard library imports
+import sys
+
 # Local imports
 from ..qt import QtGui, QtCore
 
@@ -5,7 +8,7 @@ def ui_handler(handler, *args, **kw):
     """ Handles UI notification handler requests that occur on a thread other
     than the UI thread.
     """
-    _FutureCall(0, handler, *args, **kw)
+    invoke_later(handler, *args, **kw)
 
 def set_trait_later(obj, trait_name, value):
     """ Set the given trait name on the given object in the GUI thread.
@@ -15,12 +18,13 @@ def set_trait_later(obj, trait_name, value):
 def invoke_later(callable, *args, **kw):
     """ Invoke the callable in the GUI thread.
     """
-    do_after(0, callable, *args, **kw)
+    _FutureCall(0, callable, *args, **kw)
 
 def do_after(ms, callable, *args, **kw):
     """ Invoke the callable after the given number of milliseconds.
     """
-    _FutureCall(ms, callable, *args, **kw)
+    app = QtGui.QApplication.instance() or QtGui.QApplication(sys.argv)
+    QtCore.QTimer.singleShot(ms, lambda : callable(*args, **kw))
 
 def process_events():
     """ Process all events.
