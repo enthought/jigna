@@ -36,7 +36,7 @@ class _FutureCall(QtCore.QObject):
     _calls_mutex = QtCore.QMutex()
 
     # A new Qt event type for _FutureCalls
-    _pyface_event = QtCore.QEvent.Type(QtCore.QEvent.registerEventType())
+    _gui_event = QtCore.QEvent.Type(QtCore.QEvent.registerEventType())
 
     def __init__(self, ms, callable, *args, **kw):
         super(_FutureCall, self).__init__()
@@ -58,14 +58,14 @@ class _FutureCall(QtCore.QObject):
         # Post an event to be dispatched on the main GUI thread. Note that
         # we do not call QTimer.singleShot here, which would be simpler, because
         # that only works on QThreads. We want regular Python threads to work.
-        event = QtCore.QEvent(self._pyface_event)
+        event = QtCore.QEvent(self._gui_event)
         QtGui.QApplication.postEvent(self, event)
         QtGui.QApplication.sendPostedEvents()
 
     def event(self, event):
         """ QObject event handler.
         """
-        if event.type() == self._pyface_event:
+        if event.type() == self._gui_event:
             # Invoke the callable (puts it at the end of the event queue)
             QtCore.QTimer.singleShot(self._ms, self._dispatch)
             return True
