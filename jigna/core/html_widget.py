@@ -560,7 +560,7 @@ class WebView(QtWebKit.QWebView):
 
 
 if __name__ == '__main__':
-    from pyface.qt import QtGui
+    from jigna.qt import QtGui
     app = QtGui.QApplication.instance() or QtGui.QApplication([])
     w = HTMLWidget()
     w.create()
