@@ -22,17 +22,20 @@ def get_value(obj, extended_trait_name):
     """
     return eval('obj.'+extended_trait_name, {'obj': obj})
 
-#-------------------------------------------------------------------------------
-#  Handles UI notification handler requests that occur on a thread other than
-#  the UI thread:
-#-------------------------------------------------------------------------------
+def ui_handler(handler, *args, **kwds):
+    """ Handles UI notification handler requests that occur on a thread other
+        than the UI thread.
+    """
+    _CallAfter(handler, *args, **kwds)
 
-_QT_TRAITS_EVENT = QtCore.QEvent.Type(QtCore.QEvent.registerEventType())
+#### Private protocol #########################################################
 
 class _CallAfter(QtCore.QObject):
     """ This class dispatches a handler so that it executes in the main GUI
         thread (similar to the wx function).
     """
+
+    _QT_TRAITS_EVENT = QtCore.QEvent.Type(QtCore.QEvent.registerEventType())
 
     # The list of pending calls.
     _calls = []
@@ -61,13 +64,13 @@ class _CallAfter(QtCore.QObject):
         # Post an event to be dispatched on the main GUI thread. Note that
         # we do not call QTimer.singleShot, which would be simpler, because
         # that only works on QThreads. We want regular Python threads to work.
-        event = QtCore.QEvent(_QT_TRAITS_EVENT)
+        event = QtCore.QEvent(self._QT_TRAITS_EVENT)
         QtGui.QApplication.instance().postEvent(self, event)
 
     def event(self, event):
         """ QObject event handler.
         """
-        if event.type() == _QT_TRAITS_EVENT:
+        if event.type() == self._QT_TRAITS_EVENT:
             # Invoke the handler
             self._handler(*self._args, **self._kwds)
 
@@ -86,9 +89,3 @@ class _CallAfter(QtCore.QObject):
         self._calls_mutex.lock()
         del self._calls[self._calls.index(self)]
         self._calls_mutex.unlock()
-
-def ui_handler(handler, *args, **kwds):
-    """ Handles UI notification handler requests that occur on a thread other
-        than the UI thread.
-    """
-    _CallAfter(handler, *args, **kwds)
