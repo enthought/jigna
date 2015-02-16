@@ -41,7 +41,7 @@ install:
 
 script:
   # Run the tests
-  - coverage run -m unittest discover
+    - nosetests -sv
 
 after_script:
   - coverage report
