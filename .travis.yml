@@ -27,21 +27,11 @@ before_install:
   - sh -e /etc/init.d/xvfb start
 
 install:
-  # Install the standard dependencies (PySide based install)
-  - enpkg distribute traits pyside
-
-  # Install the web dependencies
-  - enpkg tornado
-
-  # Install the test dependencies
-  - pip install nose selenium coverage
-
-  # Install the current project source
-  - python setup.py install
+  - sh develop.sh
 
 script:
   # Run the tests
-    - nosetests -sv
+  - nosetests -sv
 
 after_script:
   - coverage report

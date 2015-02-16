@@ -19,32 +19,14 @@ remotely, allowing us to view and manipulate a Traits-based-object from the web.
 Installation
 ============
 
-These installation instructions assume that you have a working Python
-environment with enpkg and pip installed in it.
+To install jigna, copy and paste the following commands on your shell::
 
-The standard installation installs a PySide based Qt egg for displaying the UI::
-
-    enpkg traits pyside
-    python setup.py develop
-
-If you want a PyQt based installation, you can install PyQt from pip::
-
-    enpkg traits
-    pip install python-qt
-    python setup.py develop
-
-If you want a web based installation (for viewing the UI in a regular web
-browser), you need to install tornado::
-
-    enpkg traits tornado
-    python setup.py develop
+    git clone git@github.com:enthought/jigna.git
+    cd jigna
+    sh develop.sh
 
 Testing
 =======
-
-For testing the library, you need to install some additional dependencies::
-
-    pip install nose selenium coverage
 
 To run the tests, you can simply do the following from the project's root
 directory::
