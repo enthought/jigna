@@ -1,4 +1,0 @@
-traits
-traitsui
-pyface
-tornado

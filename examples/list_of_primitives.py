@@ -54,7 +54,7 @@ def main():
     #
     # We're trying to append and insert primitives to the list in the future.
     # This should be reflected in the UI.
-    from pyface.timer.api import do_after
+    from jigna.utils.gui import do_after
     do_after(2500, basket.fruits.append, 'mango')
     do_after(5000, basket.fruits.insert, 0, 'banana')
 

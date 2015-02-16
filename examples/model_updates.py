@@ -37,7 +37,7 @@ def main():
 
     # Schedule an update to a model variable after 2.5 seconds. This update
     # will be reflected in the UI immediately.
-    from pyface.timer.api import do_after
+    from jigna.utils.gui import do_after
     do_after(2500, motd.update_message, "Flat is better than nested.")
 
     # Start the event loop

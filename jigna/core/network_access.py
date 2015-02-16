@@ -12,15 +12,13 @@ import threading
 from StringIO import StringIO
 
 # System library imports.
-from pyface.qt import QtCore
-from pyface.qt.QtNetwork import QNetworkAccessManager, QNetworkReply, \
-    QNetworkRequest
+from jigna.qt import QtCore, QtNetwork
 
 # Logger.
 logger = logging.getLogger(__name__)
 
 
-class ProxyAccessManager(QNetworkAccessManager):
+class ProxyAccessManager(QtNetwork.QNetworkAccessManager):
     """ A QNetworkAccessManager subclass which proxies requests for a set of
     hosts and schemes.
     """
@@ -77,7 +75,7 @@ class ProxyAccessManager(QNetworkAccessManager):
             operation, request, data)
 
 
-class ProxyReply(QNetworkReply):
+class ProxyReply(QtNetwork.QNetworkReply):
     """ QNetworkReply subclass to send a specific request to local wsgi app.
     """
     def __init__(self, parent, url, operation, req, data, handler):
@@ -136,8 +134,8 @@ class ProxyReplyWorker(QtCore.QThread):
     readyRead = QtCore.Signal()
     finished = QtCore.Signal()
 
-    OPERATIONS = {QNetworkAccessManager.GetOperation: 'GET',
-                  QNetworkAccessManager.PostOperation: 'POST',}
+    OPERATIONS = {QtNetwork.QNetworkAccessManager.GetOperation: 'GET',
+                  QtNetwork.QNetworkAccessManager.PostOperation: 'POST',}
 
     def __init__(self, reply, parent=None):
         super(ProxyReplyWorker, self).__init__(parent)
@@ -202,9 +200,13 @@ class ProxyReplyWorker(QtCore.QThread):
         except Exception as e:
             if reply.aborted:
                 return
-            reply.setAttribute(QNetworkRequest.HttpStatusCodeAttribute, 500)
-            reply.setAttribute(QNetworkRequest.HttpReasonPhraseAttribute,
-                               'Internal Error')
+            reply.setAttribute(
+                QtNetwork.QNetworkRequest.HttpStatusCodeAttribute, 500
+            )
+            reply.setAttribute(
+                QtNetwork.QNetworkRequest.HttpReasonPhraseAttribute,
+                'Internal Error'
+            )
             with reply._buflock:
                 reply.buffer += 'WSGI Proxy "Server" Error.\n' + str(e)
         finally:
@@ -218,10 +220,12 @@ class ProxyReplyWorker(QtCore.QThread):
     def _start_response(self, status, response_headers):
         """ WSGI start_response callable. """
         code, reason = status.split(' ', 1)
-        self.reply.setAttribute(QNetworkRequest.HttpStatusCodeAttribute,
-                          int(code))
-        self.reply.setAttribute(QNetworkRequest.HttpReasonPhraseAttribute,
-                          reason)
+        self.reply.setAttribute(
+            QtNetwork.QNetworkRequest.HttpStatusCodeAttribute, int(code)
+        )
+        self.reply.setAttribute(
+            QtNetwork.QNetworkRequest.HttpReasonPhraseAttribute, reason
+        )
         for name, value in response_headers:
             self.reply.setRawHeader(name, str(value))
 

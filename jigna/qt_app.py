@@ -5,6 +5,8 @@
 # All right reserved.
 #
 
+from __future__ import absolute_import
+
 # Standard Library
 import os
 from os.path import join
@@ -12,11 +14,9 @@ from os.path import join
 # Enthought Library
 from traits.api import Instance
 
-# Qt Library
-from pyface.qt import QtGui
-
 # Local Library
-from app import App
+from .app import App
+from .qt import QtGui
 
 class QtApp(App):
     """ A Qt based App to render the jigna template with a given context on a

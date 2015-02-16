@@ -44,7 +44,7 @@ def main():
     #
     # The operation should fill in the `spouse` field of the person and this
     # should be reflected in the UI.
-    from pyface.timer.api import do_after
+    from jigna.utils.gui import do_after
     do_after(2500, fred.marry, wilma)
 
     # Start the event loop.

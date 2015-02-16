@@ -10,7 +10,7 @@ import inspect
 import logging
 
 # System library imports.
-from pyface.qt import QtCore
+from jigna.qt import QtCore
 
 # Logger.
 logger = logging.getLogger(__name__)

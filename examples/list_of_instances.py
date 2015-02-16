@@ -44,7 +44,7 @@ def main():
     #
     # We're trying to append and insert instances in the list in the future.
     # This should be reflected in the UI.
-    from pyface.timer.api import do_after
+    from jigna.utils.gui import do_after
     do_after(2500, fred.friends.append, Person(name='Wilma'))
     do_after(5000, fred.friends.insert, 0, Person(name='Barney'))
 

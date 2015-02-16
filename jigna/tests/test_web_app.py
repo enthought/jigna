@@ -9,9 +9,12 @@ from unittest import skip
 from traits.api import HasTraits, Str, Int
 
 # Third party libraries
-import tornado
-from tornado.testing import AsyncHTTPTestCase
-from selenium import webdriver
+try:
+    import tornado
+    from tornado.testing import AsyncHTTPTestCase
+    from selenium import webdriver
+except ImportError:
+    raise unittest.SkipTest("Tornado not installed")
 
 # Local library
 from jigna.api import WebApp
@@ -22,7 +25,7 @@ class MyModel(HasTraits):
     attr1 = Str
     attr2 = Int
 
-@skip("Ignoring web tests for now")
+@skip("Web tests don't work at the moment")
 class TestWebApp(AsyncHTTPTestCase):
 
     def setUp(self):

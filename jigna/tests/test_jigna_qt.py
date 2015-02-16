@@ -1,11 +1,10 @@
 from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
 from jigna.api import Template, QtApp
-from pyface.gui import GUI
-from pyface.qt import QtGui, QtCore
+from jigna.utils import gui
+from jigna.qt import QtGui
 
 import unittest
 import time
-from types import NoneType
 
 #### Test model ####
 
@@ -72,7 +71,7 @@ class TestJignaQt(unittest.TestCase):
         fred = Person(name='Fred', age=42)
         app = QtApp(template=template, context={'model':fred})
         widget = app.create_widget()
-        GUI.process_events()
+        gui.process_events()
         cls.app = app
         cls.fred = fred
 
@@ -88,9 +87,9 @@ class TestJignaQt(unittest.TestCase):
         self.fred.method_slow_called_with = None
 
     def execute_js(self, js):
-        GUI.process_events()
+        gui.process_events()
         result = self.bridge.widget.execute_js(js)
-        GUI.process_events()
+        gui.process_events()
         return result
 
     def assertJSEqual(self, js, value):
