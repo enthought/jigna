@@ -10,16 +10,14 @@ import os
 from os.path import join
 
 # Enthought Library
-from traits.api import Instance, Int
+from traits.api import Instance, Int, HasTraits
 
 # Tornado Library
 from tornado.ioloop import IOLoop
 from tornado import web
 
-# Local Library
-from app import App
 
-class WebApp(App):
+class WebApp(HasTraits):
     """ A web based App to serve the jigna template with a given context over
     the web where it can be viewed using a regular web browser. """
 

@@ -4,8 +4,9 @@ This example is the simplest example which shows how to start a jigna view.
 
 #### Imports ####
 
+from jigna.api import Template, HTMLWidget
+from jigna.qt import QtGui
 from traits.api import HasTraits, Int, Str
-from jigna.api import Template, QtApp
 
 #### Domain model ####
 
@@ -27,14 +28,19 @@ template = Template(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start a QtGui application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'person': fred})
+    # Create a jigna based HTML widget to render the HTML template with the
+    # given context.
+    widget = HTMLWidget(template=template, context={'person': fred})
+    widget.show()
 
     # Start the event loop
-    app.start()
+    app.exec_()
 
     # Check the values after the UI is closed
     print fred.name, fred.age
