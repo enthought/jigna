@@ -17,10 +17,10 @@ from traits.api import Any, Str, Instance
 from traits.trait_notifiers import set_ui_handler
 
 # Jigna libary.
-from jigna.core.web_view_container import JignaWebView
+from jigna.core.qwebview import ProxyWebView
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
-from jigna.qt import QtWebKit, QtGui
+from jigna.qt import QtWebKit, QtGui, QtCore
 from jigna.utils.gui import invoke_later, ui_handler
 
 class QtBridge(Bridge):
@@ -59,11 +59,11 @@ class QtServer(Server):
 
     ### 'QtServer' protocol ##################################################
 
-    #: The `JignaWebView` object which specifies rules about how to handle
+    #: The `ProxyWebView` object which specifies rules about how to handle
     #: different requests etc.
-    webview = Instance(JignaWebView)
+    webview = Instance(ProxyWebView)
     def _webview_default(self):
-        return JignaWebView(
+        return ProxyWebView(
             python_namespace = 'qt_bridge',
             callbacks        = [('handle_request', self.handle_request)],
             debug            = True,
@@ -80,7 +80,9 @@ class QtServer(Server):
         """
         self.webview.setParent(widget)
 
-        self.webview.setHtml(self.html, self.base_url)
+        self.webview.setHtml(
+            self.html, QtCore.QUrl.fromLocalFile(self.base_url)
+        )
         self._wait_for_page_ready()
 
         self._enable_qwidget_embedding()
@@ -126,16 +128,12 @@ class QtServer(Server):
         to be replaced with something much smarter like:
         http://doc.qt.digia.com/qq/qq27-responsive-guis.html#waitinginalocaleventloop
         """
-        loading = True
-        def _on_load_finished():
-            print 'load mat le'
-            global loading
-            loading = False
 
-        self.webview.page().loadFinished.connect(_on_load_finished)
+        event_loop = QtCore.QEventLoop()
 
-        while loading:
-            QtGui.QApplication.processEvents()
+        self.webview.page().loadFinished.connect(event_loop.quit)
+
+        event_loop.exec_()
 
 
 class QtWebPluginFactory(QtWebKit.QWebPluginFactory):
