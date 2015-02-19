@@ -121,8 +121,7 @@ class WebViewContainer(HasTraits):
         control = _WebView(parent)
         control.setSizePolicy(QtGui.QSizePolicy.Expanding,
                               QtGui.QSizePolicy.Expanding)
-        page = _WebPage(control)
-        page.js_console_msg.connect(self._on_js_console_msg)
+        page = QtWebKit.QWebPage(control)
         control.setPage(page)
         frame = page.mainFrame()
 
@@ -130,8 +129,6 @@ class WebViewContainer(HasTraits):
         frame.javaScriptWindowObjectCleared.connect(self._js_cleared_signal)
         frame.titleChanged.connect(self._title_signal)
         frame.urlChanged.connect(self._url_signal)
-        page.navigation_request.connect(self._navigation_request_signal,
-                                        QtCore.Qt.DirectConnection)
         page.loadFinished.connect(self._load_finished_signal)
 
         for action in self._disabled_actions:
@@ -334,33 +331,6 @@ class WebViewContainer(HasTraits):
 
                 exposed_containers.append(js_object_wrapper)
 
-    def _navigation_request_signal(self, nav_req):
-        if self.url == '':
-            # If no url has been loaded yet, let the url load.
-            return
-
-        qurl = nav_req.request.url()
-        str_url = qurl.toString()
-
-        if nav_req.frame is None:
-            # request to open in new window.
-            # TODO: implement createWindow() to open in a tab.
-            # open externally until TODO is completed.
-            webbrowser.open_new(str_url)
-            nav_req.reject()
-
-        # Now fall back to other handling methods.
-        scheme = str(qurl.scheme())
-        if scheme in self.click_schemes:
-            self.click_schemes[scheme](str_url)
-            nav_req.reject()
-        elif qurl.host() in self.hosts:
-            # Load hosts pages locally even if open_externally is specified.
-            return
-        elif self.open_externally:
-            webbrowser.open_new(str_url)
-            nav_req.reject()
-
     def _load_finished_signal(self, ok):
         # Make sure that the widget has not been destroyed during loading.
         if self.control is not None:
@@ -377,10 +347,6 @@ class WebViewContainer(HasTraits):
 
     def _url_signal(self, url):
         self.url = url.toString()
-
-    def _on_js_console_msg(self, msg, lineno, sourceid):
-        """ Log the javascript console messages. """
-        logger.debug('JS: <%s>:%s(%s) %s', self.url, lineno, sourceid, msg)
 
     def _apply_null_fix(self, obj):
         """ Makes sure that None objects coming from Qt bridge are actually None.
@@ -403,97 +369,6 @@ class WebViewContainer(HasTraits):
         qmenu = page.createStandardContextMenu()
         return qmenu
 
-
-class _NavigationRequest(object):
-    """ A navigation request object which can be used to indicate whether to
-    accept or reject a navigation request in a web page. """
-    __slots__ = ['_accepted', 'page', 'frame', 'request', 'type']
-
-    def __init__(self, page, frame, request, type):
-        self._accepted = None
-        self.page = page
-        self.frame = frame
-        self.request = request
-        self.type = type
-
-    def accept(self):
-        """ Indicate that the navigation request must proceed. """
-        self._accepted = True
-
-    def reject(self):
-        """ Indicate that the navigation request must be cancelled. """
-        self._accepted = False
-
-    def ignore(self):
-        """ Indicate default behavior for the navigation request. """
-        self._accepted = None
-
-
-class _WebPage(QtWebKit.QWebPage):
-    """ QWebpage subclass to enable logging of javascript console messages. """
-    js_console_msg = QtCore.Signal(str, int, str)
-
-    # NOTE: This signal's argument is used by the emitter.
-    # Use `DirectConnection` when connecting, and connect
-    # from objects in same thread.
-    navigation_request = QtCore.Signal(_NavigationRequest)
-
-    def __init__(self, parent=None):
-        super(_WebPage, self).__init__(parent)
-
-    def supportsExtension(self, extension):
-        """ Overridden to enable showing error page (ErrorPageExtension). """
-        if extension == self.ErrorPageExtension:
-            return True
-        else:
-            return super(_WebPage, self).supportsExtension(extension)
-
-    def extension(self, extension, option, output):
-        """ Overridden to show error page when loading a frame fails. """
-        if extension == self.ErrorPageExtension:
-            domain_map = {self.QtNetwork: 'Network Error',
-                          self.Http: 'HTTP Error',
-                          self.WebKit: 'Internal Error'}
-            code_type_map = {self.QtNetwork: 'Network Error Code',
-                             self.Http: 'HTTP Status Code',
-                             self.WebKit: 'Internal Error Code'}
-            code_map = {self.QtNetwork:
-                            lambda code: QtNetwork.QNetworkReply.NetworkError(code).name,
-                        self.Http:
-                            lambda code: str(code),
-                        self.WebKit:
-                            lambda code: str(code)}
-            content = '''<html><body>
-                         <h1>An error occurred while loading the page.</h1>
-                         <h2><b>URL:</b> {url}</h2>
-                         <h2><b>Nature of Error:</b> {domain}</h2>
-                         <h3><b>{code_type}:</b> {code}</h3>
-                         <h3><b>Error Message:</b> {message}</h3>
-                         </body></html>'''.format(url=option.url.toString(),
-                                domain=domain_map[option.domain],
-                                code_type=code_type_map[option.domain],
-                                code=code_map[option.domain](option.error),
-                                message=option.errorString)
-            output.content = bytes(content)
-            output.contentType = 'text/html'
-            output.encoding = 'UTF-8'
-            return True
-        return super(_WebPage, self).extension(extension, option, output)
-
-    def javaScriptConsoleMessage(self, message, lineno, source_id):
-        self.js_console_msg.emit(message, lineno, source_id)
-        return super(_WebPage, self).javaScriptConsoleMessage(
-                                                   message, lineno, source_id)
-
-    def acceptNavigationRequest(self, frame, request, type):
-        """ Overridden to forward request to navigation handler, if set. """
-        nav_req = _NavigationRequest(self, frame, request, type)
-        self.navigation_request.emit(nav_req)
-        if nav_req._accepted is None:
-            return super(_WebPage, self).acceptNavigationRequest(
-                                                   frame, request, type)
-        else:
-            return nav_req._accepted
 
 class DarwinWebView(QtWebKit.QWebView):
     """ A QWebView suitable for use in HTMLWidget. """
