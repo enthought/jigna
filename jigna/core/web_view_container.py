@@ -13,11 +13,10 @@ from types import NoneType
 
 # Enthought library imports.
 from traits.api import ( HasTraits, Any, Bool, Callable, Dict, Either, Event,
-    Instance, List, Property, Str, Tuple, Unicode, implements, on_trait_change,
+    Instance, List, Property, Str, Tuple, Unicode, on_trait_change,
     Float )
 
 # Local imports.
-from jigna.core.i_html_widget import IHTMLWidget
 from jigna.core.interoperation import create_js_object_wrapper
 from jigna.core.network_access import ProxyAccessManager
 from jigna.qt import QtCore, QtGui, QtWebKit, QtNetwork
@@ -28,11 +27,7 @@ logger = logging.getLogger(__name__)
 class WebViewContainer(HasTraits):
     """ A container for displaying web content.
 
-    See ``IHTMLWidget`` for detailed documentation.
     """
-    implements(IHTMLWidget)
-
-    #### 'IHTMLWidget' interface ##############################################
 
     control = Any
 
@@ -70,20 +65,43 @@ class WebViewContainer(HasTraits):
     # The object to expose to JavaScript using the information below.
     js_object = Instance(HasTraits)
 
-    # A list of callables to expose to Javascript.
+    # A list of callables to expose to Javascript. Each pair is either a method
+    # name or a tuple of form:
+    #
+    #     (javascript_name, callable(arg1, arg2, ...) -> result).
+    #
+    # Only primitive values (bool, int, long, float, str, and unicode) are
+    # supported as arguments and return values. Keyword arguments and
+    # variable-length argument lists are ignored.
     callbacks = List(Either(Str, Tuple(Str, Callable)))
 
-    # A list of traits to expose to Javascript.
+    # A list of traits to expose to Javascript. Each item is a either a trait
+    # name or a tuple of form:
+    #
+    #     (javascript_name, trait_name)
+    #
+    # Only structures consisting of lists, dicts, and primitive values (bool,
+    # int, long, float, str, and unicode) are supported.
     properties = List(Either(Str, Tuple(Str, Str)))
 
     # The name of the Javascript object that will contain the registered
     # callbacks and properties.
     python_namespace = Str('python')
 
-    # A list of schemes to intercept clicks on and functions to handle them.
+    # A list of schemes to intercept clicks on and functions to handle
+    # them, e.g.
+    #
+    #     ('doc', foo.open_doc)
+    #
+    # The callback should take a URL and handle opening or loading.
     click_schemes = Dict(Str, Callable)
 
-    # A list of hosts and wsgi apps to handle them.
+    # A list of hosts and wsgi apps to handle them
+    # (http://www.python.org/dev/peps/pep-3333/), e.g.,
+    #
+    #     ('doc.jigna', doc_url_to_html)
+    #
+    # The callback should take a URL and return an HTML string.
     hosts = Dict(Str, Callable)
 
     # A list of url root paths and wsgi apps to handle them.
@@ -159,18 +177,20 @@ class WebViewContainer(HasTraits):
             self.control.deleteLater()
             self.control = None
 
-    ###########################################################################
-    # 'IHTMLWidget' interface.
-    ###########################################################################
-
     def create(self, parent=None):
         """ Create the HTML widget's underlying control.
+
+        The HTML widget should be torn down by calling ``destroy()``, which is
+        part of the IWidget interface.
         """
         self.parent = parent
         self.control = self._create_control(parent)
 
     def execute_js(self, js):
         """ Execute JavaScript synchronously.
+
+        Warning: under most circumstances, this method should not be called when
+        the page is loading.
         """
         frame = self.control.page().mainFrame()
         result = frame.evaluateJavaScript(js)
@@ -180,6 +200,15 @@ class WebViewContainer(HasTraits):
 
     def load_html(self, html, base_url=None):
         """ Loads raw HTML into the widget.
+
+        Parameters:
+        -----------
+        html : unicode
+            An HTML string.
+
+        base_url : str
+            If specified, external objects (e.g. stylesheets and images) are
+            relative to this URL.
         """
         self.loading = True
         if base_url:
