@@ -78,7 +78,6 @@ class TestJignaQt(unittest.TestCase):
     def setUp(self):
         cls = self.__class__
         self.widget = cls.widget
-        self.bridge = self.widget._server._bridge
         self.fred = cls.fred
         self.fred.spouse = None
         self.fred.fruits = []
@@ -88,7 +87,7 @@ class TestJignaQt(unittest.TestCase):
 
     def execute_js(self, js):
         gui.process_events()
-        result = self.bridge.webview_container.execute_js(js)
+        result = self.widget.execute_js(js)
         gui.process_events()
         return result
 

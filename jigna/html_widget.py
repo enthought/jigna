@@ -13,7 +13,7 @@ from os.path import join
 
 # Local Library
 from .qt import QtGui
-
+from .qt_server import QtServer
 
 class HTMLWidget(QtGui.QWidget):
     """ A Qt based HTML widget to render the jigna template with a given
@@ -27,12 +27,12 @@ class HTMLWidget(QtGui.QWidget):
         self.context = context
         self.template = template
 
-        self._create()
+        self._webview = self._create()
 
     def execute_js(self, js):
         """ Execute the given js string on the HTML widget.
         """
-        return self._webview_container.execute_js(js)
+        return self._webview.execute_js(js)
 
     #### Private protocol #####################################################
 
@@ -40,21 +40,18 @@ class HTMLWidget(QtGui.QWidget):
         """ Create the jigna widget to render the template with the context.
         """
 
-        from jigna.qt_server import QtServer
+        # Set up the client
+        self.resize(*self.template.recommended_size)
 
-        # Set up the QtServer to serve the domain models in context
-        self._server = QtServer(
+        # Set up the server to serve the domain models in context
+        server = QtServer(
             base_url = join(os.getcwd(), self.template.base_url),
             html     = self.template.html,
             context  = self.context
         )
-        self._server.initialize()
-
-        # Set up the client
-        self._webview_container = self._server.webview_container
-        self._webview_container.create(parent=self)
-        size = self.template.recommended_size
-        self._webview_container.control.resize(size[0], size[1])
+        server.initialize()
 
         # Connect the client to the server
-        self._server.connect(self._webview_container)
+        server.connect(self)
+
+        return server.webview

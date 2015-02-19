@@ -15,45 +15,9 @@ from jigna.qt import QtCore
 # Logger.
 logger = logging.getLogger(__name__)
 
-###############################################################################
-# Functions.
-###############################################################################
-
-class PythonContainer(QtCore.QObject):
-    """ Container class for python object to be exposed to js. """
-    def __init__(self, parent=None, slot_map=None):
-        super(PythonContainer, self).__init__(parent)
-
-        # slot_name: callable
-        self._slot_map = slot_map
-
-
 def create_js_object_wrapper(callbacks=[], parent=None):
-    """ Create an object wrapper for python objects.
-
-    Usage:
-    ------
-    1. Auto wrap python objects:
-
-       Call with a python object as `obj` and both `callbacks` and `properties`
-       unspecified. Any attributes of `obj` wrappable in JS will be wrapped.
-
-    2. Wrap specified attributes of object:
-
-       Call with `callbacks` and `properties` as a list of attributes to be
-       exposed to JS.
-
-       Each element of the list must be either:
-        - str, which is taken as the attribute name of `obj` to be
-          exposed to JS with same name and whose value is the value of
-          the attribute of `obj`
-        - 2-tuple (str,obj/callable), where the second element object
-          exposed to JS with first element str as the property name.
-          In this case the argument `obj` is unused.
-
-    Note: Arbitrary object cannot be wrapped and callables in the form of
-    function objects cannot be exposed as functions in JS. If `obj` is a dict,
-    the items of the dict are exposed instead of the attributes.
+    """ Create a JS object wrapper containing the given callbacks as its
+    methods.
 
     Note: Set the parent (setParent()) of the returned QObject to make sure
     it is destroyed when the parent is destroyed, or manually destroy the
@@ -80,7 +44,7 @@ def create_js_object_wrapper(callbacks=[], parent=None):
 
     # Create the container class.
     container_class = type(
-        'CustomPythonContainer', (PythonContainer, QtCore.QObject,), class_dict
+        'CustomPythonContainer', (_PythonContainer, QtCore.QObject,), class_dict
     )
     qobj = container_class(parent=parent, slot_map=slot_map)
 
@@ -105,3 +69,13 @@ def wrap_func(func, name=None):
         return self._slot_map[slot_key](*args)
     wrapped.name = slot_key
     return wrapped
+
+#### Private protocol #########################################################
+
+class _PythonContainer(QtCore.QObject):
+    """ Container class for python object to be exposed to js. """
+    def __init__(self, parent=None, slot_map=None):
+        super(_PythonContainer, self).__init__(parent)
+
+        # slot_name: callable
+        self._slot_map = slot_map
