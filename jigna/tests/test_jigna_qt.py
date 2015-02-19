@@ -1,5 +1,5 @@
 from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
 from jigna.utils import gui
 from jigna.qt import QtGui
 
@@ -69,16 +69,16 @@ class TestJignaQt(unittest.TestCase):
         qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
         template = Template(body_html=body_html)
         fred = Person(name='Fred', age=42)
-        app = QtApp(template=template, context={'model':fred})
-        widget = app.create_widget()
+        widget = HTMLWidget(template=template, context={'model':fred})
+        widget.show()
         gui.process_events()
-        cls.app = app
+        cls.widget = widget
         cls.fred = fred
 
     def setUp(self):
         cls = self.__class__
-        self.app = cls.app
-        self.bridge = self.app._server._bridge
+        self.widget = cls.widget
+        self.bridge = self.widget._server._bridge
         self.fred = cls.fred
         self.fred.spouse = None
         self.fred.fruits = []
