@@ -88,7 +88,7 @@ class TestJignaQt(unittest.TestCase):
 
     def execute_js(self, js):
         gui.process_events()
-        result = self.bridge.widget.execute_js(js)
+        result = self.bridge.webview_container.execute_js(js)
         gui.process_events()
         return result
 

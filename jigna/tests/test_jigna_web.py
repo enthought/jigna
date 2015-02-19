@@ -22,9 +22,8 @@ class TestJignaWebSync(TestJignaQt):
         fred = Person(name='Fred', age=42)
         template = Template(body_html=body_html, async=async)
         port = get_free_port()
-        app = WebApp(template=template, context={'model':fred}, port=port)
-        application = app.create_application()
-        application.listen(port)
+        app = WebApp(template=template, context={'model':fred})
+        app.listen(port)
 
         # Start the tornado server in a different thread so that we can write
         # test statements here in the main loop

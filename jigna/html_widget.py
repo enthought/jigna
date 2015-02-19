@@ -32,7 +32,7 @@ class HTMLWidget(QtGui.QWidget):
     def execute_js(self, js):
         """ Execute the given js string on the HTML widget.
         """
-        return self._widget.execute_js(js)
+        return self._webview_container.execute_js(js)
 
     #### Private protocol #####################################################
 
