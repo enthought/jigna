@@ -31,7 +31,7 @@ class PythonContainer(QtCore.QObject):
         self._wrapped_obj = wrapped_obj
 
 
-def create_js_object_wrapper(obj, callbacks=[], properties=[], parent=None):
+def create_js_object_wrapper(obj=None, callbacks=[], properties=[], parent=None):
     """ Create an object wrapper for python objects.
 
     Usage:

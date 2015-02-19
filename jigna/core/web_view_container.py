@@ -62,9 +62,6 @@ class WebViewContainer(HasTraits):
 
     #### Python-JavaScript interoperation #####################################
 
-    # The object to expose to JavaScript using the information below.
-    js_object = Instance(HasTraits)
-
     # A list of callables to expose to Javascript. Each pair is either a method
     # name or a tuple of form:
     #
@@ -74,15 +71,6 @@ class WebViewContainer(HasTraits):
     # supported as arguments and return values. Keyword arguments and
     # variable-length argument lists are ignored.
     callbacks = List(Either(Str, Tuple(Str, Callable)))
-
-    # A list of traits to expose to Javascript. Each item is a either a trait
-    # name or a tuple of form:
-    #
-    #     (javascript_name, trait_name)
-    #
-    # Only structures consisting of lists, dicts, and primitive values (bool,
-    # int, long, float, str, and unicode) are supported.
-    properties = List(Either(Str, Tuple(Str, Str)))
 
     # The name of the Javascript object that will contain the registered
     # callbacks and properties.
@@ -335,14 +323,16 @@ class WebViewContainer(HasTraits):
 
             self._exposed_containers = exposed_containers = []
 
-            if self.callbacks or self.properties:
-                exposed_containers.append(create_js_object_wrapper(
-                            self.js_object, self.callbacks, self.properties,
-                            parent=frame,
-                        ))
+            if self.callbacks:
+                js_object_wrapper = create_js_object_wrapper(
+                    callbacks=self.callbacks, parent=frame
+                )
+
                 frame.addToJavaScriptWindowObject(
-                    self.python_namespace, exposed_containers[-1],
-                    )
+                    self.python_namespace, js_object_wrapper
+                )
+
+                exposed_containers.append(js_object_wrapper)
 
     def _navigation_request_signal(self, nav_req):
         if self.url == '':
