@@ -5,10 +5,13 @@ an <object> tag.
 
 #### Imports ####
 
-from traits.api import HasTraits, CInt, Instance, Array, Property, on_trait_change
-from numpy import linspace, sin
 from chaco.api import Plot, ArrayPlotData
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
+from numpy import linspace, sin
+from traits.api import (
+    HasTraits, CInt, Instance, Array, Property, on_trait_change
+)
 
 #### Domain model ####
 
@@ -97,25 +100,30 @@ template = Template(body_html=body_html, recommended_size=(600, 600))
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication.instance() or QtGui.QApplication([])
+
     # Instantiate the domain model and the plot controller
     domain_model = DomainModel(scaling_factor=50)
     plot_controller = PlotController(domain_model=domain_model)
 
-    # Create a QtApp to render the HTML template with the given context.
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
     #
     # The widget contains an embedded Chaco QWidget showing a 2D plot of
     # the domain model. Moving the slider on the UI changes the domain model
     # and hence the Chaco plot.
-    app = QtApp(
+    widget = HTMLWidget(
         template=template,
         context={
             'domain_model': domain_model,
             'plot_controller': plot_controller
         }
     )
+    widget.show()
 
     # Start the event loop
-    app.start()
+    app.exec_()
 
 if __name__ == "__main__":
     main()

@@ -11,6 +11,7 @@ from mayavi.core.api import PipelineBase
 from traits.api import HasTraits, Instance, Int, Str
 from tvtk.api import tvtk
 from jigna.api import Template, WebApp
+from tornado.ioloop import IOLoop
 
 mlab.options.offscreen = True
 mlab.options.backend = 'test'
@@ -124,9 +125,20 @@ template = Template(html_file='mayavi_webgl_demo.html')
 #### Entry point ####
 
 def main():
+    # Start the tornado ioloop application
+    ioloop = IOLoop.instance()
+
+    # Instantiate the domain model
     plotter = Plotter3D(expression="x*x*0.5 + y*y + z*z*2.0", n_contour=4)
-    app = WebApp(template=template, context={'plotter': plotter}, port=8001)
-    app.start()
+
+    # Create a web app serving the view with the domain model added to its
+    # context.
+    app = WebApp(template=template, context={'plotter': plotter})
+    app.listen(8000)
+
+    # Start serving the web app on port 8000.
+    print 'Serving on port 8000...'
+    ioloop.start()
 
 if __name__ == '__main__':
     main()

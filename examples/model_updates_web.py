@@ -5,10 +5,10 @@ the web version.
 
 #### Imports ####
 
-from traits.api import HasTraits, Str
-from tornado.ioloop import IOLoop
-from jigna.api import Template, WebApp
 import datetime
+from jigna.api import Template, WebApp
+from tornado.ioloop import IOLoop
+from traits.api import HasTraits, Str
 
 #### Domain model ####
 
@@ -39,7 +39,8 @@ def main():
 
     # Create a web app serving the view with the domain model added to its
     # context.
-    app = WebApp(template=template, context={'motd':motd}, port=8000)
+    app = WebApp(template=template, context={'motd':motd})
+    app.listen(8000)
 
     # Schedule an update to a model variable after 10 seconds. If the user's
     # browser is connected to the web app before 10 seconds, it will see the
@@ -55,7 +56,8 @@ def main():
     )
 
     # Start serving the web app on port 8000.
-    app.start()
+    print 'Serving on port 8000...'
+    ioloop.start()
 
 if __name__ == "__main__":
     main()

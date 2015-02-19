@@ -6,7 +6,8 @@ in this case, i.e. from the UI to the model.
 
 #### Imports ####
 
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
 
 #### Domain model ####
 
@@ -29,17 +30,22 @@ template = Template(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create a QtApp to render the HTML template with the given context.
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
     #
     # This will behave as a static page since we don't have the traits
     # machinery here to reflect model updates in the view.
-    app = QtApp(template=template, context={'person': fred})
+    widget = HTMLWidget(template=template, context={'person': fred})
+    widget.show()
 
     # Start the event loop
-    app.start()
+    app.exec_()
 
     # Check the values after the UI is closed
     print fred.name, fred.age

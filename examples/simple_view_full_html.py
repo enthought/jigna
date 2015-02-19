@@ -6,7 +6,8 @@ a full html file, rather than specifying body_html and head_html.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
 
 #### Domain model ####
 
@@ -24,14 +25,19 @@ template = Template(html_file='simple_view_full.html')
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain model
     fred = Person(name='Fred', age=42)
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'person': fred})
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
+    widget = HTMLWidget(template=template, context={'person': fred})
+    widget.show()
 
     # Start the event loop
-    app.start()
+    app.exec_()
 
     # Check the values after the UI is closed
     print fred.name, fred.age

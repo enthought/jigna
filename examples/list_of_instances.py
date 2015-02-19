@@ -6,7 +6,9 @@ an instance (non-primitive) type.
 #### Imports ####
 
 from traits.api import HasTraits, Instance, Str, List
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
+from jigna.utils.gui import do_after
 
 #### Domain model ####
 
@@ -34,22 +36,26 @@ template = Template(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain model
     fred = Person(name='Fred', friends=[Person(name='Dino')])
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'person':fred})
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
+    widget = HTMLWidget(template=template, context={'person':fred})
+    widget.show()
 
     # Schedule some operations on the list.
     #
     # We're trying to append and insert instances in the list in the future.
     # This should be reflected in the UI.
-    from jigna.utils.gui import do_after
     do_after(2500, fred.friends.append, Person(name='Wilma'))
     do_after(5000, fred.friends.insert, 0, Person(name='Barney'))
 
     # Start the event loop
-    app.start()
+    app.exec_()
 
     # Check the final values of the list attribute
     print [friend.name for friend in fred.friends]

@@ -142,7 +142,9 @@ class MainHandler(RequestHandler):
         if not len(path):
             self.write(self.server.html)
         else:
-            super(MainHandler, self).get()
+            mime_type, _ = mimetypes.guess_type(path)
+            self.set_header('Content-Type', mime_type)
+            self.write(open(join(self.server.base_url, path)).read())
 
         return
 

@@ -37,14 +37,13 @@ def main():
     # Create a web app serving the view with the domain model added to its
     # context.
     app = WebApp(template=template, context={'person': fred}, port=8000)
+    app.listen(8000)
 
     # Start serving the web app on port 8000.
     #
     # Point your web browser to http://localhost:8000/ to connect to this jigna
     # web app. Any operation performed on the client directly update the
     # model attributes on the server.
-    app.listen(8000)
-
     print 'Serving on port 8000...'
     ioloop.start()
 
