@@ -82,10 +82,12 @@ class WebServer(Server):
 
     #### 'Server' protocol ####################################################
 
-    def initialize(self):
+    def __init__(self, **traits):
         """ Initialize the web server. This simply creates the web application
         to serve the Python model.
         """
+        super(WebServer, self).__init__(**traits)
+        
         # Note that the order of the handlers is from specific rules to general
         # rules. If general rules come first, they will handle everything and
         # not let the specific rules even come into picture.

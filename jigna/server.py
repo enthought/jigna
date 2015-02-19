@@ -80,12 +80,6 @@ class Server(HasTraits):
 
         return
 
-    def initialize(self):
-        """ Initialize the server with configuration options to specify which
-        URL is handled how. """
-
-        raise NotImplementedError
-
     def handle_request(self, jsonized_request):
         """ Handle a jsonized request from a client. """
 

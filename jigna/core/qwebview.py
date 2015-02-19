@@ -99,6 +99,20 @@ class ProxyWebView(QtWebKit.QWebView):
             )
         )
 
+    def setHtml(self, html, base_url):
+        """ Reimplemented to make sure that when we return, the DOM is ready to
+        use.
+
+        Based on the local event loop approach described here:
+        http://doc.qt.digia.com/qq/qq27-responsive-guis.html#waitinginalocaleventloop
+        """
+        event_loop = QtCore.QEventLoop()
+        self.page().loadFinished.connect(event_loop.quit)
+
+        super(ProxyWebView, self).setHtml(html, base_url)
+
+        event_loop.exec_()
+
     #### Private protocol #####################################################
 
     @staticmethod
@@ -113,6 +127,7 @@ class ProxyWebView(QtWebKit.QWebView):
             return None
 
         return obj
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])

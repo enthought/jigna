@@ -16,12 +16,13 @@ from os.path import abspath, dirname, join
 from traits.api import Any, Str, Instance
 from traits.trait_notifiers import set_ui_handler
 
-# Jigna libary.
+# Jigna library.
 from jigna.core.qwebview import ProxyWebView
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
-from jigna.qt import QtWebKit, QtGui, QtCore
-from jigna.utils.gui import invoke_later, ui_handler
+from jigna.qt import QtWebKit, QtCore
+from jigna.utils.gui import ui_handler
+
 
 class QtBridge(Bridge):
     """ Qt (via QWebkit) bridge implementation. """
@@ -57,6 +58,28 @@ class QtBridge(Bridge):
 class QtServer(Server):
     """ Qt (via QWebkit) server implementation. """
 
+    #### 'Server' protocol ####################################################
+
+    def __init__(self, **traits):
+        """ Initialize the Qt server. This simply configures the widget to serve
+        the Python model.
+        """
+
+        super(QtServer, self).__init__(**traits)
+
+
+        self.webview.setHtml(self.html, QtCore.QUrl.fromLocalFile(self.base_url))
+        self._enable_qwidget_embedding()
+
+        # This statement makes sure that when we dispatch traits events on the
+        # 'ui' thread, it passes on those events through the Qt layer.
+        set_ui_handler(ui_handler)
+
+        return
+
+    #: The trait change dispatch mechanism to use when traits change.
+    trait_change_dispatch = Str('ui')
+
     ### 'QtServer' protocol ##################################################
 
     #: The `ProxyWebView` object which specifies rules about how to handle
@@ -74,35 +97,6 @@ class QtServer(Server):
             }
         )
 
-    def connect(self, widget):
-        """ Connect the given widget to the server. This includes loading the
-        html and also enabling custom widget embedding etc.
-        """
-        self.webview.setParent(widget)
-
-        self.webview.setHtml(
-            self.html, QtCore.QUrl.fromLocalFile(self.base_url)
-        )
-        self._wait_for_page_ready()
-
-        self._enable_qwidget_embedding()
-
-    #### 'Server' protocol ####################################################
-
-    def initialize(self):
-        """ Initialize the Qt server. This simply configures the widget to serve
-        the Python model.
-        """
-
-        # This statement makes sure that when we dispatch traits events on the
-        # 'ui' thread, it passes on those events through the Qt layer.
-        set_ui_handler(ui_handler)
-
-        return
-
-    #: The trait change dispatch mechanism to use when traits change.
-    trait_change_dispatch = Str('ui')
-
     #### Private protocol #####################################################
 
     _bridge = Instance(QtBridge)
@@ -119,21 +113,6 @@ class QtServer(Server):
 
         self._plugin_factory = QtWebPluginFactory(context=self.context)
         self.webview.page().setPluginFactory(self._plugin_factory)
-
-    def _wait_for_page_ready(self):
-        """
-        Wait till the page is ready (DOM ready)
-
-        FIXME: this is currently a very performance intensive code and needs
-        to be replaced with something much smarter like:
-        http://doc.qt.digia.com/qq/qq27-responsive-guis.html#waitinginalocaleventloop
-        """
-
-        event_loop = QtCore.QEventLoop()
-
-        self.webview.page().loadFinished.connect(event_loop.quit)
-
-        event_loop.exec_()
 
 
 class QtWebPluginFactory(QtWebKit.QWebPluginFactory):

@@ -24,7 +24,7 @@ class WebApp(web.Application):
         self.context = context
         self.template = template
 
-        self._create()
+        self._application = self._create()
 
     def update_context(self, context={}):
         """
@@ -43,12 +43,10 @@ class WebApp(web.Application):
 
         # Set up the WebServer to serve the domain models in context
         from jigna.web_server import WebServer
-        self._server = WebServer(
+        server = WebServer(
             base_url    = join(os.getcwd(), self.template.base_url),
             html        = self.template.html,
-            context     = self.context,
-            application = self
+            context     = self.context
         )
-        self._server.initialize()
 
-        self._application = self._server.application
+        return server.application

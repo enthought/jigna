@@ -29,6 +29,9 @@ class HTMLWidget(QtGui.QWidget):
 
         self._webview = self._create()
 
+        self._webview.setParent(self)
+        self.resize(*template.recommended_size)
+
     def execute_js(self, js):
         """ Execute the given js string on the HTML widget.
         """
@@ -47,18 +50,11 @@ class HTMLWidget(QtGui.QWidget):
         """ Create the jigna widget to render the template with the context.
         """
 
-        # Set up the client
-        self.resize(*self.template.recommended_size)
-
         # Set up the server to serve the domain models in context
         server = QtServer(
             base_url = join(os.getcwd(), self.template.base_url),
             html     = self.template.html,
             context  = self.context
         )
-        server.initialize()
-
-        # Connect the client to the server
-        server.connect(self)
 
         return server.webview
