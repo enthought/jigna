@@ -4,7 +4,7 @@ This example is the simplest example which shows how to start a jigna view.
 
 #### Imports ####
 
-from jigna.api import Template, HTMLWidget
+from jigna.api import HTMLWidget, Template
 from jigna.qt import QtGui
 from traits.api import HasTraits, Int, Str
 

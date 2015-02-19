@@ -9,44 +9,33 @@
 import os
 from os.path import join
 
-# Enthought Library
-from traits.api import Instance, Int, HasTraits
-
 # Tornado Library
-from tornado.ioloop import IOLoop
 from tornado import web
 
 
-class WebApp(HasTraits):
+class WebApp(web.Application):
     """ A web based App to serve the jigna template with a given context over
     the web where it can be viewed using a regular web browser. """
 
-    #### 'App' protocol ######################################################
+    def __init__(self, handlers=None, default_host="", transforms=None,
+                 context=None, template=None, **kw):
+        super(WebApp, self).__init__(handlers, default_host, transforms, **kw)
 
-    def start(self):
+        self.context = context
+        self.template = template
+
+        self._create()
+
+    def update_context(self, context={}):
         """
-        Create the web app to serve jigna and start the web server's event loop.
-        This is a *blocking* call.
+        Dynamically update the context of the serving application. This will add
+        the given models but not remove anything.
         """
-        ioloop = IOLoop.instance()
+        self._server.context.update(context)
 
-        self.create_application()
-        self.application.listen(self.port)
+    #### Private protocol #####################################################
 
-        print 'listening on port %s ...' % self.port
-        ioloop.start()
-
-    #### 'WebApp' protocol ####################################################
-
-    #: The tornado web Application object which serves through a web server the
-    #: jigna template rendered with the context. Clients connect to this
-    #: application to populate their views.
-    application = Instance(web.Application)
-
-    #: Port at which the web application is to be run.
-    port = Int(8000)
-
-    def create_application(self):
+    def _create(self):
         """
         Create the web application serving the given context. Returns the
         tornado application created.
@@ -55,19 +44,11 @@ class WebApp(HasTraits):
         # Set up the WebServer to serve the domain models in context
         from jigna.web_server import WebServer
         self._server = WebServer(
-            base_url = join(os.getcwd(), self.template.base_url),
-            html     = self.template.html,
-            context  = self.context
+            base_url    = join(os.getcwd(), self.template.base_url),
+            html        = self.template.html,
+            context     = self.context,
+            application = self
         )
         self._server.initialize()
 
-        self.application = self._server.application
-
-        return self.application
-
-    def update_context(self, context={}):
-        """
-        Dynamically update the context of the serving application. This will add
-        the given models but not remove anything.
-        """
-        self._server.context.update(context)
+        self._application = self._server.application

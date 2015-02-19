@@ -16,7 +16,7 @@ import traceback
 
 # 3rd party library.
 from tornado.websocket import WebSocketHandler
-from tornado.web import Application, RequestHandler
+from tornado.web import Application, RequestHandler, StaticFileHandler
 
 # Enthought library.
 from traits.api import List, Str, Instance
@@ -86,18 +86,34 @@ class WebServer(Server):
         """ Initialize the web server. This simply creates the web application
         to serve the Python model.
         """
-        settings = {
-            'static_path'       : join(dirname(__file__), 'js', 'dist'),
-            'static_url_prefix' : '/jigna/'
-        }
-
-        self.application = Application(
+        # Note that the order of the handlers is from specific rules to general
+        # rules. If general rules come first, they will handle everything and
+        # not let the specific rules even come into picture.
+        self.application.add_handlers(
+            '.*$',
             [
-                (r"/_jigna_ws", JignaSocket,   dict(bridge=self._bridge, server=self)),
-                (r"/_jigna",    GetFromBridge, dict(server=self)),
-                (r".*",         MainHandler,   dict(server=self)),
-            ],
-            **settings
+                # To serve jigna.js from package source
+                (
+                    r"/jigna/(.*)", StaticFileHandler,
+                    dict(path=join(dirname(__file__), 'js', 'dist'))
+                ),
+
+                # This handler handles the web socket based async version of the
+                # web interface.
+                (
+                    r"/_jigna_ws", AsyncWebSocketHandler,
+                    dict(bridge=self._bridge, server=self)
+                ),
+
+                # This handler handles synchronous GET requests from JS proxy
+                # getters and returns the corresponding attribute from the
+                # python side.
+                (r"/_jigna", SyncGETHandler, dict(server=self)),
+
+                # Main handler which returns the jigna HTML and other resources
+                # by resolving it via server's base url.
+                (r".*", MainHandler, dict(server=self)),
+            ]
         )
 
         return
@@ -113,7 +129,9 @@ class WebServer(Server):
 
 ##### Request handlers ########################################################
 
+
 class MainHandler(RequestHandler):
+
     def initialize(self, server):
         self.server = server
 
@@ -124,13 +142,16 @@ class MainHandler(RequestHandler):
         if not len(path):
             self.write(self.server.html)
         else:
-            mime_type, _ = mimetypes.guess_type(path)
-            self.set_header('Content-Type', mime_type)
-            self.write(open(join(self.server.base_url, path)).read())
+            super(MainHandler, self).get()
 
         return
 
-class GetFromBridge(RequestHandler):
+
+class SyncGETHandler(RequestHandler):
+
+    def data_received(self, chunk):
+        pass
+
     def initialize(self, server):
         self.server = server
         return
@@ -142,9 +163,9 @@ class GetFromBridge(RequestHandler):
         self.write(jsonized_response)
         return
 
-##### WebSocket handler #######################################################
 
-class JignaSocket(WebSocketHandler):
+class AsyncWebSocketHandler(WebSocketHandler):
+
     def initialize(self, bridge, server):
         self.bridge = bridge
         self.server = server
@@ -159,7 +180,7 @@ class JignaSocket(WebSocketHandler):
             request_id, jsonized_request = json.loads(message)
             jsonized_response = self.server.handle_request(jsonized_request)
             self.write_message(json.dumps([request_id, jsonized_response]))
-        except:
+        except Exception:
             traceback.print_exc()
             self.write_message(json.dumps([request_id, '{}']))
         return

@@ -24,8 +24,8 @@ class HTMLWidget(QtGui.QWidget):
     ):
         super(HTMLWidget, self).__init__(parent, window_flags)
 
-        self.template = template
         self.context = context
+        self.template = template
 
         self._create()
 
@@ -40,8 +40,9 @@ class HTMLWidget(QtGui.QWidget):
         """ Create the jigna widget to render the template with the context.
         """
 
-        # Set up the QtServer to serve the domain models in context
         from jigna.qt_server import QtServer
+
+        # Set up the QtServer to serve the domain models in context
         self._server = QtServer(
             base_url = join(os.getcwd(), self.template.base_url),
             html     = self.template.html,
