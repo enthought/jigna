@@ -63,24 +63,24 @@ class ProxyAccessManager(QtNetwork.QNetworkAccessManager):
         `createRequest` method.
         """
         url = request.url()
-        str_url = url.toString()
         handler = self.get_url_handler(url)
         if handler is not None:
-            logger.debug('Proxying request to %s' % str_url)
             data_str = data and data.readAll() or ''
             return ProxyReply(self, url, operation, request, data_str, handler)
 
         # Default case, let superclass handle normal web access
         return super(ProxyAccessManager, self).createRequest(
-            operation, request, data)
-
+            operation, request, data
+        )
 
 class ProxyReply(QtNetwork.QNetworkReply):
     """ QNetworkReply subclass to send a specific request to local wsgi app.
     """
     def __init__(self, parent, url, operation, req, data, handler):
         """ handler is the wsgi app """
+
         super(ProxyReply, self).__init__(parent)
+
         self.setRequest(req)
         self.setOperation(operation)
         self.setUrl(url)

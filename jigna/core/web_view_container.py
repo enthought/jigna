@@ -39,9 +39,6 @@ class WebViewContainer(HasTraits):
     # Whether the page is currently loading.
     loading = Bool(False)
 
-    # Fired when the page has completely loaded.
-    loaded = Event
-
     # The title of the current web page.
     title = Unicode
 
@@ -51,9 +48,6 @@ class WebViewContainer(HasTraits):
 
     # The zoom level of the page
     zoom = Property(Float)
-
-    # Additional JavaScript to be executed after the page load finishes.
-    post_load_js = List(Str)
 
     # Whether debugging tools are enabled in the web view.
     debug = Bool(False)
@@ -334,13 +328,7 @@ class WebViewContainer(HasTraits):
     def _load_finished_signal(self, ok):
         # Make sure that the widget has not been destroyed during loading.
         if self.control is not None:
-            if ok:
-                # Evaluate post-load JS.
-                for script in self.post_load_js:
-                    self.execute_js(script)
-
             self.loading = False
-            self.loaded = ok
 
     def _title_signal(self, title):
         self.title = title
