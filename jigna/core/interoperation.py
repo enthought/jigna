@@ -21,17 +21,14 @@ logger = logging.getLogger(__name__)
 
 class PythonContainer(QtCore.QObject):
     """ Container class for python object to be exposed to js. """
-    def __init__(self, parent=None, slot_map=None, wrapped_obj=None):
+    def __init__(self, parent=None, slot_map=None):
         super(PythonContainer, self).__init__(parent)
 
         # slot_name: callable
         self._slot_map = slot_map
 
-        # the object being wrapped for property access
-        self._wrapped_obj = wrapped_obj
 
-
-def create_js_object_wrapper(obj=None, callbacks=[], properties=[], parent=None):
+def create_js_object_wrapper(callbacks=[], parent=None):
     """ Create an object wrapper for python objects.
 
     Usage:
@@ -65,51 +62,27 @@ def create_js_object_wrapper(obj=None, callbacks=[], properties=[], parent=None)
     else stray references to the object may cause memory leaks.
 
     """
-    if isinstance(obj, dict):
-        obj = type('CustomObject', (object,), obj)
-
     # Create the container class dict.
     class_dict = {}
-    auto = not callbacks and not properties
-    if auto:
-        names = filter(lambda name: not name.startswith('_'), dir(obj))
-        is_callable = lambda name: callable(getattr(obj, name))
-        callbacks, properties = split_on_condition(names, is_callable)
 
     # Create the container callback slots, these need to be defined on the
     # class (associated with the QMetaObject).
     slot_map = {}
-    for name_or_pair in callbacks:
-        if isinstance(name_or_pair, basestring):
-            name = name_or_pair
-            callback = getattr(obj, name)
-        else:
-            name, callback = name_or_pair
+    for _callback in callbacks:
+        name, callback = _callback
 
         wrapped = wrap_func(callback, name)
         if wrapped:
             class_dict[name] = wrapped
             slot_map[wrapped.name] = callback
-        elif not auto:
+        else:
             logger.error('Callback %r is not translatable to JavaScript', name)
 
-    # Create the container properties.
-    for name_or_pair in properties:
-        if isinstance(name_or_pair, basestring):
-            jname, pname = name_or_pair, name_or_pair
-        else:
-            jname, pname = name_or_pair
-
-        qproperty = wrap_property(obj, pname)
-        if qproperty:
-            class_dict[jname] = qproperty
-        elif not auto:
-            logger.error('Attribute %r is not translatable to JavaScript',
-                         pname)
-
     # Create the container class.
-    container_class = type('CustomPythonContainer', (PythonContainer, QtCore.QObject,), class_dict)
-    qobj = container_class(parent=parent, slot_map=slot_map, wrapped_obj=obj)
+    container_class = type(
+        'CustomPythonContainer', (PythonContainer, QtCore.QObject,), class_dict
+    )
+    qobj = container_class(parent=parent, slot_map=slot_map)
 
     return qobj
 
@@ -132,32 +105,3 @@ def wrap_func(func, name=None):
         return self._slot_map[slot_key](*args)
     wrapped.name = slot_key
     return wrapped
-
-def wrap_property(obj, name, setter=True):
-    """ Wraps a Python attribute as a Qt Property.
-    """
-    getter = lambda self: getattr(self._wrapped_obj, name)
-    if setter:
-        setter = lambda self, value: setattr(self._wrapped_obj, name, value)
-    value = getattr(obj, name)
-    signature = None
-    if isinstance(value, dict):
-        signature = 'QVariantMap'
-    elif isinstance(value, list):
-        signature = 'QVariantList'
-    elif isinstance(value, (bool, int, long, float, basestring)):
-        signature = 'QVariant'
-    if signature:
-        if setter:
-            return QtCore.Property(signature, getter, setter)
-        else:
-            return QtCore.Property(signature, getter)
-    return None
-
-def split_on_condition(seq, condition):
-    """ Split a list on a condition.
-    """
-    a, b = [], []
-    for item in seq:
-        (a if condition(item) else b).append(item)
-    return a, b
