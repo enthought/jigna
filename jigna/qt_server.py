@@ -17,7 +17,7 @@ from traits.api import Any, Str, Instance
 from traits.trait_notifiers import set_ui_handler
 
 # Jigna libary.
-from jigna.core.html_widget import HTMLWidget
+from jigna.core.web_view_container import WebViewContainer
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
 from jigna.qt import QtWebKit, QtGui
@@ -36,13 +36,13 @@ class QtBridge(Bridge):
         except TypeError:
             return
 
-        if self.widget is None:
-            raise RuntimeError("Widget does not exist")
+        if self.webview_container is None:
+            raise RuntimeError("WebViewContainer does not exist")
 
         else:
             # This looks weird but this is how we fake an event being 'received'
             # on the client side when using the Qt bridge!
-            self.widget.execute_js(
+            self.webview_container.execute_js(
                 'jigna.client.bridge.handle_event(%r);' % jsonized_event
             )
 
@@ -50,8 +50,8 @@ class QtBridge(Bridge):
 
     #### 'QtBridge' protocol ##################################################
 
-    #: The 'HTMLWidget' that contains the QtWebKit malarky.
-    widget = Any
+    #: The 'WebViewContainer' that contains the QtWebKit malarky.
+    webview_container = Any
 
 
 class QtServer(Server):
@@ -59,11 +59,11 @@ class QtServer(Server):
 
     ### 'QtServer' protocol ##################################################
 
-    #: The `HTMLWidget` object which specifies rules about how to handle
+    #: The `WebViewContainer` object which specifies rules about how to handle
     #: different requests etc.
-    widget = Instance(HTMLWidget)
-    def _widget_default(self):
-        return HTMLWidget()
+    webview_container = Instance(WebViewContainer)
+    def _webview_container_default(self):
+        return WebViewContainer()
 
     #### 'Server' protocol ####################################################
 
@@ -71,9 +71,9 @@ class QtServer(Server):
         """ Initialize the Qt server. This simply configures the widget to serve
         the Python model.
         """
-        self._bridge = QtBridge(widget=self.widget)
+        self._bridge = QtBridge(webview_container=self.webview_container)
 
-        self.widget.trait_set(
+        self.webview_container.trait_set(
             root_paths = {
                 'jigna': FileLoader(
                     root = join(abspath(dirname(__file__)), 'js', 'dist')
@@ -96,22 +96,22 @@ class QtServer(Server):
 
     #### 'QtServer' protocol ##################################################
 
-    def connect(self, widget):
+    def connect(self, webview_container):
         """ Connect the given widget to the server. This includes loading the
         html and also enabling custom widget embedding etc. The widget must be
         created already to use this method.
         """
-        widget.load_html(self.html, self.base_url)
+        webview_container.load_html(self.html, self.base_url)
 
         # Wait till the page is ready (DOM ready)
         #
         # fixme: this is currently a very performance intensive code and needs
         # to be replaced with something much smarter like:
         # http://doc.qt.digia.com/qq/qq27-responsive-guis.html#waitinginalocaleventloop
-        while widget.loading:
+        while webview_container.loading:
             QtGui.QApplication.processEvents()
 
-        self._enable_qwidget_embedding(widget)
+        self._enable_qwidget_embedding(webview_container)
 
     #### Private protocol #####################################################
 
@@ -119,14 +119,14 @@ class QtServer(Server):
 
     _plugin_factory = Instance('QtWebPluginFactory')
 
-    def _enable_qwidget_embedding(self, widget):
+    def _enable_qwidget_embedding(self, webview_container):
         """ Allow generic qwidgets to be embedded in the generated QWebView.
         """
         global_settings = QtWebKit.QWebSettings.globalSettings()
         global_settings.setAttribute(QtWebKit.QWebSettings.PluginsEnabled, True)
 
         self._plugin_factory = QtWebPluginFactory(context=self.context)
-        widget.control.page().setPluginFactory(self._plugin_factory)
+        webview_container.control.page().setPluginFactory(self._plugin_factory)
 
 
 class QtWebPluginFactory(QtWebKit.QWebPluginFactory):

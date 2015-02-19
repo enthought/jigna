@@ -25,8 +25,8 @@ from jigna.qt import QtCore, QtGui, QtWebKit, QtNetwork
 logger = logging.getLogger(__name__)
 
 
-class HTMLWidget(HasTraits):
-    """ A widget for displaying web content.
+class WebViewContainer(HasTraits):
+    """ A container for displaying web content.
 
     See ``IHTMLWidget`` for detailed documentation.
     """
@@ -109,7 +109,9 @@ class HTMLWidget(HasTraits):
         """ Create and return the toolkit-specific control for the widget.
         """
         # Create control.
-        _WebView = WebView if sys.platform == 'darwin' else QtWebKit.QWebView
+        _WebView = (
+            DarwinWebView if sys.platform == 'darwin' else QtWebKit.QWebView
+        )
         control = _WebView(parent)
         control.setSizePolicy(QtGui.QSizePolicy.Expanding,
                               QtGui.QSizePolicy.Expanding)
@@ -474,11 +476,11 @@ class _WebPage(QtWebKit.QWebPage):
         else:
             return nav_req._accepted
 
-class WebView(QtWebKit.QWebView):
+class DarwinWebView(QtWebKit.QWebView):
     """ A QWebView suitable for use in HTMLWidget. """
 
     def __init__(self, parent):
-        super(WebView, self).__init__(parent)
+        super(DarwinWebView, self).__init__(parent)
         self.wheel_timer = QtCore.QTimer()
         self.wheel_timer.setSingleShot(True)
         self.wheel_timer.setInterval(25)

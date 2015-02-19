@@ -51,10 +51,10 @@ class HTMLWidget(QtGui.QWidget):
         self._server.initialize()
 
         # Set up the client
-        self._widget = self._server.widget
-        self._widget.create(parent=self)
+        self._webview_container = self._server.webview_container
+        self._webview_container.create(parent=self)
         size = self.template.recommended_size
-        self._widget.control.resize(size[0], size[1])
+        self._webview_container.control.resize(size[0], size[1])
 
         # Connect the client to the server
-        self._server.connect(self._widget)
+        self._server.connect(self._webview_container)
