@@ -43,9 +43,11 @@ class Server(HasTraits):
     base_url = Property(Str, depends_on='_base_url')
     def _get_base_url(self):
         if not self._base_url.endswith('/'):
-            return self._base_url + '/'
+            base_url = self._base_url + '/'
         else:
-            return self._base_url
+            base_url = self._base_url
+
+        return base_url
 
     def _set_base_url(self, base_url):
         self._base_url = base_url
