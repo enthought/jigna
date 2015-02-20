@@ -16,7 +16,7 @@ from jigna.qt import QtCore, QtGui, QtWebKit
 
 logger = logging.getLogger(__name__)
 
-class ProxyWebView(QtWebKit.QWebView):
+class ProxyQWebView(QtWebKit.QWebView):
 
     DISABLED_ACTIONS = [
         QtWebKit.QWebPage.OpenLinkInNewWindow,
@@ -30,7 +30,7 @@ class ProxyWebView(QtWebKit.QWebView):
         self, parent=None, python_namespace=None, callbacks=[], debug=True,
         root_paths={}
     ):
-        super(ProxyWebView, self).__init__(parent)
+        super(ProxyQWebView, self).__init__(parent)
 
         # Connect JS with python.
         self.expose_python_namespace(python_namespace, callbacks)
@@ -115,7 +115,7 @@ class ProxyWebView(QtWebKit.QWebView):
 
         self.page().loadFinished.connect(on_load)
 
-        super(ProxyWebView, self).setHtml(html, base_url)
+        super(ProxyQWebView, self).setHtml(html, base_url)
 
         if not self._loaded:
             event_loop.exec_()

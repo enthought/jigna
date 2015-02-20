@@ -17,7 +17,7 @@ from traits.api import Any, Str, Instance
 from traits.trait_notifiers import set_ui_handler
 
 # Jigna library.
-from jigna.core.proxy_qwebview import ProxyWebView
+from jigna.core.proxy_qwebview import ProxyQWebView
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
 from jigna.qt import QtWebKit, QtCore
@@ -83,11 +83,11 @@ class QtServer(Server):
 
     ### 'QtServer' protocol ##################################################
 
-    #: The `ProxyWebView` object which specifies rules about how to handle
+    #: The `ProxyQWebView` object which specifies rules about how to handle
     #: different requests etc.
-    webview = Instance(ProxyWebView)
+    webview = Instance(ProxyQWebView)
     def _webview_default(self):
-        return ProxyWebView(
+        return ProxyQWebView(
             python_namespace = 'qt_bridge',
             callbacks        = [('handle_request', self.handle_request)],
             debug            = True,
