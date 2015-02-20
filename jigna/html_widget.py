@@ -30,7 +30,10 @@ class HTMLWidget(QtGui.QWidget):
 
         self._webview = self._create()
 
-        self._webview.setParent(self)
+        # Set the layout
+        self.setLayout(QtGui.QVBoxLayout())
+        self.layout().setContentsMargins(0, 0, 0, 0)
+        self.layout().addWidget(self._webview)
         self.resize(*template.recommended_size)
 
     def execute_js(self, js):
