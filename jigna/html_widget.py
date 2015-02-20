@@ -15,6 +15,7 @@ from os.path import join
 from .qt import QtGui
 from .qt_server import QtServer
 
+
 class HTMLWidget(QtGui.QWidget):
     """ A Qt based HTML widget to render the jigna template with a given
     domain model context. """

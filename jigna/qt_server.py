@@ -65,15 +65,16 @@ class QtServer(Server):
         the Python model.
         """
 
-        super(QtServer, self).__init__(**traits)
-
-
-        self.webview.setHtml(self.html, QtCore.QUrl.fromLocalFile(self.base_url))
-        self._enable_qwidget_embedding()
-
         # This statement makes sure that when we dispatch traits events on the
         # 'ui' thread, it passes on those events through the Qt layer.
         set_ui_handler(ui_handler)
+
+        super(QtServer, self).__init__(**traits)
+
+        self.webview.setHtml(
+            self.html, QtCore.QUrl.fromLocalFile(self.base_url)
+        )
+        self._enable_qwidget_embedding()
 
         return
 

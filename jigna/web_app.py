@@ -12,6 +12,9 @@ from os.path import join
 # Tornado Library
 from tornado import web
 
+# Local Library
+from .web_server import WebServer
+
 
 class WebApp(web.Application):
     """ A web based App to serve the jigna template with a given context over
@@ -26,13 +29,6 @@ class WebApp(web.Application):
 
         self._application = self._create()
 
-    def update_context(self, context={}):
-        """
-        Dynamically update the context of the serving application. This will add
-        the given models but not remove anything.
-        """
-        self._server.context.update(context)
-
     #### Private protocol #####################################################
 
     def _create(self):
@@ -42,7 +38,6 @@ class WebApp(web.Application):
         """
 
         # Set up the WebServer to serve the domain models in context
-        from jigna.web_server import WebServer
         server = WebServer(
             base_url    = join(os.getcwd(), self.template.base_url),
             html        = self.template.html,

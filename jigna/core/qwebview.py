@@ -107,11 +107,18 @@ class ProxyWebView(QtWebKit.QWebView):
         http://doc.qt.digia.com/qq/qq27-responsive-guis.html#waitinginalocaleventloop
         """
         event_loop = QtCore.QEventLoop()
-        self.page().loadFinished.connect(event_loop.quit)
+        self._loaded = False
+
+        def on_load():
+            self._loaded = True
+            event_loop.quit()
+
+        self.page().loadFinished.connect(on_load)
 
         super(ProxyWebView, self).setHtml(html, base_url)
 
-        event_loop.exec_()
+        if not self._loaded:
+            event_loop.exec_()
 
     #### Private protocol #####################################################
 

@@ -73,5 +73,12 @@ class TestHTMLWidget(unittest.TestCase):
         self.assertEqual(attr1, self.model.attr1)
         self.assertEqual(attr2, self.model.attr2)
 
+    def test_two_widgets_are_created(self):
+        HTMLWidget(template=self.template, context={'model': self.model})
+        HTMLWidget(template=self.template, context={'model': self.model})
+
+        # If you arrive here, it means the test passed
+        self.assertTrue(True)
+
 if __name__ == "__main__":
     unittest.main()
