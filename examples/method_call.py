@@ -7,7 +7,8 @@ also pass instances.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str, Instance
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
 
 #### Domain model ####
 
@@ -48,19 +49,26 @@ template = Template(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain models
     fred = Person(name='Fred', age=14)
     wilma = Person(name='Wilma', age=25)
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'person':fred, 'spouse':wilma})
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
+    widget = HTMLWidget(
+        template=template, context={'person': fred, 'spouse': wilma}
+    )
+    widget.show()
 
     # Start the event loop.
     #
     # Clicking on the buttons in the UI will make blocking calls to the
     # corresponding methods on the domain model. You can supply primitive as
     # well as instance objects as arguments of the method.
-    app.start()
+    app.exec_()
 
     # Check the final values after the UI is closed
     print fred.name, fred.age, fred.spouse.name

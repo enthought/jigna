@@ -6,7 +6,8 @@ method call.
 #### Imports ####
 
 from traits.api import HasTraits
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
 import time
 
 #### Domain model ####
@@ -29,18 +30,23 @@ template = Template(html_file='success_error_callbacks.html')
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain models
     worker = Worker()
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'worker': worker})
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
+    widget = HTMLWidget(template=template, context={'worker': worker})
+    widget.show()
 
     # Start the event loop.
     #
     # The view related code is such that clicking on the buttons in the UI will
     # call methods on the domain model and do something when the method call
     # succeeded or failed.
-    app.start()
+    app.exec_()
 
 if __name__ == '__main__':
     main()

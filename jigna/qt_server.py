@@ -16,12 +16,13 @@ from os.path import abspath, dirname, join
 from traits.api import Any, Str, Instance
 from traits.trait_notifiers import set_ui_handler
 
-# Jigna libary.
-from jigna.core.html_widget import HTMLWidget
+# Jigna library.
+from jigna.core.proxy_qwebview import ProxyQWebView
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
-from jigna.qt import QtWebKit, QtGui
+from jigna.qt import QtWebKit, QtCore
 from jigna.utils.gui import ui_handler
+
 
 class QtBridge(Bridge):
     """ Qt (via QWebkit) bridge implementation. """
@@ -36,13 +37,13 @@ class QtBridge(Bridge):
         except TypeError:
             return
 
-        if self.widget is None:
-            raise RuntimeError("Widget does not exist")
+        if self.webview is None:
+            raise RuntimeError("WebView does not exist")
 
         else:
             # This looks weird but this is how we fake an event being 'received'
             # on the client side when using the Qt bridge!
-            self.widget.execute_js(
+            self.webview.execute_js(
                 'jigna.client.bridge.handle_event(%r);' % jsonized_event
             )
 
@@ -50,83 +51,69 @@ class QtBridge(Bridge):
 
     #### 'QtBridge' protocol ##################################################
 
-    #: The 'HTMLWidget' that contains the QtWebKit malarky.
-    widget = Any
+    #: The 'WebViewContainer' that contains the QtWebKit malarky.
+    webview = Any
 
 
 class QtServer(Server):
     """ Qt (via QWebkit) server implementation. """
 
-    ### 'QtServer' protocol ##################################################
-
-    #: The `HTMLWidget` object which specifies rules about how to handle
-    #: different requests etc.
-    widget = Instance(HTMLWidget)
-    def _widget_default(self):
-        return HTMLWidget()
-
     #### 'Server' protocol ####################################################
 
-    def initialize(self):
+    def __init__(self, **traits):
         """ Initialize the Qt server. This simply configures the widget to serve
         the Python model.
         """
-        self._bridge = QtBridge(widget=self.widget)
-
-        self.widget.trait_set(
-            root_paths = {
-                'jigna': FileLoader(
-                    root = join(abspath(dirname(__file__)), 'js', 'dist')
-                )
-            },
-            open_externally = False,
-            debug = True,
-            callbacks = [('handle_request', self.handle_request)],
-            python_namespace = 'qt_bridge'
-        )
 
         # This statement makes sure that when we dispatch traits events on the
-        # 'ui' thread, it passes on those events though the Qt layer.
+        # 'ui' thread, it passes on those events through the Qt layer.
         set_ui_handler(ui_handler)
+
+        super(QtServer, self).__init__(**traits)
+
+        self.webview.setHtml(
+            self.html, QtCore.QUrl.fromLocalFile(self.base_url)
+        )
+        self._enable_qwidget_embedding()
 
         return
 
     #: The trait change dispatch mechanism to use when traits change.
     trait_change_dispatch = Str('ui')
 
-    #### 'QtServer' protocol ##################################################
+    ### 'QtServer' protocol ##################################################
 
-    def connect(self, widget):
-        """ Connect the given widget to the server. This includes loading the
-        html and also enabling custom widget embedding etc. The widget must be
-        created already to use this method.
-        """
-        widget.load_html(self.html, self.base_url)
-
-        # Wait till the page is ready (DOM ready)
-        #
-        # fixme: this is currently a very performance intensive code and needs
-        # to be replaced with something much smarter like:
-        # http://doc.qt.digia.com/qq/qq27-responsive-guis.html#waitinginalocaleventloop
-        while widget.loading:
-            QtGui.QApplication.processEvents()
-
-        self._enable_qwidget_embedding(widget)
+    #: The `ProxyQWebView` object which specifies rules about how to handle
+    #: different requests etc.
+    webview = Instance(ProxyQWebView)
+    def _webview_default(self):
+        return ProxyQWebView(
+            python_namespace = 'qt_bridge',
+            callbacks        = [('handle_request', self.handle_request)],
+            debug            = True,
+            root_paths       = {
+                'jigna': FileLoader(
+                    root = join(abspath(dirname(__file__)), 'js', 'dist')
+                )
+            }
+        )
 
     #### Private protocol #####################################################
 
     _bridge = Instance(QtBridge)
+    def __bridge_default(self):
+        return QtBridge(webview=self.webview)
 
     _plugin_factory = Instance('QtWebPluginFactory')
 
-    def _enable_qwidget_embedding(self, widget):
+    def _enable_qwidget_embedding(self):
         """ Allow generic qwidgets to be embedded in the generated QWebView.
         """
         global_settings = QtWebKit.QWebSettings.globalSettings()
         global_settings.setAttribute(QtWebKit.QWebSettings.PluginsEnabled, True)
 
         self._plugin_factory = QtWebPluginFactory(context=self.context)
-        widget.control.page().setPluginFactory(self._plugin_factory)
+        self.webview.page().setPluginFactory(self._plugin_factory)
 
 
 class QtWebPluginFactory(QtWebKit.QWebPluginFactory):

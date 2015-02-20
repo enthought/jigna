@@ -1,6 +1,6 @@
 from template import Template
 from core.concurrent import Future
-from qt_app import QtApp
+from html_widget import HTMLWidget
 
 # Wrapping the WebApp import so that you can use jigna even if you don't have
 # tornado install

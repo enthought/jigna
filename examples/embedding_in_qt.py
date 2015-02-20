@@ -4,9 +4,9 @@ This example shows how to embed a jigna view to an existing QWidget framework.
 
 #### Imports ####
 
-from traits.api import HasTraits, Int, Str
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
 from jigna.qt import QtGui
+from traits.api import HasTraits, Int, Str
 
 #### Domain model ####
 
@@ -40,11 +40,9 @@ def create_jigna_widget():
     # Instantiate the domain model
     tom = Employee(name='Tom', salary=2000)
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'employee': tom})
-
-    # Create the control from the QtApp
-    return app.create_widget()
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
+    return HTMLWidget(template=template, context={'employee': tom})
 
 #### Entry point ####
 
@@ -53,7 +51,7 @@ def main():
     click.
 
     """
-    app = QtGui.QApplication.instance() or QtGui.QApplication([])
+    app = QtGui.QApplication([])
 
     # Define a new QMainWindow
     window = QtGui.QMainWindow()

@@ -6,7 +6,9 @@ the primitive type.
 #### Imports ####
 
 from traits.api import HasTraits, Str, List
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
+from jigna.utils.gui import do_after
 
 #### Domain model ####
 
@@ -44,22 +46,26 @@ template = Template(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain model
     basket = Basket(fruits=['peach', 'pear'])
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'basket':basket})
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
+    widget = HTMLWidget(template=template, context={'basket':basket})
+    widget.show()
 
     # Schedule some operations on the list.
     #
     # We're trying to append and insert primitives to the list in the future.
     # This should be reflected in the UI.
-    from jigna.utils.gui import do_after
     do_after(2500, basket.fruits.append, 'mango')
     do_after(5000, basket.fruits.insert, 0, 'banana')
 
     # Start the event loop
-    app.start()
+    app.exec_()
 
     # Check the final values of the list attribute
     print basket.fruits

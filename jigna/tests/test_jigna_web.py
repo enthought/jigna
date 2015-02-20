@@ -14,7 +14,6 @@ from jigna.api import Template, WebApp
 from jigna.utils.web import get_free_port
 from test_jigna_qt import TestJignaQt, Person, body_html
 
-@skip("Web tests don't work at the moment")
 class TestJignaWebSync(TestJignaQt):
     @classmethod
     def setUpClass(cls, async=False):
@@ -22,9 +21,8 @@ class TestJignaWebSync(TestJignaQt):
         fred = Person(name='Fred', age=42)
         template = Template(body_html=body_html, async=async)
         port = get_free_port()
-        app = WebApp(template=template, context={'model':fred}, port=port)
-        application = app.create_application()
-        application.listen(port)
+        app = WebApp(template=template, context={'model':fred})
+        app.listen(port)
 
         # Start the tornado server in a different thread so that we can write
         # test statements here in the main loop

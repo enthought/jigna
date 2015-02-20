@@ -1,8 +1,11 @@
 #### Imports ####
 
-from traits.api import HasTraits, CInt, Str, Property, Array, Instance, on_trait_change
-from numpy import linspace, sin, pi
 from jigna.api import Template, WebApp
+from numpy import linspace, sin, pi
+from tornado.ioloop import IOLoop
+from traits.api import (
+    HasTraits, CInt, Str, Property, Array, Instance, on_trait_change
+)
 
 #### Domain model ####
 
@@ -73,6 +76,9 @@ template = Template(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start the tornado ioloop application
+    ioloop = IOLoop.instance()
+
     # Instantiate the domain model and the plot controller
     domain_model = DomainModel(scaling_factor=15)
     plot_controller = PlotController(domain_model=domain_model)
@@ -87,12 +93,13 @@ def main():
         context={
             'domain_model': domain_model,
             'plot_controller': plot_controller
-        },
-        port=8000
+        }
     )
+    app.listen(8000)
 
-    # Start the event loop
-    app.start()
+    # Start serving the web app on port 8000.
+    print 'Serving on port 8000...'
+    ioloop.start()
 
 if __name__ == "__main__":
     main()

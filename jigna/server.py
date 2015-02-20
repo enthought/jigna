@@ -16,7 +16,8 @@ import traceback
 
 # Enthought library.
 from traits.api import (
-    Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent, Event
+    Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent, Event,
+    Property
 )
 
 # Logging.
@@ -39,7 +40,17 @@ class Server(HasTraits):
     #### 'Server' protocol ####################################################
 
     #: Base url for serving content.
-    base_url = Str
+    base_url = Property(Str, depends_on='_base_url')
+    def _get_base_url(self):
+        if not self._base_url.endswith('/'):
+            base_url = self._base_url + '/'
+        else:
+            base_url = self._base_url
+
+        return base_url
+
+    def _set_base_url(self, base_url):
+        self._base_url = base_url
 
     #: The html to serve.
     html = Str
@@ -70,12 +81,6 @@ class Server(HasTraits):
         self._bridge.send_event(event)
 
         return
-
-    def initialize(self):
-        """ Initialize the server with configuration options to specify which
-        URL is handled how. """
-
-        raise NotImplementedError
 
     def handle_request(self, jsonized_request):
         """ Handle a jsonized request from a client. """
@@ -201,6 +206,9 @@ class Server(HasTraits):
         return
 
     #### Private protocol #####################################################
+
+    #: Shadow trait for `base_url`
+    _base_url = Str
 
     #: The bridge that provides the communication between Python and JS.
     _bridge = Instance(Bridge)

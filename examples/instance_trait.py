@@ -5,7 +5,9 @@ This example shows two-way data binding on an `Instance` trait.
 #### Imports ####
 
 from traits.api import HasTraits, Instance, Str
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
+from jigna.utils.gui import do_after
 
 #### Domain model ####
 
@@ -33,25 +35,29 @@ template = Template(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain model
     fred = Person(name='Fred')
     wilma = Person(name='Wilma')
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(template=template, context={'person':fred})
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
+    widget = HTMLWidget(template=template, context={'person':fred})
+    widget.show()
 
     # Schedule some operations on the domain model.
     #
     # The operation should fill in the `spouse` field of the person and this
     # should be reflected in the UI.
-    from jigna.utils.gui import do_after
     do_after(2500, fred.marry, wilma)
 
     # Start the event loop.
     #
     # Initially, the `spouse` field of the person is empty, so the fields
     # related to the spouse should be empty in the UI.
-    app.start()
+    app.exec_()
 
     # Check the final values of the instance
     print fred.name, fred.spouse.name, wilma.name

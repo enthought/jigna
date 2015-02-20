@@ -10,7 +10,8 @@ safety related issues with that method.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str, Instance
-from jigna.api import Template, QtApp
+from jigna.api import HTMLWidget, Template
+from jigna.qt import QtGui
 import time
 
 #### Domain model ####
@@ -75,22 +76,27 @@ template = Template(body_html=body_html)
 #### Entry point ####
 
 def main():
+    # Start the Qt application
+    app = QtGui.QApplication([])
+
     # Instantiate the domain models
     installer = Installer()
     pandas = Package(name='Pandas', version='1.0')
 
-    # Create a QtApp to render the HTML template with the given context.
-    app = QtApp(
+    # Create the jigna based HTML widget which renders the given HTML template
+    # with the given context.
+    widget = HTMLWidget(
         template=template,
         context={'installer': installer, 'new_package': pandas}
     )
+    widget.show()
 
     # Start the event loop.
     #
     # Clicking on the button in the UI will call the `install` method in a
     # thread so that the UI is still responsive while the method is executing.
     # The progress bar is also updated as the method progresses.
-    app.start()
+    app.exec_()
 
     # Check the final values
     print installer.current.name, installer.current.version
