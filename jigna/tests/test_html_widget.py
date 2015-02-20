@@ -74,11 +74,20 @@ class TestHTMLWidget(unittest.TestCase):
         self.assertEqual(attr2, self.model.attr2)
 
     def test_two_widgets_are_created(self):
-        HTMLWidget(template=self.template, context={'model': self.model})
-        HTMLWidget(template=self.template, context={'model': self.model})
+        widget1 = HTMLWidget(
+            template=self.template, context={'model': self.model}
+        )
 
-        # If you arrive here, it means the test passed
-        self.assertTrue(True)
+        widget2 = HTMLWidget(
+            template=self.template, context={'model': self.model}
+        )
+
+        # Check if `jigna` was initialised with the correct python models
+        # (check by making sure that primitive variables are the same)
+        attr1 = widget1.execute_js("jigna.models.model.attr1")
+        attr2 = widget2.execute_js("jigna.models.model.attr2")
+        self.assertEqual(attr1, self.model.attr1)
+        self.assertEqual(attr2, self.model.attr2)
 
 if __name__ == "__main__":
     unittest.main()
