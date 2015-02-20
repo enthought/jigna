@@ -22,17 +22,19 @@ class WebApp(web.Application):
 
     def __init__(self, handlers=None, default_host="", transforms=None,
                  context=None, template=None, **kw):
-        super(WebApp, self).__init__(handlers, default_host, transforms, **kw)
 
         self.context = context
         self.template = template
 
-        handlers = self._create()
-        self.add_handlers('.*$', handlers)
+        if handlers is None:
+            handlers = []
+        handlers += self._create_handlers()
+
+        super(WebApp, self).__init__(handlers, default_host, transforms, **kw)
 
     #### Private protocol #####################################################
 
-    def _create(self):
+    def _create_handlers(self):
         """
         Create the web application serving the given context. Returns the
         tornado application created.

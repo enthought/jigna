@@ -21,14 +21,14 @@ class HTMLWidget(QtGui.QWidget):
     domain model context. """
 
     def __init__(
-        self, parent=None, window_flags=0, template=None, context=None
+        self, parent=None, window_flags=0, context=None, template=None
     ):
         super(HTMLWidget, self).__init__(parent, window_flags)
 
         self.context = context
         self.template = template
 
-        self.webview = self._create()
+        self.webview = self._create_qwebview()
 
         # Set the layout
         self.setLayout(QtGui.QVBoxLayout())
@@ -50,8 +50,8 @@ class HTMLWidget(QtGui.QWidget):
 
     #### Private protocol #####################################################
 
-    def _create(self):
-        """ Create the jigna widget to render the template with the context.
+    def _create_qwebview(self):
+        """ Create a qwebview to render the template with the context.
         """
 
         # Set up the server to serve the domain models in context
