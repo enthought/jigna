@@ -27,7 +27,8 @@ class WebApp(web.Application):
         self.context = context
         self.template = template
 
-        self._application = self._create()
+        handlers = self._create()
+        self.add_handlers('.*$', handlers)
 
     #### Private protocol #####################################################
 
@@ -44,4 +45,4 @@ class WebApp(web.Application):
             context     = self.context
         )
 
-        return server.application
+        return server.handlers

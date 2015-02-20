@@ -76,49 +76,32 @@ class WebServer(Server):
 
     ### 'WebServer' protocol ##################################################
 
-    #: The tornado `Application` object which specifies rules about how to handle
-    #: different requests etc.
-    application = Instance(Application)
+    #: The list of tornado handlers which map URL patterns to callables
+    handlers = List
+    def _handlers_default(self):
+        return [
+            # To serve jigna.js from package source
+            (
+                r"/jigna/(.*)", StaticFileHandler,
+                dict(path=join(dirname(__file__), 'js', 'dist'))
+            ),
 
-    #### 'Server' protocol ####################################################
+            # This handler handles the web socket based async version of the
+            # web interface.
+            (
+                r"/_jigna_ws", AsyncWebSocketHandler,
+                dict(bridge=self._bridge, server=self)
+            ),
 
-    def __init__(self, **traits):
-        """ Initialize the web server. This simply creates the web application
-        to serve the Python model.
-        """
-        super(WebServer, self).__init__(**traits)
-        
-        # Note that the order of the handlers is from specific rules to general
-        # rules. If general rules come first, they will handle everything and
-        # not let the specific rules even come into picture.
-        self.application.add_handlers(
-            '.*$',
-            [
-                # To serve jigna.js from package source
-                (
-                    r"/jigna/(.*)", StaticFileHandler,
-                    dict(path=join(dirname(__file__), 'js', 'dist'))
-                ),
+            # This handler handles synchronous GET requests from JS proxy
+            # getters and returns the corresponding attribute from the
+            # python side.
+            (r"/_jigna", SyncGETHandler, dict(server=self)),
 
-                # This handler handles the web socket based async version of the
-                # web interface.
-                (
-                    r"/_jigna_ws", AsyncWebSocketHandler,
-                    dict(bridge=self._bridge, server=self)
-                ),
-
-                # This handler handles synchronous GET requests from JS proxy
-                # getters and returns the corresponding attribute from the
-                # python side.
-                (r"/_jigna", SyncGETHandler, dict(server=self)),
-
-                # Main handler which returns the jigna HTML and other resources
-                # by resolving it via server's base url.
-                (r".*", MainHandler, dict(server=self)),
-            ]
-        )
-
-        return
+            # Main handler which returns the jigna HTML and other resources
+            # by resolving it via server's base url.
+            (r".*", MainHandler, dict(server=self)),
+        ]
 
     #: The trait change dispatch mechanism to use when traits change.
     trait_change_dispatch = Str('same')

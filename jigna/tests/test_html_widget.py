@@ -26,7 +26,7 @@ class TestHTMLWidget(unittest.TestCase):
         # Check if a qwebview widget was created
         self.assertIsNotNone(widget)
         self.assertIsInstance(widget, QtGui.QWidget)
-        self.assertIsInstance(widget.children()[0], QtWebKit.QWebView)
+        self.assertIsInstance(widget.webview, QtWebKit.QWebView)
 
     def test_created_widget_loads_html(self):
         # Create a widget
@@ -35,7 +35,7 @@ class TestHTMLWidget(unittest.TestCase):
         )
 
         # Check if the widget has html loaded in it
-        webview = widget.children()[0]
+        webview = widget.webview
         frame = webview.page().mainFrame()
         self.assertIsInstance(frame.toHtml(), basestring)
         self.assertGreater(len(frame.toHtml()), 0)

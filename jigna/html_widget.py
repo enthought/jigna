@@ -28,18 +28,18 @@ class HTMLWidget(QtGui.QWidget):
         self.context = context
         self.template = template
 
-        self._webview = self._create()
+        self.webview = self._create()
 
         # Set the layout
         self.setLayout(QtGui.QVBoxLayout())
         self.layout().setContentsMargins(0, 0, 0, 0)
-        self.layout().addWidget(self._webview)
+        self.layout().addWidget(self.webview)
         self.resize(*template.recommended_size)
 
     def execute_js(self, js):
         """ Execute the given js string on the HTML widget.
         """
-        return self._webview.execute_js(js)
+        return self.webview.execute_js(js)
 
     def show(self):
         """ Reimplemented to always show the widget on front.
