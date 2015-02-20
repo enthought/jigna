@@ -39,22 +39,22 @@ def main():
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
-    clock = StopWatch()
+    stop_watch = StopWatch()
 
     # Create the jigna based HTML widget which renders the given HTML template
     # with the given context.
     #
-    # The operations on the clock can be controlled from the UI. The view
+    # The operations on the stop watch can be controlled from the UI. The view
     # related logic is such that it always displays the integer time of the
     # domain model in a proper hh:mm:ss format.
-    widget = HTMLWidget(template=template, context={'clock':clock})
+    widget = HTMLWidget(template=template, context={'stop_watch': stop_watch})
     widget.show()
 
     # Start the event loop
     app.exec_()
 
     # Check the values after the UI is closed
-    print clock.time, "seconds"
+    print stop_watch.time, "seconds"
 
 if __name__ == "__main__":
     main()

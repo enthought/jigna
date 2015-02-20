@@ -13,7 +13,7 @@
         format. -->
         <script type='text/javascript'>
             // Specify the 'jigna' angular app as a dependency
-            var app = angular.module('ClockApp', ['jigna']);
+            var app = angular.module('StopWatchApp', ['jigna']);
 
             // Define a filter to display time (in seconds) in a proper hh:mm:ss
             // format
@@ -29,23 +29,24 @@
         </script>
     </head>
 
-    <body ng-app='ClockApp'>
-        Time: {{clock.time | displayTime}} <br/>
+    <body ng-app='StopWatchApp'>
+        Time: {{stop_watch.time | displayTime}} <br/>
 
-        <!-- Start the clock in a new thread because it is a slow operation -->
-        <button ng-click="jigna.threaded(clock, 'start')"
-                ng-show="clock.state=='stopped'">
+        <!-- Start the stop watch in a new thread because it is a slow
+        operation -->
+        <button ng-click="jigna.threaded(stop_watch, 'start')"
+                ng-show="stop_watch.state=='stopped'">
             Start
         </button>
 
         <!-- Stop -->
-        <button ng-click="clock.stop()"
-                ng-show="clock.state=='running'">
+        <button ng-click="stop_watch.stop()"
+                ng-show="stop_watch.state=='running'">
             Stop
         </button>
 
         <!-- Reset -->
-        <button ng-click="clock.reset()">
+        <button ng-click="stop_watch.reset()">
             Reset
         </button>
     </body>
