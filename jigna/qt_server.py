@@ -17,7 +17,7 @@ from traits.api import Any, Str, Instance
 from traits.trait_notifiers import set_ui_handler
 
 # Jigna library.
-from jigna.core.qwebview import ProxyWebView
+from jigna.core.proxy_qwebview import ProxyWebView
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
 from jigna.qt import QtWebKit, QtCore
