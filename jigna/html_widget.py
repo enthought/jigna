@@ -41,13 +41,6 @@ class HTMLWidget(QtGui.QWidget):
         """
         return self.webview.execute_js(js)
 
-    def show(self):
-        """ Reimplemented to always show the widget on front.
-        """
-        super(HTMLWidget, self).show()
-
-        self.raise_()
-
     #### Private protocol #####################################################
 
     def _create_qwebview(self):
