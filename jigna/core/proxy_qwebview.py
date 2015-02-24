@@ -145,6 +145,8 @@ class ProxyQWebPage(QtWebKit.QWebPage):
     """
 
     def acceptNavigationRequest(self, frame, request, type):
+        # Checking this is same as checking if the client side <a> tag making
+        # the HTTP request had target="_blank" as an attribute.
         if frame is None:
             import webbrowser
             webbrowser.open_new(request.url().toString())
