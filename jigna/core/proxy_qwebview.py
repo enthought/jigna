@@ -16,6 +16,7 @@ from jigna.qt import QtCore, QtGui, QtWebKit
 
 logger = logging.getLogger(__name__)
 
+
 class ProxyQWebView(QtWebKit.QWebView):
 
     DISABLED_ACTIONS = [
@@ -31,6 +32,7 @@ class ProxyQWebView(QtWebKit.QWebView):
         root_paths={}
     ):
         super(ProxyQWebView, self).__init__(parent)
+        self.setPage(ProxyQWebPage())
 
         # Connect JS with python.
         self.expose_python_namespace(python_namespace, callbacks)
@@ -134,6 +136,21 @@ class ProxyQWebView(QtWebKit.QWebView):
             return None
 
         return obj
+
+
+class ProxyQWebPage(QtWebKit.QWebPage):
+    """ Overridden to open external links in a web browser.
+    """
+
+    def acceptNavigationRequest(self, frame, nav_request, nav_type):
+        if nav_type == self.NavigationTypeOther:
+            QtGui.QDesktopServices.openUrl(nav_request.url())
+            return False
+        else:
+            return True
+
+    def createWindow(self, *args, **kwargs):
+        return ProxyQWebPage()
 
 
 if __name__ == '__main__':
