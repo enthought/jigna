@@ -16,6 +16,7 @@ from jigna.qt import QtCore, QtGui, QtWebKit
 
 logger = logging.getLogger(__name__)
 
+
 class ProxyQWebView(QtWebKit.QWebView):
 
     DISABLED_ACTIONS = [
@@ -31,6 +32,7 @@ class ProxyQWebView(QtWebKit.QWebView):
         root_paths={}
     ):
         super(ProxyQWebView, self).__init__(parent)
+        self.setPage(ProxyQWebPage())
 
         # Connect JS with python.
         self.expose_python_namespace(python_namespace, callbacks)
@@ -136,9 +138,32 @@ class ProxyQWebView(QtWebKit.QWebView):
         return obj
 
 
+class ProxyQWebPage(QtWebKit.QWebPage):
+    """ Overridden to open external links in a web browser.
+
+    Source: http://www.expobrain.net/2012/03/01/open-urls-in-external-browser-by-javascript-in-webkit/
+    """
+
+    def acceptNavigationRequest(self, frame, request, type):
+        # Checking this is same as checking if the client side <a> tag making
+        # the HTTP request had target="_blank" as an attribute.
+        if frame is None:
+            import webbrowser
+            webbrowser.open_new(request.url().toString())
+
+            return False
+
+        else:
+            return super(ProxyQWebPage, self).acceptNavigationRequest(
+                frame, request, type
+            )
+
+    def createWindow(self, *args, **kwargs):
+        return ProxyQWebPage()
+
 if __name__ == '__main__':
     app = QtGui.QApplication([])
-    w = ProxyWebView()
+    w = ProxyQWebView()
     w.show()
     w.raise_()
     w.load(QtCore.QUrl('http://www.google.com/'))
