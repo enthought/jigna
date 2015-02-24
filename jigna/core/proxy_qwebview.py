@@ -32,8 +32,7 @@ class ProxyQWebView(QtWebKit.QWebView):
         root_paths={}
     ):
         super(ProxyQWebView, self).__init__(parent)
-        self._page = ProxyQWebPage()
-        self.setPage(self._page)
+        self.setPage(ProxyQWebPage())
 
         # Connect JS with python.
         self.expose_python_namespace(python_namespace, callbacks)
