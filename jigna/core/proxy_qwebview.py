@@ -139,37 +139,17 @@ class ProxyQWebView(QtWebKit.QWebView):
         return obj
 
 
-class NavRequest(object):
-
-    def __init__(self, page, frame, request, type):
-        self.page = page
-        self.frame = frame
-        self.request = request
-        self.type = type
-
-        self._accepted = False
-
-
 class ProxyQWebPage(QtWebKit.QWebPage):
     """ Overridden to open external links in a web browser.
 
     Source: http://www.expobrain.net/2012/03/01/open-urls-in-external-browser-by-javascript-in-webkit/
     """
 
-    navigationRequest = QtCore.Signal(NavRequest)
-
-    def __init__(self, parent=None):
-        super(ProxyQWebPage, self).__init__(parent)
-
-        self.navigationRequest.connect(
-            self.onNavRequest, type=QtCore.Qt.DirectConnection
-        )
-
     def acceptNavigationRequest(self, frame, request, type):
-        nav_request = NavRequest(page=self, frame=frame, request=request, type=type)
-        self.navigationRequest.emit(nav_request)
+        if frame is None:
+            import webbrowser
+            webbrowser.open_new(request.url().toString())
 
-        if nav_request.accepted:
             return False
 
         else:
@@ -179,16 +159,6 @@ class ProxyQWebPage(QtWebKit.QWebPage):
 
     def createWindow(self, *args, **kwargs):
         return ProxyQWebPage()
-
-    def onNavRequest(self, nav_request):
-        if nav_request.frame is None:
-            import webbrowser
-            webbrowser.open_new(nav_request.request.url().toString())
-
-            nav_request.accepted = True
-
-        else:
-            nav_request.accepted = False
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])
