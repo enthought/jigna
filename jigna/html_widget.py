@@ -36,10 +36,9 @@ class HTMLWidget(QtGui.QWidget):
         self._view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
         self.webview = self._create_qwebview()
-        self.webview.resize(*template.recommended_size)
         self._scene.addItem(self.webview)
 
-        self._view.resize(*template.recommended_size)
+        self.resize(*template.recommended_size)
 
     def execute_js(self, js):
         """ Execute the given js string on the HTML widget.
@@ -60,3 +59,7 @@ class HTMLWidget(QtGui.QWidget):
         )
 
         return server.webview
+
+    def resizeEvent(self, event):
+        self.webview.resize(event.size())
+        self._view.resize(event.size())
