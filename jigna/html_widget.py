@@ -12,7 +12,7 @@ import os
 from os.path import join
 
 # Local Library
-from .qt import QtGui
+from .qt import QtGui, QtCore
 from .qt_server import QtServer
 
 
@@ -28,13 +28,18 @@ class HTMLWidget(QtGui.QWidget):
         self.context = context
         self.template = template
 
-        self.webview = self._create_qwebview()
-
         # Set the layout
-        self.setLayout(QtGui.QVBoxLayout())
-        self.layout().setContentsMargins(0, 0, 0, 0)
-        self.layout().addWidget(self.webview)
-        self.resize(*template.recommended_size)
+        self._scene = QtGui.QGraphicsScene()
+        self._view = QtGui.QGraphicsView(self._scene, parent=self)
+        self._view.setFrameShape(QtGui.QFrame.NoFrame)
+        self._view.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self._view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+
+        self.webview = self._create_qwebview()
+        self.webview.resize(*template.recommended_size)
+        self._scene.addItem(self.webview)
+
+        self._view.resize(*template.recommended_size)
 
     def execute_js(self, js):
         """ Execute the given js string on the HTML widget.

@@ -17,7 +17,7 @@ from jigna.qt import QtCore, QtGui, QtWebKit
 logger = logging.getLogger(__name__)
 
 
-class ProxyQWebView(QtWebKit.QWebView):
+class ProxyQWebView(QtWebKit.QGraphicsWebView):
 
     DISABLED_ACTIONS = [
         QtWebKit.QWebPage.OpenLinkInNewWindow,
