@@ -55,6 +55,10 @@ body_html = """
           -webkit-transition: -webkit-transform 1s;
         }
 
+        #card.flipped {
+          -webkit-transform: rotateY( 180deg );
+        }
+
         #card .face {
           display: block;
           position: absolute;
@@ -73,10 +77,6 @@ body_html = """
           background: blue;
           -webkit-transform: rotateY( 180deg );
         }
-
-        #card.flipped {
-          -webkit-transform: rotateY( 180deg );
-        }
     </style>
 """
 
@@ -93,9 +93,7 @@ def main():
 
     # Create a jigna based HTML widget to render the HTML template with the
     # given context.
-    widget = HTMLWidget(
-        template=template, context={'card': card}
-    )
+    widget = HTMLWidget(template=template, context={'card': card})
     widget.show()
 
     # Start the event loop
