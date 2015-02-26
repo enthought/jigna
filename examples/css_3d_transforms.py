@@ -60,11 +60,9 @@ body_html = """
           position: absolute;
           width: 100%;
           height: 100%;
-          -webkit-backface-visibility: hidden;
           color: white;
           font-size: 16px;
-          margin-left: auto;
-          margin-right: auto;
+          -webkit-backface-visibility: hidden;
         }
 
         #card .front {
