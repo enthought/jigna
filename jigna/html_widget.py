@@ -16,7 +16,7 @@ from .qt import QtGui, QtCore
 from .qt_server import QtServer
 
 
-class HTMLWidget(QtGui.QWidget):
+class HTMLWidget(QtGui.QGraphicsView):
     """ A Qt based HTML widget to render the jigna template with a given
     domain model context. """
 
@@ -28,16 +28,16 @@ class HTMLWidget(QtGui.QWidget):
         self.context = context
         self.template = template
 
-        # Set the layout
-        self._scene = QtGui.QGraphicsScene()
-        self._view = QtGui.QGraphicsView(self._scene, parent=self)
-        self._view.setFrameShape(QtGui.QFrame.NoFrame)
-        self._view.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self._view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-
+        # Set the scene
+        scene = QtGui.QGraphicsScene()
         self.webview = self._create_qwebview()
-        self._scene.addItem(self.webview)
+        scene.addItem(self.webview)
+        self.setScene(scene)
 
+        # Layout the view
+        self.setFrameShape(QtGui.QFrame.NoFrame)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.resize(*template.recommended_size)
 
     def execute_js(self, js):
@@ -62,4 +62,3 @@ class HTMLWidget(QtGui.QWidget):
 
     def resizeEvent(self, event):
         self.webview.resize(event.size())
-        self._view.resize(event.size())
