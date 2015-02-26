@@ -34,7 +34,7 @@ class HTMLWidget(QtGui.QGraphicsView):
         scene.addItem(self.webview)
         self.setScene(scene)
 
-        # Layout the view
+        # Layout the graphics view
         self.setFrameShape(QtGui.QFrame.NoFrame)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
@@ -44,6 +44,9 @@ class HTMLWidget(QtGui.QGraphicsView):
         """ Execute the given js string on the HTML widget.
         """
         return self.webview.execute_js(js)
+
+    def resizeEvent(self, event):
+        self.webview.resize(event.size())
 
     #### Private protocol #####################################################
 
@@ -59,6 +62,3 @@ class HTMLWidget(QtGui.QGraphicsView):
         )
 
         return server.webview
-
-    def resizeEvent(self, event):
-        self.webview.resize(event.size())
