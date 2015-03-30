@@ -22653,12 +22653,15 @@ jigna.WebBridge.prototype.send_request_async = function(jsonized_request) {
 jigna.WebBridge.prototype._pop_deferred_request = function(request_id) {
     var deferred = this._deferred_requests[request_id];
     delete this._deferred_requests[request_id];
-    this._request_ids[request_id] = request_id;
+    this._request_ids.push(request_id);
     return deferred;
 };
 
 jigna.WebBridge.prototype._push_deferred_request = function(deferred) {
     var id = this._request_ids.pop();
+    if (id === undefined) {
+        console.error("In _push_deferred_request, request_id is undefined.");
+    }
     this._deferred_requests[id] = deferred;
     return id;
 };
