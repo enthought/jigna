@@ -23,6 +23,7 @@ before_install:
 
   # Make sure you have a web browser installed (for the web tests) and the X
   # server is running
+  - sudo apt-get update
   - sudo apt-get install firefox
   - sh -e /etc/init.d/xvfb start
 
