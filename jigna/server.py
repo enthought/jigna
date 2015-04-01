@@ -148,8 +148,7 @@ class Server(HasTraits):
             self.send_event(event)
 
         def _on_error(error):
-            type, value, tb = error
-            error_msg = ''.join(traceback.format_tb(tb))
+            error_msg = ''.join(traceback.format_exception(*error))
 
             logger.error(error_msg)
 
