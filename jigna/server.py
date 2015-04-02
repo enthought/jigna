@@ -237,6 +237,8 @@ class Server(HasTraits):
         if isinstance(obj, HasTraits):
             attribute_names = [
                 name for name in obj.editable_traits()
+
+                if not name.startswith('_')
             ]
         else:
             attribute_names = [
