@@ -4,7 +4,6 @@
 # (C) Copyright 2013 Enthought, Inc., Austin, TX
 # All right reserved.
 #
-
 """ Abstract base classes for the Jigna server and bridge. """
 
 
@@ -16,8 +15,8 @@ import traceback
 
 # Enthought library.
 from traits.api import (
-    Dict, HasTraits, Instance, Str, TraitDictEvent, TraitListEvent, Event,
-    Property
+    Any, Dict, Event, HasTraits, Instance, Property, Str, TraitDictEvent,
+    TraitListEvent
 )
 
 # Logging.
@@ -82,10 +81,20 @@ class Server(HasTraits):
 
         return
 
+    #count = 0
+    
     def handle_request(self, jsonized_request):
         """ Handle a jsonized request from a client. """
 
         request = json.loads(jsonized_request)
+
+        ## self.count +=1
+        
+        ## print '-------------------------------------------------------------'
+        ## print request['kind']
+        ## print jsonized_request
+        ## print self.count
+        ## print '-------------------------------------------------------------'
 
         # To dispatch the request we have a method named after each one!
         method    = getattr(self, request['kind'])
@@ -136,8 +145,9 @@ class Server(HasTraits):
         method      = getattr(obj, method_name)
 
         from jigna.core.concurrent import Future
-        future = Future(method, args=tuple(args),
-                        dispatch=self.trait_change_dispatch)
+        future = Future(
+            method, args=tuple(args), dispatch=self.trait_change_dispatch
+        )
 
         def _on_done(result):
             event = dict(
@@ -215,8 +225,13 @@ class Server(HasTraits):
     #: All instance and lists that have been accessed via the bridge.
     #:
     #: { str id : instance_or_list obj }
-    _id_to_object_map = Dict
+    _id_to_object_map = Any({})
 
+    #: Cache of instance info by type name.
+    #:
+    #: { str type_name : dict }
+    _type_name_to_instance_info_map = Any({})
+    
     def _context_ids(self, context):
         """ Return a dictionary keyed with object ids of the objects in
         self._context and whose values are the object ids.
@@ -276,15 +291,22 @@ class Server(HasTraits):
         """ Get a description of an instance. """
 
         if isinstance(obj, HasTraits):
-            obj.on_trait_change(self._send_object_changed_event,
-                                dispatch=self.trait_change_dispatch)
+            obj.on_trait_change(
+                self._send_object_changed_event,
+                dispatch=self.trait_change_dispatch
+            )
 
-        info = dict(
-            type_name        = type(obj).__module__ + '.' + type(obj).__name__,
-            attribute_names  = self._get_attribute_names(obj),
-            event_names      = self._get_event_names(obj),
-            method_names     = self._get_public_method_names(type(obj))
-        )
+        type_name = type(obj).__module__ + '.' + type(obj).__name__
+
+        info = self._type_name_to_instance_info_map.get(type_name)
+        if info is None:
+            info = dict(
+                type_name        = type_name,
+                attribute_names  = self._get_attribute_names(obj),
+                event_names      = self._get_event_names(obj),
+                method_names     = self._get_public_method_names(type(obj))
+            )
+            self._type_name_to_instance_info_map[type_name] = info
 
         return info
 
@@ -402,13 +424,17 @@ class Server(HasTraits):
                 self._register_object(new)
 
         event = dict(
-            obj            = str(id(obj)),
-            name           = trait_name,
-            # fixme: This smells a bit, but marhsalling the new value gives us
+            obj  = str(id(obj)),
+            name = trait_name,
+            # fixme: This smells a bit, but marshalling the new value gives us
             # a type/value pair which we need on the client side to determine
             # what (if any) proxy we need to create.
-            data        = self._marshal(new)
+            data = self._marshal(new)
         )
+
+        ## print '#************************************************************'
+        ## print obj, trait_name
+        ## print '*************************************************************'
 
         self.send_event(event)
 
