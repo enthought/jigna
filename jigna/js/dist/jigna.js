@@ -26896,12 +26896,13 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var cached_value = this.__cache__[index];
-        if (cached_value === undefined) {
-            return this.__client__.get_attribute(proxy, index);
-        } else {
-            return cached_value;
+        var value = this.__cache__[index];
+        if (value === undefined) {
+            value = this.__client__.get_attribute(proxy, index);
+	    this.__cache__[index] = value;
         }
+
+	return value;
     };
 
     set = function(value) {
@@ -26929,12 +26930,13 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var cached_value = this.__cache__[attribute_name];
-        if (cached_value === undefined) {
-            return this.__client__.get_attribute(proxy, attribute_name);
-        } else {
-            return cached_value;
+        var value = this.__cache__[attribute_name];
+        if (value === undefined) {
+            value = this.__client__.get_attribute(proxy, attribute_name);
+	    this.__cache__[attribute_name] = value;
         }
+
+	return value;
     };
 
     set = function(value) {
