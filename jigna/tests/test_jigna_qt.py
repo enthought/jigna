@@ -116,11 +116,23 @@ class TestJignaQt(unittest.TestCase):
     def test_list_of_primitives(self):
         self.assertJSEqual("jigna.models.model.fruits", [])
         fred = self.fred
-        fred.fruits = ["banana", "mango"]
+        fred.fruits = ["peach", "pear"]
         self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
-        # Now set the value in the JS side.
-        self.execute_js("jigna.models.model.fruits[0] = 'peach'")
-        self.assertEqual(fred.fruits, ["peach", "mango"])
+
+        fred.fruits.append('mango')
+        self.assertJSEqual("jigna.models.model.fruits[0]", "peach")
+        self.assertJSEqual("jigna.models.model.fruits[1]", "pear")
+        self.assertJSEqual("jigna.models.model.fruits[2]", "mango")
+
+        fred.fruits.insert(0, 'banana')
+        self.assertJSEqual("jigna.models.model.fruits[0]", "banana")
+        self.assertJSEqual("jigna.models.model.fruits[1]", "peach")
+        self.assertJSEqual("jigna.models.model.fruits[2]", "pear")
+        self.assertJSEqual("jigna.models.model.fruits[3]", "mango")
+        
+        # Test setting from the JS side...
+        self.execute_js("jigna.models.model.fruits[0] = 'orange'")
+        self.assertEqual(fred.fruits, ["orange", "peach", "pear", "mango"])
 
         self.execute_js("jigna.models.model.fruits = ['apple']")
         self.assertEqual(fred.fruits, ["apple"])
@@ -153,19 +165,31 @@ class TestJignaQt(unittest.TestCase):
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
 
-    def test_list_instance(self):
+    def test_list_of_instances(self):
         self.assertJSEqual("jigna.models.model.friends", [])
-        barney = Person(name="Barney", age=40)
+        dino = Person(name="Dino", age=10)
         fred = self.fred
-        fred.friends = [barney]
+        fred.friends = [dino]
+        self.assertJSEqual("jigna.models.model.friends[0].name", "Dino")
+        self.assertJSEqual("jigna.models.model.friends[0].age", 10)
+
+        wilma = Person(name="Wilma", age=30)
+        fred.friends.append(wilma)
+        self.assertJSEqual("jigna.models.model.friends[0].name", "Dino")
+        self.assertJSEqual("jigna.models.model.friends[0].age", 10)
+        self.assertJSEqual("jigna.models.model.friends[1].name", "Wilma")
+        self.assertJSEqual("jigna.models.model.friends[1].age", 30)
+
+        barney = Person(name="Barney", age=40)
+        fred.friends.insert(0, barney)
         self.assertJSEqual("jigna.models.model.friends[0].name", "Barney")
         self.assertJSEqual("jigna.models.model.friends[0].age", 40)
-
-        dino = Person(name="Dino", age=10)
-        fred.friends.append(dino)
         self.assertJSEqual("jigna.models.model.friends[1].name", "Dino")
         self.assertJSEqual("jigna.models.model.friends[1].age", 10)
-        self.assertJSEqual("jigna.models.model.friends[0].name", "Barney")
+        self.assertJSEqual("jigna.models.model.friends[2].name", "Wilma")
+        self.assertJSEqual("jigna.models.model.friends[2].age", 30)
+
+        # Test setting from the JS side...
         self.execute_js("jigna.models.model.friends[0].name = 'Barneyji'")
         self.assertEqual(barney.name, "Barneyji")
 
