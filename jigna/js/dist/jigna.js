@@ -26485,6 +26485,7 @@ jigna.Client.prototype.initialize = function() {
     this.bridge           = this._get_bridge();
 
     this._id_to_proxy_map = {};
+    this._id_to_cache_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
     // Add all of the models being edited
@@ -26705,8 +26706,8 @@ jigna.Client.prototype._create_request = function(proxy, attribute) {
 };
 
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
-    var proxy = this._id_to_proxy_map[id];
-    proxy.__cache__[attribute_name] = undefined;
+    var cache = this._id_to_cache_map[id];
+    cache[attribute_name] = undefined;
 };
 
 jigna.Client.prototype._marshal = function(obj) {
@@ -26886,6 +26887,11 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj, info) {
     if (factory_method === undefined) {
         throw 'cannot create proxy for: ' + type;
     }
+
+    // Create a cache object corresponding to this proxy
+    if (this._client._id_to_cache_map[obj] === undefined) {
+        this._client._id_to_cache_map[obj] = {};
+    }
     return factory_method.apply(this, [obj, info]);
 };
 
@@ -26896,10 +26902,11 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var value = this.__cache__[index];
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        var value = cache[index];
         if (value === undefined) {
             value = this.__client__.get_attribute(proxy, index);
-	    this.__cache__[index] = value;
+	        cache[index] = value;
         }
 
 	return value;
@@ -26907,7 +26914,8 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
     set = function(value) {
         // In here, 'this' refers to the proxy!
-        this.__cache__[index] = value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        cache[index] = value;
         this.__client__.set_item(this.__id__, index, value);
     };
 
@@ -26930,10 +26938,11 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var value = this.__cache__[attribute_name];
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        var value = cache[attribute_name];
         if (value === undefined) {
-            value = this.__client__.get_attribute(proxy, attribute_name);
-	    this.__cache__[attribute_name] = value;
+            value = this.__client__.get_attribute(this, attribute_name);
+	        cache[attribute_name] = value;
         }
 
 	return value;
@@ -26944,10 +26953,11 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
         //
         // If the proxy is for a 'HasTraits' instance then we don't need
         // to set the cached value here as the value will get updated when
-        // we get the corresponsing trait event. However, setting the value
+        // we get the corresponding trait event. However, setting the value
         // here means that we can create jigna UIs for non-traits objects - it
         // just means we won't react to external changes to the model(s).
-        this.__cache__[attribute_name] = value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        cache[attribute_name] = value;
         this.__client__.set_instance_attribute(
             this.__id__, attribute_name, value
         );
