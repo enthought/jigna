@@ -32,7 +32,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
         var cache = this.__client__._id_to_cache_map[this.__id__];
         var value = cache[index];
         if (value === undefined) {
-            value = this.__client__.get_attribute(proxy, index);
+            value = this.__client__.get_attribute(this, index);
 	        cache[index] = value;
         }
 
