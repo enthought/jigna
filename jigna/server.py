@@ -81,32 +81,24 @@ class Server(HasTraits):
 
         return
 
-    #count = 0
-
     def handle_request(self, jsonized_request):
         """ Handle a jsonized request from a client. """
 
         request = json.loads(jsonized_request)
-
-        ## self.count +=1
-
-        ## print '-------------------------------------------------------------'
-        ## print request['kind']
-        ## print jsonized_request
-        ## print self.count
-        ## print '-------------------------------------------------------------'
 
         # To dispatch the request we have a method named after each one!
         method    = getattr(self, request['kind'])
         exception = None
         try:
             result    = method(request)
+
         except:
             exception = traceback.format_exc()
             logger.exception(exception)
             result = None
 
         response = dict(exception=exception, result=result)
+
         return json.dumps(response, default=lambda obj: repr(type(obj)));
 
     #### Handlers for each kind of request ####################################
@@ -119,7 +111,7 @@ class Server(HasTraits):
     def print_JS_message(self, request):
         """ Prints a message coming from the JS client for testing purposes """
 
-        print "JS: " + request['value']
+        print 'JS: ' + request['value']
 
         return
 
@@ -417,8 +409,6 @@ class Server(HasTraits):
         if trait_name.startswith('_'):
             return
 
-        print '_send_object_changed_event', obj, id(obj), trait_name
-
         if isinstance(new, (TraitListEvent, TraitDictEvent)):
             trait_name  = trait_name[:-len('_items')]
             new         = getattr(obj, trait_name)
@@ -443,10 +433,6 @@ class Server(HasTraits):
             # JS side.
             items_event = items_event
         )
-
-        ## print '#************************************************************'
-        ## print obj, trait_name
-        ## print '*************************************************************'
 
         self.send_event(event)
 

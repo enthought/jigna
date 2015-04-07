@@ -36,10 +36,12 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
 };
 
 jigna.Client.prototype.on_object_changed = function(event){
-    this.print_JS_message('------------on_object_changed--------------');
-    this.print_JS_message('object id  : ' + event.obj);
-    this.print_JS_message('attribute  : ' + event.name);
-    this.print_JS_message('items event: ' + event.items_event);
+    if (jigna.debug) {
+	this.print_JS_message('------------on_object_changed--------------');
+	this.print_JS_message('object id  : ' + event.obj);
+	this.print_JS_message('attribute  : ' + event.name);
+	this.print_JS_message('items event: ' + event.items_event);
+    }
 
     // Invalidating the cached attribute means that the next time the property
     // getter is called it will ask the Python-side for the new value.
@@ -51,9 +53,11 @@ jigna.Client.prototype.on_object_changed = function(event){
 
     var data = event.data;
 
-    this.print_JS_message('new type:  ' + data.type);
-    this.print_JS_message('new value: ' + data.value);
-    this.print_JS_message('new info: ' + data.info);
+    if (jigna.debug) {
+	this.print_JS_message('new type:  ' + data.type);
+	this.print_JS_message('new value: ' + data.value);
+	this.print_JS_message('new info: ' + data.info);
+    }
 
     this._create_proxy(data.type, data.value, data.info);
 
