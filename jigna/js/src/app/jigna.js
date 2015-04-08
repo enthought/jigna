@@ -7,6 +7,7 @@ var jigna = new EventTarget();
 
 jigna.initialize = function(options) {
     options = options || {};
+    this.debug  = options.debug;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize();
 };

@@ -9,6 +9,7 @@ jigna.Client.prototype.initialize = function() {
     this.bridge           = this._get_bridge();
 
     this._id_to_proxy_map = {};
+    this._id_to_cache_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
     // Add all of the models being edited
@@ -35,6 +36,15 @@ jigna.Client.prototype.handle_event = function(jsonized_event) {
 };
 
 jigna.Client.prototype.on_object_changed = function(event){
+    if (jigna.debug) {
+	this.print_JS_message('------------on_object_changed--------------');
+	this.print_JS_message('object id  : ' + event.obj);
+	this.print_JS_message('attribute  : ' + event.name);
+	this.print_JS_message('items event: ' + event.items_event);
+    }
+
+    // Invalidating the cached attribute means that the next time the property
+    // getter is called it will ask the Python-side for the new value.
     this._invalidate_cached_attribute(event.obj, event.name);
 
     // fixme: Creating a new proxy smells... It is used when we have a list of
@@ -42,7 +52,17 @@ jigna.Client.prototype.on_object_changed = function(event){
     // by managing the details of a TraitListEvent?
 
     var data = event.data;
+
+    if (jigna.debug) {
+	this.print_JS_message('new type:  ' + data.type);
+	this.print_JS_message('new value: ' + data.value);
+	this.print_JS_message('new info: ' + data.info);
+    }
+
     this._create_proxy(data.type, data.value, data.info);
+
+    // Angular listens to this event and forces a digest cycle which is how
+    // it detects changes in its watchers.
     jigna.fire_event('jigna', 'object_changed');
 };
 
@@ -229,8 +249,14 @@ jigna.Client.prototype._create_request = function(proxy, attribute) {
 };
 
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
-    var proxy = this._id_to_proxy_map[id];
-    proxy.__cache__[attribute_name] = undefined;
+    var cache = this._id_to_cache_map[id];
+    var value = cache[attribute_name];
+
+    if (value && ((value.__type__ == 'list') || (value.__type__ == 'dict'))) {
+        this._id_to_cache_map[value.__id__] = undefined;
+    }
+
+    cache[attribute_name] = undefined;
 };
 
 jigna.Client.prototype._marshal = function(obj) {

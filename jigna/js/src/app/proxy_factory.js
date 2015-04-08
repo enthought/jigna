@@ -14,6 +14,11 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj, info) {
     if (factory_method === undefined) {
         throw 'cannot create proxy for: ' + type;
     }
+
+    // Create a cache object corresponding to this proxy
+    if (this._client._id_to_cache_map[obj] === undefined) {
+        this._client._id_to_cache_map[obj] = {};
+    }
     return factory_method.apply(this, [obj, info]);
 };
 
@@ -24,17 +29,20 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var cached_value = this.__cache__[index];
-        if (cached_value === undefined) {
-            return this.__client__.get_attribute(proxy, index);
-        } else {
-            return cached_value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        var value = cache[index];
+        if (value === undefined) {
+            value = this.__client__.get_attribute(this, index);
+	        cache[index] = value;
         }
+
+	return value;
     };
 
     set = function(value) {
         // In here, 'this' refers to the proxy!
-        this.__cache__[index] = value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        cache[index] = value;
         this.__client__.set_item(this.__id__, index, value);
     };
 
@@ -57,12 +65,14 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 
     get = function() {
         // In here, 'this' refers to the proxy!
-        var cached_value = this.__cache__[attribute_name];
-        if (cached_value === undefined) {
-            return this.__client__.get_attribute(proxy, attribute_name);
-        } else {
-            return cached_value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        var value = cache[attribute_name];
+        if (value === undefined) {
+            value = this.__client__.get_attribute(this, attribute_name);
+	        cache[attribute_name] = value;
         }
+
+	return value;
     };
 
     set = function(value) {
@@ -70,10 +80,11 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
         //
         // If the proxy is for a 'HasTraits' instance then we don't need
         // to set the cached value here as the value will get updated when
-        // we get the corresponsing trait event. However, setting the value
+        // we get the corresponding trait event. However, setting the value
         // here means that we can create jigna UIs for non-traits objects - it
         // just means we won't react to external changes to the model(s).
-        this.__cache__[attribute_name] = value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        cache[attribute_name] = value;
         this.__client__.set_instance_attribute(
             this.__id__, attribute_name, value
         );
@@ -94,7 +105,8 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
     var descriptor, set;
 
     set = function(value) {
-        this.__cache__[event_name] = value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        cache[event_name] = value;
         this.__client__.set_instance_attribute(
             this.__id__, event_name, value
         );
