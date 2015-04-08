@@ -145,7 +145,25 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual("jigna.models.model.phonebook.joan", 345)
         self.assertJSEqual("jigna.models.model.phonebook", fred.phonebook)
 
-        # Now set the value in the JS side.
+        fred.phonebook['wilma'] = 678
+        self.assertJSEqual("jigna.models.model.phonebook.wilma", 678)
+        self.assertJSEqual(
+            "Object.keys(jigna.models.model.phonebook).length", 3
+        )
+
+        fred.phonebook['wilma'] = 890
+        self.assertJSEqual("jigna.models.model.phonebook.wilma", 890)
+        self.assertJSEqual(
+            "Object.keys(jigna.models.model.phonebook).length", 3
+        )
+
+        fred.phonebook.pop('wilma')
+        self.assertJSEqual("jigna.models.model.phonebook.wilma", None)
+        self.assertJSEqual(
+            "Object.keys(jigna.models.model.phonebook).length", 2
+        )
+        
+        # Test setting from the JS side...
         self.execute_js("jigna.models.model.phonebook['joe'] = 567")
         self.assertEqual(567, fred.phonebook['joe'])
 
