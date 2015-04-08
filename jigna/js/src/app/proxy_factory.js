@@ -105,7 +105,8 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
     var descriptor, set;
 
     set = function(value) {
-        this.__cache__[event_name] = value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        cache[event_name] = value;
         this.__client__.set_instance_attribute(
             this.__id__, event_name, value
         );

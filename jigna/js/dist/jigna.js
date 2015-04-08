@@ -26727,6 +26727,12 @@ jigna.Client.prototype._create_request = function(proxy, attribute) {
 
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
     var cache = this._id_to_cache_map[id];
+    var value = cache[attribute_name];
+
+    if (value && value.__type__ == 'list') {
+        this._id_to_cache_map[value.__id__] = undefined;
+    }
+
     cache[attribute_name] = undefined;
 };
 
@@ -26999,7 +27005,8 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
     var descriptor, set;
 
     set = function(value) {
-        this.__cache__[event_name] = value;
+        var cache = this.__client__._id_to_cache_map[this.__id__];
+        cache[event_name] = value;
         this.__client__.set_instance_attribute(
             this.__id__, event_name, value
         );
@@ -27077,7 +27084,6 @@ jigna.Proxy = function(type, id, client) {
     Object.defineProperty(this, '__type__',   {value : type});
     Object.defineProperty(this, '__id__',     {value : id});
     Object.defineProperty(this, '__client__', {value : client});
-    Object.defineProperty(this, '__cache__',  {value : {}});
 
     // The state for each attribute can be 'busy' or undefined, if 'busy' it
     // implies that the server is waiting to receive the value.
@@ -27181,7 +27187,6 @@ jigna.ListProxy = function(type, id, client) {
     Object.defineProperty(arr, '__type__',   {value : type});
     Object.defineProperty(arr, '__id__',     {value : id});
     Object.defineProperty(arr, '__client__', {value : client});
-    Object.defineProperty(arr, '__cache__',  {value : []});
     // The state for each attribute can be 'busy' or undefined, if 'busy' it
     // implies that the server is waiting to receive the value.
     Object.defineProperty(arr, '__state__',  {value : {}});

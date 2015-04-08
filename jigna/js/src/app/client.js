@@ -250,6 +250,12 @@ jigna.Client.prototype._create_request = function(proxy, attribute) {
 
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
     var cache = this._id_to_cache_map[id];
+    var value = cache[attribute_name];
+
+    if (value && value.__type__ == 'list') {
+        this._id_to_cache_map[value.__id__] = undefined;
+    }
+
     cache[attribute_name] = undefined;
 };
 
