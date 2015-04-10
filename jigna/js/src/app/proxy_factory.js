@@ -112,7 +112,7 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
         );
     };
 
-    descriptor = {enumerable:false, set:set};
+    descriptor = {enumerable:false, set:set, configurable: true};
     Object.defineProperty(proxy, event_name, descriptor);
 
     jigna.add_listener(
