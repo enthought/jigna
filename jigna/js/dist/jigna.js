@@ -26770,6 +26770,7 @@ jigna.Client.prototype._unmarshal = function(obj) {
 
     if (obj.type === 'primitive') {
         return obj.value;
+
     } else {
         value = this._id_to_proxy_map[obj.value];
         if (value === undefined) {
@@ -26933,10 +26934,10 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
         var value = cache[index];
         if (value === undefined) {
             value = this.__client__.get_attribute(this, index);
-	        cache[index] = value;
+                cache[index] = value;
         }
 
-	return value;
+        return value;
     };
 
     set = function(value) {
@@ -26946,7 +26947,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
         this.__client__.set_item(this.__id__, index, value);
     };
 
-    descriptor = {enumerable:true, get:get, set:set};
+    descriptor = {enumerable:true, get:get, set:set, configurable:true};
     Object.defineProperty(proxy, index, descriptor);
 };
 
@@ -26969,10 +26970,10 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
         var value = cache[attribute_name];
         if (value === undefined) {
             value = this.__client__.get_attribute(this, attribute_name);
-	        cache[attribute_name] = value;
+                cache[attribute_name] = value;
         }
 
-	return value;
+        return value;
     };
 
     set = function(value) {
@@ -26990,7 +26991,7 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
         );
     };
 
-    descriptor = {enumerable:true, get:get, set:set};
+    descriptor = {enumerable:true, get:get, set:set, configurable:true};
     Object.defineProperty(proxy, attribute_name, descriptor);
 
     jigna.add_listener(
@@ -27024,9 +27025,15 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_dict_proxy = function(id, info) {
-    var index;
+    var index, proxy;
 
-    var proxy = new jigna.Proxy('dict', id, this._client);
+    proxy = this._client._id_to_proxy_map[id];
+    if (proxy === undefined) {
+        proxy = new jigna.Proxy('dict', id, this._client);
+
+    } else {
+        this._delete_keys(proxy);
+    }
 
     for (index in info.keys) {
         this._add_item_attribute(proxy, info.keys[index]);
@@ -27034,11 +27041,16 @@ jigna.ProxyFactory.prototype._create_dict_proxy = function(id, info) {
     return proxy;
 };
 
-
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
     var index, proxy;
 
-    proxy = new jigna.Proxy('instance', id, this._client);
+    proxy = this._client._id_to_proxy_map[id];
+    if (proxy === undefined) {
+        proxy = new jigna.Proxy('instance', id, this._client);
+
+    } else {
+        this._delete_keys(proxy);
+    }
 
     for (index in info.attribute_names) {
         this._add_instance_attribute(proxy, info.attribute_names[index]);
@@ -27063,13 +27075,31 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
 jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
     var index, proxy;
 
-    proxy = new jigna.ListProxy('list', id, this._client);
+    proxy = this._client._id_to_proxy_map[id];
+    if (proxy === undefined) {
+        proxy = new jigna.ListProxy('list', id, this._client);
+
+    } else {
+        for (var i=0, len=proxy.length; i < length; i++) {
+            delete proxy[i];
+        }
+    }
 
     for (index=0; index < info.length; index++) {
         this._add_item_attribute(proxy, index);
     }
 
     return proxy;
+};
+
+jigna.ProxyFactory.prototype._delete_keys = function(proxy) {
+    /* Delete all keys (JS attributes) of a previously used proxy. */
+    var index, keys;
+
+    keys = Object.keys(proxy);
+    for (index in keys) {
+        delete proxy[keys[index]];
+    }
 };
 
 

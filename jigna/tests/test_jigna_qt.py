@@ -106,6 +106,16 @@ class TestJignaQt(unittest.TestCase):
             msg = "%s != %s, got %s"%(js, value, result)
             self.assertEqual(value, result, msg)
 
+    def test_object_identity(self):
+        fred = self.fred
+        wilma = Person(name='wilma')
+        fred.friends.append(wilma)
+        fred.spouse = wilma
+
+        self.assertJSEqual(
+            "jigna.models.model.friends[0] === jigna.models.model.spouse", True
+        )
+        
     def test_simple_primitive_traits(self):
         fred = self.fred
         fred.name = "Freddie"
