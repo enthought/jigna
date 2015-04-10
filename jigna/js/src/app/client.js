@@ -293,6 +293,7 @@ jigna.Client.prototype._unmarshal = function(obj) {
 
     if (obj.type === 'primitive') {
         return obj.value;
+
     } else {
         value = this._id_to_proxy_map[obj.value];
         if (value === undefined) {
