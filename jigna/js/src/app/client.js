@@ -8,9 +8,10 @@ jigna.Client.prototype.initialize = function() {
     // jigna.Client protocol.
     this.bridge           = this._get_bridge();
 
-    this._id_to_proxy_map = {};
-    this._id_to_cache_map = {};
-    this._proxy_factory   = new jigna.ProxyFactory(this);
+    this._type_to_constructor_map = {};
+    this._id_to_proxy_map         = {};
+    this._id_to_cache_map         = {};
+    this._proxy_factory           = new jigna.ProxyFactory(this);
 
     // Add all of the models being edited
     jigna.add_listener(
@@ -263,6 +264,7 @@ jigna.Client.prototype._marshal = function(obj) {
     var type, value;
 
     if (obj instanceof jigna.Proxy) {
+	this.print_JS_message('got instance of proxy' + obj);
         type  = obj.__type__;
         value = obj.__id__;
 
