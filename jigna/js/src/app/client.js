@@ -52,12 +52,10 @@ jigna.Client.prototype.on_object_changed = function(event){
     // getter is called it will ask the Python-side for the new value.
     this._invalidate_cached_attribute(event.obj, event.name);
 
-    // If the *contents* of a list or dict have changed then we don't try to
-    // work out the details of what has changed and then mimic that on the
-    // proxy - nope, instead we just delete the proxy's properties and
-    // re-create them!
+    // If the *contents* of a list or dict have changed then we need to update
+    // the associated proxy to reflect the change.
     if (event.items_event) {
-	this._create_proxy(event.data.type, event.data.value, event.data.info);
+	this._update_proxy(event.data.type, event.data.value, event.data.info);
     }
 
     // Angular listens to this event and forces a digest cycle which is how it
@@ -210,21 +208,6 @@ jigna.Client.prototype._create_proxy = function(type, obj, info) {
     }
 };
 
-jigna.Client.prototype._get_bridge = function() {
-    var bridge, qt_bridge;
-
-    // Are we using the intra-process Qt Bridge...
-    qt_bridge = window['qt_bridge'];
-    if (qt_bridge !== undefined) {
-	bridge = new jigna.QtBridge(this, qt_bridge);
-    // ... or the inter-process web bridge?
-    } else {
-	bridge = new jigna.WebBridge(this);
-    }
-
-    return bridge;
-};
-
 jigna.Client.prototype._create_request = function(proxy, attribute) {
     /* Create the request object for getting the given attribute of the proxy. */
 
@@ -244,6 +227,21 @@ jigna.Client.prototype._create_request = function(proxy, attribute) {
 	};
     }
     return request;
+};
+
+jigna.Client.prototype._get_bridge = function() {
+    var bridge, qt_bridge;
+
+    // Are we using the intra-process Qt Bridge...
+    qt_bridge = window['qt_bridge'];
+    if (qt_bridge !== undefined) {
+	bridge = new jigna.QtBridge(this, qt_bridge);
+    // ... or the inter-process web bridge?
+    } else {
+	bridge = new jigna.WebBridge(this);
+    }
+
+    return bridge;
 };
 
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
@@ -302,3 +300,9 @@ jigna.Client.prototype._unmarshal = function(obj) {
 	}
     }
 };
+
+jigna.Client.prototype._update_proxy = function(type, obj, info) {
+    var proxy = this._id_to_proxy_map[obj];
+    this._proxy_factory.update_proxy(proxy, type, obj, info);
+};
+

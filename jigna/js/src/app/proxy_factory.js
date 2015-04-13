@@ -26,6 +26,29 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj, info) {
     return factory_method.apply(this, [obj, info]);
 };
 
+jigna.ProxyFactory.prototype.update_proxy = function(proxy, type, obj, info) {
+    /* Update the given proxy.
+     *
+     * This is only used for list and dict proxies when their items have
+     * changed.
+     */
+
+    var factory_method = this['_update_' + type + '_proxy'];
+    if (factory_method === undefined) {
+	throw 'cannot update proxy for: ' + type;
+    }
+
+    // We cache the state of each proxy external to the proxy itself.
+    //
+    // fixme: Now that we reuse proxies, this is no longer required - the
+    // cache can be in the proxy itself which seems cleaner!
+    if (this._client._id_to_cache_map[obj] === undefined) {
+	this._client._id_to_cache_map[obj] = {};
+    }
+
+    return factory_method.apply(this, [proxy, obj, info]);
+};
+
 // Private protocol //////////////////////////////////////////////////////////
 
 jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
@@ -114,22 +137,9 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_dict_proxy = function(id, info) {
-    var index, proxy;
+    var proxy = new jigna.Proxy('dict', id, this._client);
+    this._populate_dict_proxy(proxy, info);
 
-    // fixme: smell - the proxy factory shouldn't be determining whether it
-    // needs to create a proxy or not (the giveaway is that to make the decision
-    // it looks at state of the client!)...
-    proxy = this._client._id_to_proxy_map[id];
-    if (proxy === undefined) {
-	proxy = new jigna.Proxy('dict', id, this._client);
-
-    } else {
-	this._delete_dict_keys(proxy);
-    }
-
-    for (index in info.keys) {
-	this._add_item_attribute(proxy, info.keys[index]);
-    }
     return proxy;
 };
 
@@ -144,35 +154,15 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
 	this._client._type_to_constructor_map[info.type_name] = constructor;
     }
 
-    // fixme: smell - the proxy factory shouldn't be determining whether it
-    // needs to create a proxy or not (the giveaway is that to make the decision
-    // it looks at state of the client!)...
-    proxy = this._client._id_to_proxy_map[id];
-    if (proxy === undefined) {
-	proxy = new constructor('instance', id, this._client);
-	this._listen_for_server_side_changes(proxy, info);
-    }
+    proxy = new constructor('instance', id, this._client);
+    this._listen_for_server_side_changes(proxy, info);
 
     return proxy;
 };
 
 jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
-    var index, proxy;
-
-    // fixme: smell - the proxy factory shouldn't be determining whether it
-    // needs to create a proxy or not (the giveaway is that to make the decision
-    // it looks at state of the client!)...
-    proxy = this._client._id_to_proxy_map[id];
-    if (proxy === undefined) {
-	proxy = new jigna.ListProxy('list', id, this._client);
-
-    } else {
-	this._delete_list_items(proxy);
-    }
-
-    for (index=0; index < info.length; index++) {
-	this._add_item_attribute(proxy, index);
-    }
+    var proxy = new jigna.ListProxy('list', id, this._client);
+    this._populate_list_proxy(proxy, info);
 
     return proxy;
 };
@@ -260,3 +250,31 @@ jigna.ProxyFactory.prototype._listen_for_server_side_changes = function(proxy, i
 	);
     }
 }
+
+jigna.ProxyFactory.prototype._populate_dict_proxy = function(proxy, info) {
+    var index;
+
+    for (index in info.keys) {
+	this._add_item_attribute(proxy, info.keys[index]);
+    }
+};
+
+jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
+    var index;
+
+    for (index=0; index < info.length; index++) {
+	this._add_item_attribute(proxy, index);
+    }
+
+    return proxy;
+};
+
+jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, id, info) {
+    this._delete_dict_keys(proxy);
+    this._populate_dict_proxy(proxy, info);
+};
+
+jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, id, info) {
+    this._delete_list_items(proxy);
+    this._populate_list_proxy(proxy, info);
+};
