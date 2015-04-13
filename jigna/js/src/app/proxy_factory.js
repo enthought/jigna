@@ -5,6 +5,10 @@
 jigna.ProxyFactory = function(client) {
     // Private protocol.
     this._client = client;
+
+    // We create a constructor for each Python class and then create the
+    // actual proxies as from those.
+    this._type_to_constructor_map = {};
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, obj, info) {
@@ -148,10 +152,10 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
 
     // We create a constructor for each Python class and then create the
     // actual proxies as from those.
-    constructor = this._client._type_to_constructor_map[info.type_name];
+    constructor = this._type_to_constructor_map[info.type_name];
     if (constructor === undefined) {
 	constructor = this._create_constructor(info);
-	this._client._type_to_constructor_map[info.type_name] = constructor;
+	this._type_to_constructor_map[info.type_name] = constructor;
     }
 
     proxy = new constructor('instance', id, this._client);
