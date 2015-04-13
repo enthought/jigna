@@ -112,6 +112,9 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 jigna.ProxyFactory.prototype._create_dict_proxy = function(id, info) {
     var index, proxy;
 
+    // fixme: smell - the proxy factory shouldn't be determining whether it
+    // needs to create a proxy or not (the giveaway is that to make the decision
+    // it looks at state of the client!)...
     proxy = this._client._id_to_proxy_map[id];
     if (proxy === undefined) {
 	proxy = new jigna.Proxy('dict', id, this._client);
@@ -143,27 +146,27 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
 	this._client.print_JS_message('Id: ' + id + ' Type: ' + info.type_name);
 	proxy = new constructor('instance', id, this._client);
 
+	for (index in info.attribute_names) {
+	    jigna.add_listener(
+		proxy,
+		info.attribute_names[index],
+		this._client.on_object_changed,
+		this._client
+	    );
+	}
+
+	for (index in info.event_names) {
+	    jigna.add_listener(
+		proxy,
+		info.event_names[index],
+		this._client.on_object_changed,
+		this._client
+	    );
+	}
+
     } else {
 	this._client.print_JS_message('Reusing instance proxy');
 	this._client.print_JS_message('Id: ' + id + ' Type: ' + info.type_name);
-    }
-
-    for (index in info.attribute_names) {
-	jigna.add_listener(
-	    proxy,
-	    info.attribute_names[index],
-	    this._client.on_object_changed,
-	    this._client
-	);
-    }
-
-    for (index in info.event_names) {
-	jigna.add_listener(
-	    proxy,
-	    info.event_names[index],
-	    this._client.on_object_changed,
-	    this._client
-	);
     }
 
     return proxy;
@@ -172,6 +175,9 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
 jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
     var index, proxy;
 
+    // fixme: smell - the proxy factory shouldn't be determining whether it
+    // needs to create a proxy or not (the giveaway is that to make the decision
+    // it looks at state of the client!)...
     proxy = this._client._id_to_proxy_map[id];
     if (proxy === undefined) {
 	proxy = new jigna.ListProxy('list', id, this._client);

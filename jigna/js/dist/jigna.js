@@ -26986,8 +26986,6 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 	// we get the corresponding trait event. However, setting the value
 	// here means that we can create jigna UIs for non-traits objects - it
 	// just means we won't react to external changes to the model(s).
-	console.log('setting: ' + attribute_name + 'id: ' + this.__id__);
-	console.log(this);
 	var cache = this.__client__._id_to_cache_map[this.__id__];
 	cache[attribute_name] = value;
 	this.__client__.set_instance_attribute(
@@ -27035,46 +27033,12 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
     var constructor, index, proxy;
 
     // We create a constructor for each Python class and then create the
-    // actual proxies from those.
+    // actual proxies as from those.
     constructor = this._client._type_to_constructor_map[info.type_name];
     if (constructor === undefined) {
-	this._client.print_JS_message('creating constructor for: ' + info.type_name);
-	constructor = function(type, id, client) {
-	    jigna.Proxy.call(this, type, id, client);
-	};
-
-	constructor.prototype = Object.create(jigna.Proxy.prototype);
-	constructor.prototype.constructor = constructor;
-
-	for (index in info.attribute_names) {
-	    this._add_instance_attribute(
-		constructor.prototype, info.attribute_names[index]
-	    );
-	}
-
-	for (index in info.event_names) {
-	    this._add_instance_event(
-		constructor.prototype, info.event_names[index]
-	    );
-	}
-
-	for (index in info.method_names) {
-	    this._add_instance_method(
-		constructor.prototype, info.method_names[index]
-	    );
-	}
-
-	// This property is not actually used by jigna itself. It is only there
-	// to make it easy to see what the type of the server-side object is
-	// when debugging the JS code in the web inspector.
-	Object.defineProperty(
-	    constructor.prototype, '__type_name__', {value : info.type_name}
-	);
-
+	constructor = this._create_constructor(info);
 	this._client._type_to_constructor_map[info.type_name] = constructor;
     }
-
-    console.log('constructor', constructor);
 
     proxy = this._client._id_to_proxy_map[id];
     if (proxy === undefined) {
@@ -27082,27 +27046,27 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
 	this._client.print_JS_message('Id: ' + id + ' Type: ' + info.type_name);
 	proxy = new constructor('instance', id, this._client);
 
+	for (index in info.attribute_names) {
+	    jigna.add_listener(
+	        proxy,
+		info.attribute_names[index],
+	        this._client.on_object_changed,
+	        this._client
+	    );
+	}
+
+        for (index in info.event_names) {
+	    jigna.add_listener(
+	        proxy,
+		info.event_names[index],
+		this._client.on_object_changed,
+		this._client
+	    );
+	}
+
     } else {
 	this._client.print_JS_message('Reusing instance proxy');
 	this._client.print_JS_message('Id: ' + id + ' Type: ' + info.type_name);
-    }
-
-    for (index in info.attribute_names) {
-	jigna.add_listener(
-	    proxy,
-	    info.attribute_names[index],
-	    this._client.on_object_changed,
-	    this._client
-	);
-    }
-
-    for (index in info.event_names) {
-	jigna.add_listener(
-	    proxy,
-	    info.event_names[index],
-	    this._client.on_object_changed,
-	    this._client
-	);
     }
 
     return proxy;
@@ -27125,6 +27089,44 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
 
     return proxy;
 };
+
+jigna.ProxyFactory.prototype._create_constructor = function(info) {
+    this._client.print_JS_message('creating constructor: ' + info.type_name);
+
+    constructor = function(type, id, client) {
+	jigna.Proxy.call(this, type, id, client);
+    };
+
+    constructor.prototype = Object.create(jigna.Proxy.prototype);
+    constructor.prototype.constructor = constructor;
+
+    for (index in info.attribute_names) {
+	this._add_instance_attribute(
+	    constructor.prototype, info.attribute_names[index]
+	);
+    }
+
+    for (index in info.event_names) {
+	this._add_instance_event(
+	    constructor.prototype, info.event_names[index]
+	);
+    }
+
+    for (index in info.method_names) {
+	this._add_instance_method(
+	    constructor.prototype, info.method_names[index]
+	);
+    }
+
+    // This property is not actually used by jigna itself. It is only there to
+    // make it easy to see what the type of the server-side object is when
+    // debugging the JS code in the web inspector.
+    Object.defineProperty(
+	constructor.prototype, '__type_name__', {value : info.type_name}
+    );
+
+    return constructor;
+}
 
 jigna.ProxyFactory.prototype._delete_dict_keys = function(proxy) {
     /* Delete all keys of a previously used dict proxy. */
@@ -27162,8 +27164,6 @@ jigna.Proxy = function(type, id, client) {
     // implies that the server is waiting to receive the value.
     Object.defineProperty(this, '__state__',  {value : {}});
 };
-
-//jigna.Proxy.constructor = jigna.Proxy;
 
 
 // SubArray.js ////////////////////////////////////////////////////////////////
