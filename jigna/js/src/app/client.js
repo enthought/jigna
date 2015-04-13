@@ -264,7 +264,6 @@ jigna.Client.prototype._marshal = function(obj) {
     var type, value;
 
     if (obj instanceof jigna.Proxy) {
-	this.print_JS_message('got instance of proxy' + obj);
         type  = obj.__type__;
         value = obj.__id__;
 

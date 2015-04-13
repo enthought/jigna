@@ -184,6 +184,11 @@ jigna.ProxyFactory.prototype._create_constructor = function(info) {
 	jigna.Proxy.call(this, type, id, client);
     };
 
+    // This is the standard way to set up protoype inheritance in JS.
+    //
+    // The line below says "when the function 'constructor' is called via the
+    // 'new' operator, then set the prototype of the created object to the
+    // given object".
     constructor.prototype = Object.create(jigna.Proxy.prototype);
     constructor.prototype.constructor = constructor;
 
