@@ -26485,10 +26485,10 @@ jigna.Client.prototype.initialize = function() {
     // jigna.Client protocol.
     this.bridge           = this._get_bridge();
 
-    this._type_to_constructor_map = {};
-    this._id_to_proxy_map         = {};
-    this._id_to_cache_map         = {};
-    this._proxy_factory           = new jigna.ProxyFactory(this);
+    // Private protocol.
+    this._id_to_proxy_map = {};
+    this._id_to_cache_map = {};
+    this._proxy_factory   = new jigna.ProxyFactory(this);
 
     // Add all of the models being edited
     jigna.add_listener(
@@ -26908,6 +26908,10 @@ jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
 jigna.ProxyFactory = function(client) {
     // Private protocol.
     this._client = client;
+
+    // We create a constructor for each Python class and then create the
+    // actual proxies as from those.
+    this._type_to_constructor_map = {};
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, obj, info) {
@@ -26949,7 +26953,7 @@ jigna.ProxyFactory.prototype.update_proxy = function(proxy, type, obj, info) {
 	this._client._id_to_cache_map[obj] = {};
     }
 
-    return factory_method.apply(this, [proxy, obj, info]);
+    return factory_method.apply(this, [proxy, info]);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
@@ -27051,10 +27055,10 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
 
     // We create a constructor for each Python class and then create the
     // actual proxies as from those.
-    constructor = this._client._type_to_constructor_map[info.type_name];
+    constructor = this._type_to_constructor_map[info.type_name];
     if (constructor === undefined) {
 	constructor = this._create_constructor(info);
-	this._client._type_to_constructor_map[info.type_name] = constructor;
+	this._type_to_constructor_map[info.type_name] = constructor;
     }
 
     proxy = new constructor('instance', id, this._client);
@@ -27172,12 +27176,12 @@ jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     return proxy;
 };
 
-jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, id, info) {
+jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
     this._delete_dict_keys(proxy);
     this._populate_dict_proxy(proxy, info);
 };
 
-jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, id, info) {
+jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     this._delete_list_items(proxy);
     this._populate_list_proxy(proxy, info);
 };

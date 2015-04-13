@@ -50,7 +50,7 @@ jigna.ProxyFactory.prototype.update_proxy = function(proxy, type, obj, info) {
 	this._client._id_to_cache_map[obj] = {};
     }
 
-    return factory_method.apply(this, [proxy, obj, info]);
+    return factory_method.apply(this, [proxy, info]);
 };
 
 // Private protocol //////////////////////////////////////////////////////////
@@ -273,12 +273,12 @@ jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     return proxy;
 };
 
-jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, id, info) {
+jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
     this._delete_dict_keys(proxy);
     this._populate_dict_proxy(proxy, info);
 };
 
-jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, id, info) {
+jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     this._delete_list_items(proxy);
     this._populate_list_proxy(proxy, info);
 };
