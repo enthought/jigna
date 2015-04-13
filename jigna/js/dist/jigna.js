@@ -26918,10 +26918,14 @@ jigna.ProxyFactory.prototype.create_proxy = function(type, obj, info) {
 	throw 'cannot create proxy for: ' + type;
     }
 
-    // Create a cache object corresponding to this proxy
+    // We cache the state of each proxy external to the proxy itself.
+    //
+    // fixme: Now that we reuse proxies, this is no longer required - the
+    // cache can be in the proxy itself which seems cleaner!
     if (this._client._id_to_cache_map[obj] === undefined) {
 	this._client._id_to_cache_map[obj] = {};
     }
+
     return factory_method.apply(this, [obj, info]);
 };
 
@@ -26936,7 +26940,7 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
 	var value = cache[index];
 	if (value === undefined) {
 	    value = this.__client__.get_attribute(this, index);
-		cache[index] = value;
+	    cache[index] = value;
 	}
 
 	return value;
@@ -26972,7 +26976,7 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
 	var value = cache[attribute_name];
 	if (value === undefined) {
 	    value = this.__client__.get_attribute(this, attribute_name);
-		cache[attribute_name] = value;
+	    cache[attribute_name] = value;
 	}
 
 	return value;
@@ -27043,16 +27047,13 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
 	this._client._type_to_constructor_map[info.type_name] = constructor;
     }
 
+    // fixme: smell - the proxy factory shouldn't be determining whether it
+    // needs to create a proxy or not (the giveaway is that to make the decision
+    // it looks at state of the client!)...
     proxy = this._client._id_to_proxy_map[id];
     if (proxy === undefined) {
-	this._client.print_JS_message('Creating new instance proxy');
-	this._client.print_JS_message('Id: ' + id + ' Type: ' + info.type_name);
 	proxy = new constructor('instance', id, this._client);
 	this._listen_for_server_side_changes(proxy, info);
-
-    } else {
-	this._client.print_JS_message('Reusing instance proxy');
-	this._client.print_JS_message('Id: ' + id + ' Type: ' + info.type_name);
     }
 
     return proxy;
@@ -27149,7 +27150,7 @@ jigna.ProxyFactory.prototype._listen_for_server_side_changes = function(proxy, i
     }
 
     for (index in info.event_names) {
-        jigna.add_listener(
+	jigna.add_listener(
 	    proxy,
 	    info.event_names[index],
 	    this._client.on_object_changed,
