@@ -99,8 +99,6 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
-    this._client.print_JS_message('creating constructor: ' + info.type_name);
-
     constructor = function(type, id, client) {
         jigna.Proxy.call(this, type, id, client);
     };
