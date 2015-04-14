@@ -26956,33 +26956,10 @@ jigna.ProxyFactory.prototype.update_proxy = function(proxy, type, obj, info) {
     return factory_method.apply(this, [proxy, info]);
 };
 
-// Private protocol //////////////////////////////////////////////////////////
+// Private protocol ////////////////////////////////////////////////////////////
 
-jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
-    var descriptor, get, set;
 
-    get = function() {
-	// In here, 'this' refers to the proxy!
-	var cache = this.__client__._id_to_cache_map[this.__id__];
-	var value = cache[index];
-	if (value === undefined) {
-	    value = this.__client__.get_attribute(this, index);
-	    cache[index] = value;
-	}
-
-	return value;
-    };
-
-    set = function(value) {
-	// In here, 'this' refers to the proxy!
-	var cache = this.__client__._id_to_cache_map[this.__id__];
-	cache[index] = value;
-	this.__client__.set_item(this.__id__, index, value);
-    };
-
-    descriptor = {enumerable:true, get:get, set:set, configurable:true};
-    Object.defineProperty(proxy, index, descriptor);
-};
+// Instance proxy creation /////////////////////////////////////////////////////
 
 jigna.ProxyFactory.prototype._add_instance_method = function(proxy, method_name){
     proxy[method_name] = function() {
@@ -27043,37 +27020,6 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
     Object.defineProperty(proxy, event_name, descriptor);
 };
 
-jigna.ProxyFactory.prototype._create_dict_proxy = function(id, info) {
-    var proxy = new jigna.Proxy('dict', id, this._client);
-    this._populate_dict_proxy(proxy, info);
-
-    return proxy;
-};
-
-jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
-    var constructor, index, proxy;
-
-    // We create a constructor for each Python class and then create the
-    // actual proxies as from those.
-    constructor = this._type_to_constructor_map[info.type_name];
-    if (constructor === undefined) {
-	constructor = this._create_constructor(info);
-	this._type_to_constructor_map[info.type_name] = constructor;
-    }
-
-    proxy = new constructor('instance', id, this._client);
-    this._listen_for_server_side_changes(proxy, info);
-
-    return proxy;
-};
-
-jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
-    var proxy = new jigna.ListProxy('list', id, this._client);
-    this._populate_list_proxy(proxy, info);
-
-    return proxy;
-};
-
 jigna.ProxyFactory.prototype._create_constructor = function(info) {
     this._client.print_JS_message('creating constructor: ' + info.type_name);
 
@@ -27117,23 +27063,21 @@ jigna.ProxyFactory.prototype._create_constructor = function(info) {
     return constructor;
 }
 
-jigna.ProxyFactory.prototype._delete_dict_keys = function(proxy) {
-    /* Delete all keys of a previously used dict proxy. */
-    var index, keys;
+jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
+    var constructor, index, proxy;
 
-    keys = Object.keys(proxy);
-    for (index in keys) {
-	delete proxy[keys[index]];
+    // We create a constructor for each Python class and then create the
+    // actual proxies as from those.
+    constructor = this._type_to_constructor_map[info.type_name];
+    if (constructor === undefined) {
+	constructor = this._create_constructor(info);
+	this._type_to_constructor_map[info.type_name] = constructor;
     }
-};
 
-jigna.ProxyFactory.prototype._delete_list_items = function(proxy) {
-    /* Delete all items of a previously used list proxy. */
-    var index;
+    proxy = new constructor('instance', id, this._client);
+    this._listen_for_server_side_changes(proxy, info);
 
-    for (index=0; index < proxy.length; index++) {
-	delete proxy[index];
-    }
+    return proxy;
 };
 
 jigna.ProxyFactory.prototype._listen_for_server_side_changes = function(proxy, info) {
@@ -27158,11 +27102,53 @@ jigna.ProxyFactory.prototype._listen_for_server_side_changes = function(proxy, i
     }
 }
 
+// Dict proxy creation /////////////////////////////////////////////////////////
+
+jigna.ProxyFactory.prototype._create_dict_proxy = function(id, info) {
+    var proxy = new jigna.Proxy('dict', id, this._client);
+    this._populate_dict_proxy(proxy, info);
+
+    return proxy;
+};
+
+jigna.ProxyFactory.prototype._delete_dict_keys = function(proxy) {
+    /* Delete all keys of a previously used dict proxy. */
+    var index, keys;
+
+    keys = Object.keys(proxy);
+    for (index in keys) {
+	delete proxy[keys[index]];
+    }
+};
+
 jigna.ProxyFactory.prototype._populate_dict_proxy = function(proxy, info) {
     var index;
 
     for (index in info.keys) {
 	this._add_item_attribute(proxy, info.keys[index]);
+    }
+};
+
+jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
+    this._delete_dict_keys(proxy);
+    this._populate_dict_proxy(proxy, info);
+};
+
+// List proxy creation /////////////////////////////////////////////////////////
+
+jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
+    var proxy = new jigna.ListProxy('list', id, this._client);
+    this._populate_list_proxy(proxy, info);
+
+    return proxy;
+};
+
+jigna.ProxyFactory.prototype._delete_list_items = function(proxy) {
+    /* Delete all items of a previously used list proxy. */
+    var index;
+
+    for (index=0; index < proxy.length; index++) {
+	delete proxy[index];
     }
 };
 
@@ -27176,14 +27162,37 @@ jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     return proxy;
 };
 
-jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
-    this._delete_dict_keys(proxy);
-    this._populate_dict_proxy(proxy, info);
-};
-
 jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     this._delete_list_items(proxy);
     this._populate_list_proxy(proxy, info);
+};
+
+// Common for list and dict proxies ////////////////////////////////////////////
+
+jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
+    var descriptor, get, set;
+
+    get = function() {
+	// In here, 'this' refers to the proxy!
+	var cache = this.__client__._id_to_cache_map[this.__id__];
+	var value = cache[index];
+	if (value === undefined) {
+	    value = this.__client__.get_attribute(this, index);
+	    cache[index] = value;
+	}
+
+	return value;
+    };
+
+    set = function(value) {
+	// In here, 'this' refers to the proxy!
+	var cache = this.__client__._id_to_cache_map[this.__id__];
+	cache[index] = value;
+	this.__client__.set_item(this.__id__, index, value);
+    };
+
+    descriptor = {enumerable:true, get:get, set:set, configurable:true};
+    Object.defineProperty(proxy, index, descriptor);
 };
 
 
