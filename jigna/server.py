@@ -283,13 +283,6 @@ class Server(HasTraits):
     def _get_instance_info(self, obj):
         """ Get a description of an instance. """
 
-        # fixme: Smells as this method should just create instance info!
-        if isinstance(obj, HasTraits):
-            obj.on_trait_change(
-                self._send_object_changed_event,
-                dispatch=self.trait_change_dispatch
-            )
-
         type_name = type(obj).__module__ + '.' + type(obj).__name__
 
         info = self._type_name_to_instance_info_map.get(type_name)
@@ -359,6 +352,11 @@ class Server(HasTraits):
             value = obj_id
             info  = self._get_instance_info(obj)
 
+            if isinstance(obj, HasTraits):
+                obj.on_trait_change(
+                    self._send_object_changed_event,
+                    dispatch=self.trait_change_dispatch
+                )
         else:
             type  = 'primitive'
             value = obj
