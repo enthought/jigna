@@ -61,7 +61,7 @@ def main():
     #
     # We're trying to append and insert primitives to the list in the future.
     # This should be reflected in the UI.
-    do_after(2500, basket.fruits.append, 'mango')
+    #do_after(2500, basket.fruits.append, 'mango')
     do_after(5000, basket.fruits.insert, 0, 'banana')
 
     # Start the event loop

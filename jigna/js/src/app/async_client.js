@@ -87,7 +87,6 @@ jigna.AsyncClient.prototype.call_instance_method_thread = function(id, method_na
 jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
     /* Get the specified attribute of the proxy from the server. */
     var client = this;
-    var cache = this._id_to_cache_map[proxy.__id__]
 
     // start a new request only if a request for getting that attribute isn't
     // already sent
@@ -97,7 +96,7 @@ jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
         var request = this._create_request(proxy, attribute);
         this.send_request(request).done(function(response){
             // update the proxy cache
-            cache[attribute] = client._unmarshal(response);
+            proxy.__cache__[attribute] = client._unmarshal(response);
 
             // fire the object changed event to trigger fresh fetches from
             // the cache
@@ -110,5 +109,5 @@ jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
         });
     }
 
-    return cache[attribute];
+    return proxy.__cache__[attribute];
 };

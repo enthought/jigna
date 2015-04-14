@@ -10,7 +10,6 @@ jigna.Client.prototype.initialize = function() {
 
     // Private protocol.
     this._id_to_proxy_map = {};
-    this._id_to_cache_map = {};
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
     // Add all of the models being edited
@@ -245,14 +244,8 @@ jigna.Client.prototype._get_bridge = function() {
 };
 
 jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
-    var cache = this._id_to_cache_map[id];
-    var value = cache[attribute_name];
-
-    if (value && ((value.__type__ == 'list') || (value.__type__ == 'dict'))) {
-	this._id_to_cache_map[value.__id__] = undefined;
-    }
-
-    cache[attribute_name] = undefined;
+    var proxy = this._id_to_proxy_map[id];
+    proxy.__cache__[attribute_name] = undefined;
 };
 
 jigna.Client.prototype._marshal = function(obj) {
