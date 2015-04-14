@@ -117,7 +117,7 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
     Object.defineProperty(proxy, event_name, descriptor);
 };
 
-jigna.ProxyFactory.prototype._create_constructor = function(info) {
+jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
     this._client.print_JS_message('creating constructor: ' + info.type_name);
 
     constructor = function(type, id, client) {
@@ -167,17 +167,17 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
     // actual proxies as from those.
     constructor = this._type_to_constructor_map[info.type_name];
     if (constructor === undefined) {
-	constructor = this._create_constructor(info);
+	constructor = this._create_instance_constructor(info);
 	this._type_to_constructor_map[info.type_name] = constructor;
     }
 
     proxy = new constructor('instance', id, this._client);
-    this._listen_for_server_side_changes(proxy, info);
+    this._listen_for_object_changed(proxy, info);
 
     return proxy;
 };
 
-jigna.ProxyFactory.prototype._listen_for_server_side_changes = function(proxy, info) {
+jigna.ProxyFactory.prototype._listen_for_object_changed = function(proxy, info) {
     /* Listen for changes to the object that the proxy is a proxy for! */
 
     for (index in info.attribute_names) {
