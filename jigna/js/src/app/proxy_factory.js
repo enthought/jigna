@@ -77,7 +77,7 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
         this.__cache__[attribute_name] = value;
         this.__client__.set_instance_attribute(
             this.__id__, attribute_name, value
-	);
+        );
     };
 
     descriptor = {enumerable:true, get:get, set:set, configurable:true};
