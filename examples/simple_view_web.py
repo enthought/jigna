@@ -36,7 +36,7 @@ def main():
 
     # Create a web app serving the view with the domain model added to its
     # context.
-    app = WebApp(template=template, context={'person': fred}, port=8000)
+    app = WebApp(template=template, context={'person': fred})
     app.listen(8000)
 
     # Start serving the web app on port 8000.

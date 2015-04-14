@@ -34,8 +34,6 @@ jigna.ProxyFactory.prototype.update_proxy = function(proxy, type, obj, info) {
     throw 'cannot update proxy for: ' + type;
     }
 
-    proxy.__cache__ = {}
-
     return factory_method.apply(this, [proxy, info]);
 };
 
@@ -210,6 +208,7 @@ jigna.ProxyFactory.prototype._populate_dict_proxy = function(proxy, info) {
 };
 
 jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
+    proxy.__cache__ = {}
     this._delete_dict_keys(proxy);
     this._populate_dict_proxy(proxy, info);
 };
@@ -243,6 +242,7 @@ jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
 };
 
 jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, info) {
+    proxy.__cache__ = []
     this._delete_list_items(proxy);
     this._populate_list_proxy(proxy, info);
 };
