@@ -294,8 +294,8 @@ jigna.Client.prototype._unmarshal = function(obj) {
     }
 };
 
-jigna.Client.prototype._update_proxy = function(type, obj, info) {
-    var proxy = this._id_to_proxy_map[obj];
-    this._proxy_factory.update_proxy(proxy, type, obj, info);
+jigna.Client.prototype._update_proxy = function(type, id, info) {
+    var proxy = this._id_to_proxy_map[id];
+    this._proxy_factory.update_proxy(proxy, type, info);
 };
 

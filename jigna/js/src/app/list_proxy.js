@@ -15,7 +15,7 @@ jigna.ListProxy = function(type, id, client) {
     Object.defineProperty(arr, '__type__',   {value : type});
     Object.defineProperty(arr, '__id__',     {value : id});
     Object.defineProperty(arr, '__client__', {value : client});
-    Object.defineProperty(arr, '__cache__', {value : [], writable: true});
+    Object.defineProperty(arr, '__cache__',  {value : [], writable: true});
 
     // The state for each attribute can be 'busy' or undefined, if 'busy' it
     // implies that the server is waiting to receive the value.
