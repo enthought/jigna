@@ -7,7 +7,7 @@ jigna.ProxyFactory = function(client) {
     this._client = client;
 
     // We create a constructor for each Python class and then create the
-    // actual proxies as from those.
+    // actual proxies from those.
     this._type_to_constructor_map = {};
 };
 

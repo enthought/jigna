@@ -33,6 +33,7 @@ class Bridge(HasTraits):
 
         raise NotImplementedError
 
+
 class Server(HasTraits):
     """ Server that serves a Jigna view. """
 
@@ -62,8 +63,6 @@ class Server(HasTraits):
     def _context_changed(self):
         self._register_objects(self.context)
 
-        return
-
     def _context_items_changed(self, dict_event):
         context = dict(dict_event.added)
         context.update(dict_event.changed)
@@ -90,7 +89,7 @@ class Server(HasTraits):
         method    = getattr(self, request['kind'])
         exception = None
         try:
-            result    = method(request)
+            result = method(request)
 
         except:
             exception = traceback.format_exc()
@@ -118,7 +117,7 @@ class Server(HasTraits):
     #### Instances ####
 
     def call_instance_method(self, request):
-        """ Call a method on a instance. """
+        """ Call a method on an instance. """
 
         obj         = self._id_to_object_map[request['id']]
         method_name = request['method_name']
@@ -128,8 +127,12 @@ class Server(HasTraits):
         return self._marshal(method(*args))
 
     def call_instance_method_thread(self, request):
-        """ Call an instance method in a new thread. Returns the id of the
-        Future object which finishes when the method in thread finishes."""
+        """ Call a method on an instance *in a new thread*.
+
+        Return the Id of a Future object which finishes when the method in
+        thread finishes.
+
+        """
 
         obj         = self._id_to_object_map[request['id']]
         method_name = request['method_name']
@@ -214,9 +217,9 @@ class Server(HasTraits):
     #: The bridge that provides the communication between Python and JS.
     _bridge = Instance(Bridge)
 
-    #: All instance and lists that have been accessed via the bridge.
+    #: All instances, lists and dicts that have been accessed via the bridge.
     #:
-    #: { str id : instance_or_list obj }
+    #: { str id : instance_list_or_dict obj }
     _id_to_object_map = Any({})
 
     #: Cache of instance info by type name.
@@ -235,7 +238,7 @@ class Server(HasTraits):
         return context_ids
 
     def _get_attribute_names(self, obj):
-        """ Get the names of all the attributes on an object.
+        """ Get the names of all 'public' attributes on an object.
 
         Return a list of strings.
 
@@ -251,7 +254,7 @@ class Server(HasTraits):
             attribute_names = [
                 name for name, value in inspect.getmembers(obj)
 
-                if not inspect.ismethod(value)
+                if not inspect.ismethod(value) and not name.startswith('_')
             ]
 
         return attribute_names
@@ -259,9 +262,7 @@ class Server(HasTraits):
     def _get_dict_info(self, obj):
         """ Get a description of a dict. """
 
-        info = dict(keys=obj.keys())
-
-        return info
+        return dict(keys=obj.keys())
 
     def _get_event_names(self, obj):
         """ Get the names of all the attributes on an object.
@@ -282,6 +283,7 @@ class Server(HasTraits):
     def _get_instance_info(self, obj):
         """ Get a description of an instance. """
 
+        # fixme: Smells as this method should just create instance info!
         if isinstance(obj, HasTraits):
             obj.on_trait_change(
                 self._send_object_changed_event,
@@ -305,10 +307,7 @@ class Server(HasTraits):
     def _get_list_info(self, obj):
         """ Get a description of a list. """
 
-        info = dict(length=len(obj))
-
-        return info
-
+        return dict(length=len(obj))
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
