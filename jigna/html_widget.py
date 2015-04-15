@@ -35,6 +35,9 @@ class HTMLWidget(QtGui.QWidget):
         self._template = template
         self._server   = self._create_server()
 
+        # fixme: This has to be a public attribute for testing *only*.
+        self.webview   = self._server.webview
+        
         # Set the widget layout.
         self.setLayout(QtGui.QVBoxLayout())
         self.layout().setContentsMargins(0, 0, 0, 0)
