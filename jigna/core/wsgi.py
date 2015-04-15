@@ -61,7 +61,7 @@ class FileLoader(HasTraits):
         path = join(self.root, path)
         if not exists(path):
             start_response('404 File not found', [])
-            return ""
+            return [""]
 
         else:
             start_response(
