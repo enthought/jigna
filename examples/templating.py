@@ -54,9 +54,8 @@ def main():
 
     # Start the event loop.
     #
-    # You should see that user resources like CSS, images and custom JS are
-    # pulled in properly from the `user_resources_data` directory and displayed
-    # in the view.
+    # You should see that the person-view component's template is rendered with
+    # the correct domain models.
     app.exec_()
 
 if __name__ == "__main__":
