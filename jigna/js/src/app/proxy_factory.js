@@ -139,22 +139,22 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
     return constructor;
 }
 
-    jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
-        var constructor, index, proxy;
+jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
+    var constructor, index, proxy;
 
-        // We create a constructor for each Python class and then create the
-        // actual proxies as from those.
-        constructor = this._type_to_constructor_map[info.type_name];
-        if (constructor === undefined) {
-            constructor = this._create_instance_constructor(info);
-            this._type_to_constructor_map[info.type_name] = constructor;
-        }
+    // We create a constructor for each Python class and then create the
+    // actual proxies as from those.
+    constructor = this._type_to_constructor_map[info.type_name];
+    if (constructor === undefined) {
+        constructor = this._create_instance_constructor(info);
+        this._type_to_constructor_map[info.type_name] = constructor;
+    }
+    
+    proxy = new constructor('instance', id, this._client);
+    this._listen_for_object_changed(proxy, info);
 
-        proxy = new constructor('instance', id, this._client);
-        this._listen_for_object_changed(proxy, info);
-
-        return proxy;
-    };
+    return proxy;
+};
 
 jigna.ProxyFactory.prototype._listen_for_object_changed = function(proxy, info) {
     /* Listen for changes to the object that the proxy is a proxy for! */
@@ -222,17 +222,16 @@ jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
 
 jigna.ProxyFactory.prototype._delete_list_items = function(proxy) {
     /* Delete all items of a previously used list proxy. */
-    var index;
 
-    for (index=proxy.length-1; index >= 0; index--) {
+    for (var index=proxy.length-1; index >= 0; index--) {
         delete proxy[index];
     }
 };
 
 jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
-    var index;
+    /* Populate the items in a list proxy. */
 
-    for (index=0; index < info.length; index++) {
+    for (var index=0; index < info.length; index++) {
         this._add_item_attribute(proxy, index);
     }
 
@@ -240,9 +239,17 @@ jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
 };
 
 jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, info) {
-    proxy.__cache__ = []
+    /* Update the given proxy.
+     *
+     * This removes all previous items and then repopulates the proxy with
+     * items that reflect the (possibly) new length.
+     */
     this._delete_list_items(proxy);
     this._populate_list_proxy(proxy, info);
+
+    // Get rid of any cached items (items we have already requested from the
+    // server-side.
+    proxy.__cache__ = []
 };
 
 // Common for list and dict proxies ////////////////////////////////////////////
