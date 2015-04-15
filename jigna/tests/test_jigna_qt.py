@@ -115,7 +115,7 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual(
             "jigna.models.model.friends[0] === jigna.models.model.spouse", True
         )
-        
+
     def test_simple_primitive_traits(self):
         fred = self.fred
         fred.name = "Freddie"
