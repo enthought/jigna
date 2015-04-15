@@ -7,11 +7,13 @@
 
 # Standard library imports.
 import logging
+from os.path import abspath, dirname, join
 from types import NoneType
 
 # Local imports.
 from jigna.core.interoperation import create_js_object_wrapper
 from jigna.core.network_access import ProxyAccessManager
+from jigna.core.wsgi import FileLoader
 from jigna.qt import QtCore, QtGui, QtWebKit
 
 logger = logging.getLogger(__name__)
@@ -28,8 +30,8 @@ class ProxyQWebView(QtWebKit.QWebView):
     ]
 
     def __init__(
-        self, parent=None, python_namespace=None, callbacks=[], debug=True,
-        root_paths={}
+        self, parent=None, python_namespace=None, callbacks=[],
+        debug=True, hosts={}
     ):
         super(ProxyQWebView, self).__init__(parent)
         self.setPage(ProxyQWebPage())
@@ -37,13 +39,19 @@ class ProxyQWebView(QtWebKit.QWebView):
         # Connect JS with python.
         self.expose_python_namespace(python_namespace, callbacks)
 
-        # Install custom access manager to handle '/jigna' requests.
-        access_manager = ProxyAccessManager(root_paths=root_paths)
+        # Install custom access manager to delegate requests to custom WSGI
+        # hosts.
+        access_manager = ProxyAccessManager(hosts=hosts)
         self.page().setNetworkAccessManager(access_manager)
 
         # Disable some actions
         for action in self.DISABLED_ACTIONS:
             self.pageAction(action).setVisible(False)
+
+        # Allow access to local URLs
+        self.page().settings().setAttribute(
+            QtWebKit.QWebSettings.LocalContentCanAccessRemoteUrls, True
+        )
 
         # Setup debug flag
         self.page().settings().setAttribute(
@@ -101,7 +109,7 @@ class ProxyQWebView(QtWebKit.QWebView):
             )
         )
 
-    def setHtml(self, html, base_url):
+    def setUrl(self, url):
         """ Reimplemented to make sure that when we return, the DOM is ready to
         use.
 
@@ -117,7 +125,7 @@ class ProxyQWebView(QtWebKit.QWebView):
 
         self.page().loadFinished.connect(on_load)
 
-        super(ProxyQWebView, self).setHtml(html, base_url)
+        super(ProxyQWebView, self).setUrl(url)
 
         if not self._loaded:
             event_loop.exec_()

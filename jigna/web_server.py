@@ -11,7 +11,7 @@
 # Standard library.
 import json
 import mimetypes
-from os.path import join, dirname
+from os.path import abspath, dirname, join
 import traceback
 
 # 3rd party library.
@@ -23,6 +23,9 @@ from traits.api import List, Str, Instance
 
 # Jigna library.
 from jigna.server import Bridge, Server
+
+#: Path to jigna.js file
+JIGNA_JS_FILE = join(abspath(dirname(__file__)), 'js', 'dist', 'jigna.js')
 
 
 class WebBridge(Bridge):
@@ -83,7 +86,7 @@ class WebServer(Server):
             # To serve jigna.js from package source
             (
                 r"/jigna/(.*)", StaticFileHandler,
-                dict(path=join(dirname(__file__), 'js', 'dist'))
+                dict(path=dirname(JIGNA_JS_FILE))
             ),
 
             # This handler handles the web socket based async version of the
