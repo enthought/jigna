@@ -116,27 +116,6 @@ class TestJignaQt(unittest.TestCase):
             "jigna.models.model.friends[0] === jigna.models.model.spouse", True
         )
 
-    def test_object_garbage_collection(self):
-        fred = self.fred
-        wilma = Person(name='wilma', age=42)
-        wilma_id = id(wilma)
-        fred.spouse = wilma
-        fred.spouse = None
-
-        # fixme: smelly test, reaching in to delete our reference to wilma!
-        # The id to object map should be a weak value dictionary.
-        del self.widget._server._id_to_object_map[str(id(wilma))]
-        del wilma
-
-        # This is an attempt to create an object with the same Id as 'wilma'!
-        # In CPython this works pretty reliably :)
-        thelma = Person(name='thelma')
-        self.assertEqual(id(thelma), wilma_id)
-        
-        fred.spouse = thelma
-        self.assertJSEqual("jigna.models.model.spouse.name", 'thelma')
-        self.assertJSEqual("jigna.models.model.spouse.age", 0)
-        
     def test_simple_primitive_traits(self):
         fred = self.fred
         fred.name = "Freddie"
