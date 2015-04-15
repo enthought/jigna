@@ -48,11 +48,6 @@ class ProxyQWebView(QtWebKit.QWebView):
         for action in self.DISABLED_ACTIONS:
             self.pageAction(action).setVisible(False)
 
-        # Allow access to local URLs
-        self.page().settings().setAttribute(
-            QtWebKit.QWebSettings.LocalContentCanAccessRemoteUrls, True
-        )
-
         # Setup debug flag
         self.page().settings().setAttribute(
             QtWebKit.QWebSettings.DeveloperExtrasEnabled, debug

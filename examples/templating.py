@@ -18,14 +18,14 @@ class Person(HasTraits):
 #### UI layer ####
 
 html = """
-  <html ng-app='jigna'>
+  <html ng-app='templating'>
     <head>
       <script type='text/javascript' src='/jigna/jigna.js'></script>
-      <script type='text/javascript'>jigna.initialize()</script>
+      <script type='text/javascript' src='templating.js'></script>
     </head>
     <body>
-      Person:
-      <div ng-include="'template_person.html'"></div>
+      <person-view person="fred"></person-view>
+      <person-view person="wilma"></person-view>
     </body>
   </html>
 """
@@ -43,10 +43,13 @@ def main():
 
     # Instantiate the domain model
     fred = Person(name='Fred', age=28)
+    wilma = Person(name='Wilma', age=25)
 
     # Create the jigna based HTML widget which renders the given HTML template
     # with the given context.
-    widget = HTMLWidget(template=template, context={'person': fred})
+    widget = HTMLWidget(
+        template=template, context={'fred': fred, 'wilma': wilma}
+    )
     widget.show()
 
     # Start the event loop.
@@ -55,15 +58,6 @@ def main():
     # pulled in properly from the `user_resources_data` directory and displayed
     # in the view.
     app.exec_()
-
-
-def main2():
-    from jigna.utils.web import start_web_app
-
-    # Instantiate the domain model
-    fred = Person(name='Fred', age=28)
-
-    start_web_app(template=template, context={'person': fred})
 
 if __name__ == "__main__":
     main()
