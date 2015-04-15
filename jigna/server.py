@@ -271,12 +271,16 @@ class Server(HasTraits):
 
         """
 
+        # We ignore these triats that are added by the trait machinery :)
+        ignore = ['trait_added', 'trait_modified']
+        
         event_names = []
 
         if isinstance(obj, HasTraits):
             for trait_name in obj.class_trait_names():
                 if obj.trait(trait_name).is_trait_type(Event):
-                    event_names.append(trait_name)
+                    if trait_name not in ignore:
+                        event_names.append(trait_name)
 
         return event_names
 
