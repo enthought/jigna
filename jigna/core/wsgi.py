@@ -54,7 +54,7 @@ class FileLoader(HasTraits):
             start_response(
                 '200 OK', [('Content-Type', '; '.join(guess_type(path)))]
             )
-            return self.overrides[path]
+            return [self.overrides[path]]
 
         # Continue, if the path wasn't handled by canned responses for special
         # paths
@@ -69,4 +69,4 @@ class FileLoader(HasTraits):
             )
             with open(path, 'rb') as f:
                 response = f.read()
-            return response
+            return [response]
