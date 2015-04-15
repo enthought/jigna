@@ -25,7 +25,12 @@ def guess_type(content):
             if not mimeInitialized:
                 mimetypes.init()
                 mimeInitialized = True
-    return mimetypes.guess_type(content)
+    guessed = mimetypes.guess_type(content)
+
+    if guessed[1] is None:
+        guessed = (guessed[0], "")
+
+    return guessed
 
 
 class FileLoader(HasTraits):
@@ -33,21 +38,35 @@ class FileLoader(HasTraits):
     #: Root directory where it looks
     root = Directory
 
+    #: A dictionary of overrides which holds canned responses for some special
+    #: paths
+    overrides = Dict
+
     #### WSGI protocol ########################################################
 
     def __call__(self, env, start_response):
 
-        path = env['PATH_INFO'].strip('/')
-        path = '/'.join(path.split('/')[1:]) # remove the top-level path as that's url pattern
-        path = path.replace('/', sep)        # handle Windows paths
-        path = join(self.root, path)
+        # Clean up path and handle Windows paths
+        path = env['PATH_INFO'].strip('/').replace('/', sep)
 
+        # Check if it is handled by one of the overrides
+        if self.overrides.get(path) is not None:
+            start_response(
+                '200 OK', [('Content-Type', '; '.join(guess_type(path)))]
+            )
+            return [self.overrides[path]]
+
+        # Continue, if the path wasn't handled by canned responses for special
+        # paths
+        path = join(self.root, path)
         if not exists(path):
             start_response('404 File not found', [])
-            return ""
+            return [""]
 
         else:
-            start_response('200 OK', [('Content-Type', guess_type(path))])
+            start_response(
+                '200 OK', [('Content-Type', '; '.join(guess_type(path)))]
+            )
             with open(path, 'rb') as f:
                 response = f.read()
-            return response
+            return [response]

@@ -20,8 +20,11 @@ from traits.trait_notifiers import set_ui_handler
 from jigna.core.proxy_qwebview import ProxyQWebView
 from jigna.core.wsgi import FileLoader
 from jigna.server import Bridge, Server
-from jigna.qt import QtWebKit, QtCore
+from jigna.qt import QtWebKit
 from jigna.utils.gui import ui_handler
+
+#: Path to jigna.js file
+JIGNA_JS_FILE = join(abspath(dirname(__file__)), 'js', 'dist', 'jigna.js')
 
 
 class QtBridge(Bridge):
@@ -70,10 +73,7 @@ class QtServer(Server):
         set_ui_handler(ui_handler)
 
         super(QtServer, self).__init__(**traits)
-
-        self.webview.setHtml(
-            self.html, QtCore.QUrl.fromLocalFile(self.base_url)
-        )
+        self.webview.setUrl(self.home_url)
         self._enable_qwidget_embedding()
 
         return
@@ -87,13 +87,19 @@ class QtServer(Server):
     #: different requests etc.
     webview = Instance(ProxyQWebView)
     def _webview_default(self):
+        user_root, index_file = self.home_url.split('/')[-2:]
+
         return ProxyQWebView(
             python_namespace = 'qt_bridge',
             callbacks        = [('handle_request', self.handle_request)],
             debug            = True,
-            root_paths       = {
-                'jigna': FileLoader(
-                    root = join(abspath(dirname(__file__)), 'js', 'dist')
+            hosts            = {
+                user_root: FileLoader(
+                    root      = abspath(self.base_url),
+                    overrides = {
+                        index_file: self.html,
+                        'jigna/jigna.js': open(JIGNA_JS_FILE).read()
+                    }
                 )
             }
         )

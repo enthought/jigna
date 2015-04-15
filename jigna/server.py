@@ -52,6 +52,9 @@ class Server(HasTraits):
     def _set_base_url(self, base_url):
         self._base_url = base_url
 
+    #: URL for the main home page
+    home_url = Str('http://root.jigna/index.html')
+
     #: The html to serve.
     html = Str
 

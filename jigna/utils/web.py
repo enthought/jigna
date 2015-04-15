@@ -30,3 +30,20 @@ def get_free_port():
     sock.close()
 
     return port
+
+
+def start_web_app(template, context, port=8000):
+    """
+    Start a web app at the given port for serving the jigna view for the given
+    template and context.
+    """
+    from tornado.ioloop import IOLoop
+    from jigna.api import WebApp
+
+    ioloop = IOLoop.instance()
+
+    app = WebApp(template=template, context=context)
+    app.listen(port)
+
+    print 'Starting the web app on port %s ...' % port
+    ioloop.start()

@@ -73,6 +73,7 @@ class ProxyAccessManager(QtNetwork.QNetworkAccessManager):
             operation, request, data
         )
 
+
 class ProxyReply(QtNetwork.QNetworkReply):
     """ QNetworkReply subclass to send a specific request to local wsgi app.
     """
