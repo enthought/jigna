@@ -223,12 +223,14 @@ class Server(HasTraits):
     #: All instances, lists and dicts that have been accessed via the bridge.
     #:
     #: { str id : instance_list_or_dict obj }
-    _id_to_object_map = Any({})
-
-    #: Cache of instance info by type name.
-    #:
-    #: { str type_name : dict }
-    _type_name_to_instance_info_map = Any({})
+    _id_to_object_map = Any
+    def __id_to_object_map_default(self):
+        return {}
+    
+    #: Type names that we have already sent the full info for.
+    _visited_type_names = Any
+    def __visited_type_names_default(self):
+        return set()
 
     def _context_ids(self, context):
         """ Return a dictionary keyed with object ids of the objects in
@@ -292,16 +294,18 @@ class Server(HasTraits):
 
         type_name = type(obj).__module__ + '.' + type(obj).__name__
 
-        info = self._type_name_to_instance_info_map.get(type_name)
-        if info is None:
+        if type_name not in self._visited_type_names:
             info = dict(
                 type_name        = type_name,
                 attribute_names  = self._get_attribute_names(obj),
                 event_names      = self._get_event_names(obj),
                 method_names     = self._get_public_method_names(type(obj))
             )
-            self._type_name_to_instance_info_map[type_name] = info
+            self._visited_type_names.add(type_name)
 
+        else:
+            info = dict(type_name=type_name)
+            
         return info
 
     def _get_list_info(self, obj):
