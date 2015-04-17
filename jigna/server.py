@@ -226,11 +226,13 @@ class Server(HasTraits):
     _id_to_object_map = Any
     def __id_to_object_map_default(self):
         return {}
-    
-    #: Type names that we have already sent the full info for.
-    _visited_type_names = Any
-    def __visited_type_names_default(self):
-        return set()
+
+    #: Cache of instance info by type name.
+    #:
+    #: { str type_name : dict }
+    _type_name_to_instance_info_map = Any
+    def __type_name_to_instance_info_map_default(self):
+        return {}
 
     def _context_ids(self, context):
         """ Return a dictionary keyed with object ids of the objects in
@@ -294,17 +296,15 @@ class Server(HasTraits):
 
         type_name = type(obj).__module__ + '.' + type(obj).__name__
 
-        if type_name not in self._visited_type_names:
+        info = self._type_name_to_instance_info_map.get(type_name)
+        if info is None:
             info = dict(
                 type_name        = type_name,
                 attribute_names  = self._get_attribute_names(obj),
                 event_names      = self._get_event_names(obj),
                 method_names     = self._get_public_method_names(type(obj))
             )
-            self._visited_type_names.add(type_name)
-
-        else:
-            info = dict(type_name=type_name)
+            self._type_name_to_instance_info_map[type_name] = info
             
         return info
 

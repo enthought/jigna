@@ -99,8 +99,30 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
-    constructor = function(type, id, client) {
+    constructor = function(type, id, client, info) {
         jigna.Proxy.call(this, type, id, client);
+
+        /* Listen for changes to the object that the proxy is a proxy for! */
+        
+        var index; 
+
+        for (index in info.attribute_names) {
+            jigna.add_listener(
+                this,
+                info.attribute_names[index],
+                client.on_object_changed,
+                client
+            );
+        }
+
+        for (index in info.event_names) {
+            jigna.add_listener(
+                this,
+                info.event_names[index],
+                client.on_object_changed,
+                client
+            );
+        }
     };
 
     // This is the standard way to set up protoype inheritance in JS.
@@ -150,33 +172,8 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
         this._type_to_constructor_map[info.type_name] = constructor;
     }
     
-    proxy = new constructor('instance', id, this._client);
-    this._listen_for_object_changed(proxy, info);
-
-    return proxy;
+    return new constructor('instance', id, this._client, info);
 };
-
-jigna.ProxyFactory.prototype._listen_for_object_changed = function(proxy, info) {
-    /* Listen for changes to the object that the proxy is a proxy for! */
-
-    for (index in info.attribute_names) {
-        jigna.add_listener(
-            proxy,
-            info.attribute_names[index],
-            this._client.on_object_changed,
-            this._client
-        );
-    }
-
-    for (index in info.event_names) {
-        jigna.add_listener(
-            proxy,
-            info.event_names[index],
-            this._client.on_object_changed,
-            this._client
-        );
-    }
-}
 
 // Dict proxy creation /////////////////////////////////////////////////////////
 
