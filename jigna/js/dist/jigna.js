@@ -26508,7 +26508,6 @@ jigna.Client.prototype.initialize = function() {
 jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var event = JSON.parse(jsonized_event);
-
     jigna.fire_event(event.obj, event);
 };
 
@@ -26524,14 +26523,22 @@ jigna.Client.prototype.on_object_changed = function(event){
         this.print_JS_message('-------------------------------------------');
     }
 
-    // Invalidating the cached attribute means that the next time the property
-    // getter is called it will ask the Python-side for the new value.
-    this._invalidate_cached_attribute(event.obj, event.name);
+    var proxy = this._id_to_proxy_map[event.obj];
 
     // If the *contents* of a list or dict have changed then we need to update
     // the associated proxy to reflect the change.
     if (event.items_event) {
+        // fixme: Clearing the cache is required because of the case when
+        // an object Id is re-used... This is just papering over the cracks,
+        // we need to track the object lifetime in the server.
+        //
+        // fixme: The order of this is important, the cache needs to be 
+        // cleared before updating the proxy - need to investigate!
+        proxy.__cache__[event.name] = undefined;
         this._update_proxy(event.data.type, event.data.value, event.data.info);
+
+    } else {
+        proxy.__cache__[event.name] = this._unmarshal(event.data);
     }
 
     // Angular listens to this event and forces a digest cycle which is how it
@@ -26718,11 +26725,6 @@ jigna.Client.prototype._get_bridge = function() {
     }
 
     return bridge;
-};
-
-jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
-    var proxy = this._id_to_proxy_map[id];
-    proxy.__cache__[attribute_name] = undefined;
 };
 
 jigna.Client.prototype._marshal = function(obj) {
@@ -26994,12 +26996,13 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
-    constructor = function(type, id, client, info) {
+    constructor = function(type, id, client) {
         jigna.Proxy.call(this, type, id, client);
 
         /* Listen for changes to the object that the proxy is a proxy for! */
         
         var index; 
+        var info = this.__info__;
 
         for (index in info.attribute_names) {
             jigna.add_listener(
@@ -27053,6 +27056,13 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
         constructor.prototype, '__type_name__', {value : info.type_name}
     );
 
+    // This property is not actually used by jigna itself. It is only there to
+    // make it easy to see what the type of the server-side object is when
+    // debugging the JS code in the web inspector.
+    Object.defineProperty(
+        constructor.prototype, '__info__', {value : info}
+    );
+
     return constructor;
 }
 
@@ -27067,7 +27077,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
         this._type_to_constructor_map[info.type_name] = constructor;
     }
     
-    return new constructor('instance', id, this._client, info);
+    return new constructor('instance', id, this._client);
 };
 
 // Dict proxy creation /////////////////////////////////////////////////////////

@@ -99,12 +99,13 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
-    constructor = function(type, id, client, info) {
+    constructor = function(type, id, client) {
         jigna.Proxy.call(this, type, id, client);
 
         /* Listen for changes to the object that the proxy is a proxy for! */
         
         var index; 
+        var info = this.__info__;
 
         for (index in info.attribute_names) {
             jigna.add_listener(
@@ -158,6 +159,13 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
         constructor.prototype, '__type_name__', {value : info.type_name}
     );
 
+    // This property is not actually used by jigna itself. It is only there to
+    // make it easy to see what the type of the server-side object is when
+    // debugging the JS code in the web inspector.
+    Object.defineProperty(
+        constructor.prototype, '__info__', {value : info}
+    );
+
     return constructor;
 }
 
@@ -172,7 +180,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
         this._type_to_constructor_map[info.type_name] = constructor;
     }
     
-    return new constructor('instance', id, this._client, info);
+    return new constructor('instance', id, this._client);
 };
 
 // Dict proxy creation /////////////////////////////////////////////////////////

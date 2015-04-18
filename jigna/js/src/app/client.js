@@ -31,7 +31,6 @@ jigna.Client.prototype.initialize = function() {
 jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var event = JSON.parse(jsonized_event);
-
     jigna.fire_event(event.obj, event);
 };
 
@@ -47,14 +46,22 @@ jigna.Client.prototype.on_object_changed = function(event){
         this.print_JS_message('-------------------------------------------');
     }
 
-    // Invalidating the cached attribute means that the next time the property
-    // getter is called it will ask the Python-side for the new value.
-    this._invalidate_cached_attribute(event.obj, event.name);
+    var proxy = this._id_to_proxy_map[event.obj];
 
     // If the *contents* of a list or dict have changed then we need to update
     // the associated proxy to reflect the change.
     if (event.items_event) {
+        // fixme: Clearing the cache is required because of the case when
+        // an object Id is re-used... This is just papering over the cracks,
+        // we need to track the object lifetime in the server.
+        //
+        // fixme: The order of this is important, the cache needs to be 
+        // cleared before updating the proxy - need to investigate!
+        proxy.__cache__[event.name] = undefined;
         this._update_proxy(event.data.type, event.data.value, event.data.info);
+
+    } else {
+        proxy.__cache__[event.name] = this._unmarshal(event.data);
     }
 
     // Angular listens to this event and forces a digest cycle which is how it
@@ -241,11 +248,6 @@ jigna.Client.prototype._get_bridge = function() {
     }
 
     return bridge;
-};
-
-jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
-    var proxy = this._id_to_proxy_map[id];
-    proxy.__cache__[attribute_name] = undefined;
 };
 
 jigna.Client.prototype._marshal = function(obj) {

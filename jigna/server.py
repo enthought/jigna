@@ -227,12 +227,13 @@ class Server(HasTraits):
     def __id_to_object_map_default(self):
         return {}
 
-    #: Cache of instance info by type name.
+    #: The typenames of the Python types that we have already visited.
     #:
-    #: { str type_name : dict }
-    _type_name_to_instance_info_map = Any
-    def __type_name_to_instance_info_map_default(self):
-        return {}
+    #: And by 'visited' we mean, those types that we have already sent the
+    #: the full info for over to the client side.
+    _visited_type_names = Any
+    def __visited_type_names_default(self):
+        return set()
 
     def _context_ids(self, context):
         """ Return a dictionary keyed with object ids of the objects in
@@ -296,16 +297,24 @@ class Server(HasTraits):
 
         type_name = type(obj).__module__ + '.' + type(obj).__name__
 
-        info = self._type_name_to_instance_info_map.get(type_name)
-        if info is None:
+        # The first time we send the details of a type over to the client we
+        # need to include the full info for it (its attributes, events and
+        # methods etc)...
+        if type_name not in self._visited_type_names:
             info = dict(
-                type_name        = type_name,
-                attribute_names  = self._get_attribute_names(obj),
-                event_names      = self._get_event_names(obj),
-                method_names     = self._get_public_method_names(type(obj))
+                type_name       = type_name,
+                attribute_names = self._get_attribute_names(obj),
+                event_names     = self._get_event_names(obj),
+                method_names    = self._get_public_method_names(type(obj))
             )
-            self._type_name_to_instance_info_map[type_name] = info
-            
+            self._visited_type_names.add(type_name)
+
+        # ... for subsequent calls, we only need to send the type name as the
+        # the client will have already built a prototype based on the previous
+        # info.
+        else:
+            info = dict(type_name = type_name)
+
         return info
 
     def _get_list_info(self, obj):
