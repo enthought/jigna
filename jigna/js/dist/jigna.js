@@ -26529,16 +26529,22 @@ jigna.Client.prototype.on_object_changed = function(event){
     // the associated proxy to reflect the change.
     if (event.items_event) {
         // The collection proxy can be undefined if on the Python side you
-        // have re-initialized a list/dict with an empty list/dict, e.g.
+        // have re-initialized a list/dict with the same value that it
+        // previously had, e.g.
         //
         // class Person(HasTraits):
-        //     friends = List # Default is an empty list!
+        //     friends = List([1, 2, 3])
         //
         // fred = Person()
-        // fred.friends = []  # Traits won't fire a changed event for this!
+        // fred.friends = [1, 2, 3] # No trait changed event!!
         //
-        // This means that we won't have seen the new list before we get an
-        // items changed event on it.
+        // This is because even though traits does copy on assignment for
+        // lists/dicts (and hence the new list will have a new Id), it fires
+        // the trait change events only if it considers the old and new values
+        // to be different (ie. if does not compare the identity of the lists).
+        //
+        // For us(!), it means that we won't have seen the new list before we
+        // get an items changed event on it.
         var collection_proxy = this._id_to_proxy_map[event.data.value];
         if (collection_proxy === undefined) {
             proxy.__cache__[event.name] = this._create_proxy(
