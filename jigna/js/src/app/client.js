@@ -51,14 +51,28 @@ jigna.Client.prototype.on_object_changed = function(event){
     // If the *contents* of a list or dict have changed then we need to update
     // the associated proxy to reflect the change.
     if (event.items_event) {
-        // fixme: Clearing the cache is required because of the case when
-        // an object Id is re-used... This is just papering over the cracks,
-        // we need to track the object lifetime in the server.
+        // The collection proxy can be undefined if on the Python side you
+        // have re-initialized a list/dict with an empty list/dict, e.g.
         //
-        // fixme: The order of this is important, the cache needs to be 
-        // cleared before updating the proxy - need to investigate!
-        proxy.__cache__[event.name] = undefined;
-        this._update_proxy(event.data.type, event.data.value, event.data.info);
+        // class Person(HasTraits):
+        //     friends = List # Default is an empty list!
+        //
+        // fred = Person()
+        // fred.friends = []  # Traits won't fire a changed event for this!
+        //
+        // This means that we won't have seen the new list before we get an
+        // items changed event on it.
+        var collection_proxy = this._id_to_proxy_map[event.data.value];
+        if (collection_proxy === undefined) {
+            proxy.__cache__[event.name] = this._create_proxy(
+                event.data.type, event.data.value, event.data.info
+            );
+
+        } else {
+            this._proxy_factory.update_proxy(
+                collection_proxy, event.data.type, event.data.info
+            );
+        }
 
     } else {
         proxy.__cache__[event.name] = this._unmarshal(event.data);
@@ -295,9 +309,3 @@ jigna.Client.prototype._unmarshal = function(obj) {
         }
     }
 };
-
-jigna.Client.prototype._update_proxy = function(type, id, info) {
-    var proxy = this._id_to_proxy_map[id];
-    this._proxy_factory.update_proxy(proxy, type, info);
-};
-
