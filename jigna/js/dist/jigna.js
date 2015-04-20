@@ -26525,9 +26525,10 @@ jigna.Client.prototype.on_object_changed = function(event){
 
     var proxy = this._id_to_proxy_map[event.obj];
 
-    // If the *contents* of a list or dict have changed then we need to update
+    // If the *contents* of a list/dict have changed then we need to update
     // the associated proxy to reflect the change.
     if (event.items_event) {
+        var collection_proxy = this._id_to_proxy_map[event.data.value];
         // The collection proxy can be undefined if on the Python side you
         // have re-initialized a list/dict with the same value that it
         // previously had, e.g.
@@ -26545,7 +26546,6 @@ jigna.Client.prototype.on_object_changed = function(event){
         //
         // For us(!), it means that we won't have seen the new list before we
         // get an items changed event on it.
-        var collection_proxy = this._id_to_proxy_map[event.data.value];
         if (collection_proxy === undefined) {
             proxy.__cache__[event.name] = this._create_proxy(
                 event.data.type, event.data.value, event.data.info
