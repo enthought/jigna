@@ -27063,18 +27063,18 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
         );
     }
 
-    // This property is not actually used by jigna itself. It is only there to
-    // make it easy to see what the type of the server-side object is when
-    // debugging the JS code in the web inspector.
+    // The info is only sent to us once per type, and so we store it in the
+    // prototype so that we can use it in the constructor to get the names
+    // of any atttributes and events.
     Object.defineProperty(
-        constructor.prototype, '__type_name__', {value : info.type_name}
+        constructor.prototype, '__info__', {value : info}
     );
 
     // This property is not actually used by jigna itself. It is only there to
     // make it easy to see what the type of the server-side object is when
     // debugging the JS code in the web inspector.
     Object.defineProperty(
-        constructor.prototype, '__info__', {value : info}
+        constructor.prototype, '__type_name__', {value : info.type_name}
     );
 
     return constructor;
