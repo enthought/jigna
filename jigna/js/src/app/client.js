@@ -31,7 +31,6 @@ jigna.Client.prototype.initialize = function() {
 jigna.Client.prototype.handle_event = function(jsonized_event) {
     /* Handle an event from the server. */
     var event = JSON.parse(jsonized_event);
-
     jigna.fire_event(event.obj, event);
 };
 
@@ -47,14 +46,42 @@ jigna.Client.prototype.on_object_changed = function(event){
         this.print_JS_message('-------------------------------------------');
     }
 
-    // Invalidating the cached attribute means that the next time the property
-    // getter is called it will ask the Python-side for the new value.
-    this._invalidate_cached_attribute(event.obj, event.name);
+    var proxy = this._id_to_proxy_map[event.obj];
 
-    // If the *contents* of a list or dict have changed then we need to update
+    // If the *contents* of a list/dict have changed then we need to update
     // the associated proxy to reflect the change.
     if (event.items_event) {
-        this._update_proxy(event.data.type, event.data.value, event.data.info);
+        var collection_proxy = this._id_to_proxy_map[event.data.value];
+        // The collection proxy can be undefined if on the Python side you
+        // have re-initialized a list/dict with the same value that it
+        // previously had, e.g.
+        //
+        // class Person(HasTraits):
+        //     friends = List([1, 2, 3])
+        //
+        // fred = Person()
+        // fred.friends = [1, 2, 3] # No trait changed event!!
+        //
+        // This is because even though traits does copy on assignment for
+        // lists/dicts (and hence the new list will have a new Id), it fires
+        // the trait change events only if it considers the old and new values
+        // to be different (ie. if does not compare the identity of the lists).
+        //
+        // For us(!), it means that we won't have seen the new list before we
+        // get an items changed event on it.
+        if (collection_proxy === undefined) {
+            proxy.__cache__[event.name] = this._create_proxy(
+                event.data.type, event.data.value, event.data.info
+            );
+
+        } else {
+            this._proxy_factory.update_proxy(
+                collection_proxy, event.data.type, event.data.info
+            );
+        }
+
+    } else {
+        proxy.__cache__[event.name] = this._unmarshal(event.data);
     }
 
     // Angular listens to this event and forces a digest cycle which is how it
@@ -243,11 +270,6 @@ jigna.Client.prototype._get_bridge = function() {
     return bridge;
 };
 
-jigna.Client.prototype._invalidate_cached_attribute = function(id, attribute_name) {
-    var proxy = this._id_to_proxy_map[id];
-    proxy.__cache__[attribute_name] = undefined;
-};
-
 jigna.Client.prototype._marshal = function(obj) {
     var type, value;
 
@@ -293,9 +315,3 @@ jigna.Client.prototype._unmarshal = function(obj) {
         }
     }
 };
-
-jigna.Client.prototype._update_proxy = function(type, id, info) {
-    var proxy = this._id_to_proxy_map[id];
-    this._proxy_factory.update_proxy(proxy, type, info);
-};
-

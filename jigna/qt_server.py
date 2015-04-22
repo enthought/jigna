@@ -49,7 +49,7 @@ class QtBridge(Bridge):
             self.webview.execute_js(
                 'jigna.client.bridge.handle_event(%r);' % jsonized_event
             )
-
+            
         return
 
     #### 'QtBridge' protocol ##################################################
