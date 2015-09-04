@@ -23,5 +23,10 @@ setup(
     package_dir={'jigna':'jigna'},
     include_package_data=True,
     package_data={'jigna': ['js/dist/*.js']},
+    install_requires=[
+        'traits>=4.5.0',
+        'PySide>=1.2.2',
+        'tornado>=4.2'
+    ],
     zip_safe=False
 )

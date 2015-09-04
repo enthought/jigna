@@ -4,31 +4,21 @@ python:
   - "2.7"
 
 env:
-  - DISPLAY=:99.0 MASTER=master_2.7.6_2.1.0.dev1773-afa28b9_rh5-64.sh RUNTIME=`pwd`/runtime
+  - DISPLAY=:99.0
 
 before_install:
-
-  # Prepare a Python environment with enpkg installed in it.
-  - wget https://s3.amazonaws.com/enstaller-assets/masters/rh5-64/2.7.6/$MASTER
-  - bash $MASTER -bp $RUNTIME
-  - source $RUNTIME/bin/activate
-  - wget https://s3.amazonaws.com/enstaller-assets/enstaller/bootstrap.py
-  - python `pwd`/bootstrap.py
-
-  # At this point, enpkg is installed - provide auth info now.
-  - echo "EPD_auth = 'dGVzdC5mcmVlQGZha2UuZG9tYWluOnRlc3Q9MTIzNA=='" > ${HOME}/.enstaller4rc
-
-  # Install pip
-  - enpkg pip
-
   # Make sure you have a web browser installed (for the web tests) and the X
   # server is running
   - sudo apt-get update
   - sudo apt-get install firefox
   - sh -e /etc/init.d/xvfb start
+  # Install PySide via Ubuntu repos as it is not available on PyPI for linux.
+  - sudo apt-get install python-pyside
 
 install:
-  - sh develop.sh
+  - python setup.py install
+  # Add the test dependencies
+  - pip install nose selenium coverage
 
 script:
   # Run the tests
