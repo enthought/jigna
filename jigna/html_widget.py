@@ -25,7 +25,7 @@ class HTMLWidget(QtGui.QWidget):
     
     def __init__(
         self, parent=None, window_flags=0, context=None, template=None,
-        debug=True
+        debug=False
     ):
         """ Constructor. """
         

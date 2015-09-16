@@ -81,7 +81,7 @@ class QtServer(Server):
     #: Whether to switch on the debug flag or not.
     #:
     #: In debug mode, we show the QtWebkit inspect tools.
-    debug = Bool(True)
+    debug = Bool(False)
 
     #: The trait change dispatch mechanism to use when traits change.
     trait_change_dispatch = Str('ui')
