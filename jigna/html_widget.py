@@ -24,7 +24,8 @@ class HTMLWidget(QtGui.QWidget):
     #### 'object' protocol #####################################################
     
     def __init__(
-        self, parent=None, window_flags=0, context=None, template=None
+        self, parent=None, window_flags=0, context=None, template=None,
+        debug=True
     ):
         """ Constructor. """
         
@@ -33,6 +34,7 @@ class HTMLWidget(QtGui.QWidget):
         # Private protocol.
         self._context  = context
         self._template = template
+        self._debug    = debug
         self._server   = self._create_server()
 
         # fixme: This has to be a public attribute for testing *only*.
@@ -57,7 +59,8 @@ class HTMLWidget(QtGui.QWidget):
         server = QtServer(
             base_url = join(os.getcwd(), self._template.base_url),
             html     = self._template.html,
-            context  = self._context
+            context  = self._context,
+            debug    = self._debug
         )
 
         return server

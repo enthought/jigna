@@ -13,7 +13,7 @@ import json
 from os.path import abspath, dirname, join
 
 # Enthought library.
-from traits.api import Any, Str, Instance
+from traits.api import Any, Bool, Str, Instance
 from traits.trait_notifiers import set_ui_handler
 
 # Jigna library.
@@ -78,6 +78,11 @@ class QtServer(Server):
 
         return
 
+    #: Whether to switch on the debug flag or not.
+    #:
+    #: In debug mode, we show the QtWebkit inspect tools.
+    debug = Bool(True)
+
     #: The trait change dispatch mechanism to use when traits change.
     trait_change_dispatch = Str('ui')
 
@@ -92,7 +97,7 @@ class QtServer(Server):
         return ProxyQWebView(
             python_namespace = 'qt_bridge',
             callbacks        = [('handle_request', self.handle_request)],
-            debug            = True,
+            debug            = self.debug,
             hosts            = {
                 user_root: FileLoader(
                     root      = abspath(self.base_url),
