@@ -13,7 +13,6 @@ from types import NoneType
 # Local imports.
 from jigna.core.interoperation import create_js_object_wrapper
 from jigna.core.network_access import ProxyAccessManager
-from jigna.core.wsgi import FileLoader
 from jigna.qt import QtCore, QtGui, QtWebKit
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,8 @@ class ProxyQWebView(QtWebKit.QWebView):
         QtWebKit.QWebPage.DownloadLinkToDisk,
         QtWebKit.QWebPage.OpenImageInNewWindow,
         QtWebKit.QWebPage.OpenFrameInNewWindow,
-        QtWebKit.QWebPage.DownloadImageToDisk
+        QtWebKit.QWebPage.DownloadImageToDisk,
+        QtWebKit.QWebPage.Reload
     ]
 
     def __init__(
