@@ -41,8 +41,8 @@ class ProxyQWebView(QtWebKit.QWebView):
 
         # Install custom access manager to delegate requests to custom WSGI
         # hosts.
-        access_manager = ProxyAccessManager(hosts=hosts)
-        self.page().setNetworkAccessManager(access_manager)
+        self._access_manager = ProxyAccessManager(hosts=hosts)
+        self.page().setNetworkAccessManager(self._access_manager)
 
         # Disable some actions
         for action in self.DISABLED_ACTIONS:
