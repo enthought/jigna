@@ -34,7 +34,9 @@ class ProxyQWebView(QtWebKit.QWebView):
         debug=True, hosts={}
     ):
         super(ProxyQWebView, self).__init__(parent)
-        self.setPage(ProxyQWebPage())
+
+        self._page = ProxyQWebPage()
+        self.setPage(self._page)
 
         # Connect JS with python.
         self.expose_python_namespace(python_namespace, callbacks)
@@ -42,14 +44,14 @@ class ProxyQWebView(QtWebKit.QWebView):
         # Install custom access manager to delegate requests to custom WSGI
         # hosts.
         self._access_manager = ProxyAccessManager(hosts=hosts)
-        self.page().setNetworkAccessManager(self._access_manager)
+        self._page.setNetworkAccessManager(self._access_manager)
 
         # Disable some actions
         for action in self.DISABLED_ACTIONS:
             self.pageAction(action).setVisible(False)
 
         # Setup debug flag
-        self.page().settings().setAttribute(
+        self._page.settings().setAttribute(
             QtWebKit.QWebSettings.DeveloperExtrasEnabled, debug
         )
 
@@ -64,7 +66,7 @@ class ProxyQWebView(QtWebKit.QWebView):
         Warning: under most circumstances, this method should not be called when
         the page is loading.
         """
-        frame = self.page().mainFrame()
+        frame = self._page.mainFrame()
         result = frame.evaluateJavaScript(js)
         result = self._apply_null_fix(result)
 
@@ -96,7 +98,7 @@ class ProxyQWebView(QtWebKit.QWebView):
             window.python.say_hello == <a function which calls Python land>
 
         """
-        frame = self.page().mainFrame()
+        frame = self._page.mainFrame()
         js_wrapper = create_js_object_wrapper(callbacks=callbacks, parent=frame)
         frame.javaScriptWindowObjectCleared.connect(
             lambda: frame.addToJavaScriptWindowObject(
@@ -118,7 +120,7 @@ class ProxyQWebView(QtWebKit.QWebView):
             self._loaded = True
             event_loop.quit()
 
-        self.page().loadFinished.connect(on_load)
+        self._page.loadFinished.connect(on_load)
 
         super(ProxyQWebView, self).setUrl(url)
 
