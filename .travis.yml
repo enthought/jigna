@@ -4,8 +4,12 @@ python:
   - "2.7"
 
 env:
-  - secure: "Ekkvjqo6LtpIMtg+6BmmCwfAHWB0TAQyRycHpKwmcALjU3K/OTzQzDCfUl3neakV12w+EQyxklAWpiqxjPqea/dA3qDvBWYxQ025oDfUz27p1DEOcdSA2dRzWCXNl1hm+rZCL2PcxTP0B91dBWrN4xOINc0rw5DEKW2wwuNuG9g="
-  - DISPLAY=:99.0 MASTER=master_2.7.6_2.1.0.dev1773-afa28b9_rh5-64.sh RUNTIME=`pwd`/runtime
+  global:
+    # EPD_auth
+    - secure: "Ekkvjqo6LtpIMtg+6BmmCwfAHWB0TAQyRycHpKwmcALjU3K/OTzQzDCfUl3neakV12w+EQyxklAWpiqxjPqea/dA3qDvBWYxQ025oDfUz27p1DEOcdSA2dRzWCXNl1hm+rZCL2PcxTP0B91dBWrN4xOINc0rw5DEKW2wwuNuG9g="
+
+    # Others
+    - DISPLAY=:99.0 MASTER=master_2.7.6_2.1.0.dev1773-afa28b9_rh5-64.sh RUNTIME=`pwd`/runtime
 
 before_install:
 
