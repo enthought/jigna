@@ -17,7 +17,7 @@ env:
 before_install:
 
   # Prepare a Python environment with enpkg installed in it.
-  - wget -O master.sh ${MASTER_URL}
+  - wget -q -O master.sh ${MASTER_URL}
   - bash master.sh -bp ./runtime
   - source ./runtime/bin/activate
   - wget https://s3.amazonaws.com/enstaller-assets/enstaller/bootstrap.py
