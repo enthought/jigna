@@ -11,6 +11,9 @@ env:
     # MASTER_URL (link to the Python master)
     - secure: "Dr0B1EHYiV3EZvDTTSjwYpkFr1iZKZ5ryq8YAYvshrT+jFSNXvIof4i4ZX5YY2fZOg9nFc41ltjjPxWzc6RVf9hId+h5idFWh+Kfj/7+9TlOyYB0JfUzvOsU1YvGSGUpM5BRWTicAzd4PoXaKnUxIfQbGQ25P185OyW/4nbzNtI="
 
+    # BOOTSTRAP_PY_URL (link to Enstaller's bootstrap.py file)
+    - secure: "E29bCQ4/IYToJAXqYK1aRvOD0NrzVapcIpIh4lLWcJDXNVsVZ3El0ctL9iPag+EI8tVyXidWVBh+1chEgKkOiXdOH8Pks3SviXKzQzARlPv78Uq38JD/G4uyACUlxpSFvMW93aeyekbSOhEQgSOjdoLP7Cgs6uQcFCQq6qNSd/Q="
+
     # Display
     - DISPLAY=:99.0
 
@@ -20,8 +23,8 @@ before_install:
   - wget -q -O master.sh ${MASTER_URL}
   - bash master.sh -bp ./runtime
   - source ./runtime/bin/activate
-  - wget https://s3.amazonaws.com/enstaller-assets/enstaller/bootstrap.py
-  - python `pwd`/bootstrap.py
+  - wget -q -O bootstrap.py ${BOOTSTRAP_PY_URL}
+  - python ./bootstrap.py
 
   # At this point, enpkg is installed - provide auth info now.
   - echo "EPD_auth = '"${EPD_auth}"'" > ${HOME}/.enstaller4rc
