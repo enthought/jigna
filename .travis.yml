@@ -6,7 +6,7 @@ python:
 env:
   global:
     # EPD_auth
-    - secure: "Ekkvjqo6LtpIMtg+6BmmCwfAHWB0TAQyRycHpKwmcALjU3K/OTzQzDCfUl3neakV12w+EQyxklAWpiqxjPqea/dA3qDvBWYxQ025oDfUz27p1DEOcdSA2dRzWCXNl1hm+rZCL2PcxTP0B91dBWrN4xOINc0rw5DEKW2wwuNuG9g="
+    - secure: "KY7cnBEpCrBo3VVHeX/XwDta54bhTZHilpWT1RuwtIVLgtaNPMFCOPqM7W4mnWtNV4uXgcGTTsbGjsCm3dFTk0fKdo8gacr9UMHRbX4P6x59LbFPuoAPqoFsUBr3zScqeO913gkihHOqiBk+ULtD3i35kuy4ebNcxFKgPnljSeo="
 
     # MASTER_URL (link to the Python master)
     - secure: "Dr0B1EHYiV3EZvDTTSjwYpkFr1iZKZ5ryq8YAYvshrT+jFSNXvIof4i4ZX5YY2fZOg9nFc41ltjjPxWzc6RVf9hId+h5idFWh+Kfj/7+9TlOyYB0JfUzvOsU1YvGSGUpM5BRWTicAzd4PoXaKnUxIfQbGQ25P185OyW/4nbzNtI="
