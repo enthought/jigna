@@ -26,7 +26,8 @@ class ProxyQWebView(QtWebKit.QWebView):
         QtWebKit.QWebPage.OpenImageInNewWindow,
         QtWebKit.QWebPage.OpenFrameInNewWindow,
         QtWebKit.QWebPage.DownloadImageToDisk,
-        QtWebKit.QWebPage.Reload
+        QtWebKit.QWebPage.Reload,
+        QtWebKit.QWebPage.Back
     ]
 
     def __init__(
