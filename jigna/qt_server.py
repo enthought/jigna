@@ -103,7 +103,7 @@ class QtServer(Server):
                     root      = abspath(self.base_url),
                     overrides = {
                         index_file: self.html,
-                        'jigna/jigna.js': open(JIGNA_JS_FILE).read()
+                        join('jigna', 'jigna.js'): open(JIGNA_JS_FILE).read()
                     }
                 )
             }
