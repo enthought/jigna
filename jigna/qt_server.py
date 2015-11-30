@@ -10,6 +10,7 @@
 
 # Standard library.
 import json
+import os
 from os.path import abspath, dirname, join
 
 # Enthought library.
@@ -105,7 +106,8 @@ class QtServer(Server):
                         index_file: self.html,
                         join('jigna', 'jigna.js'): open(JIGNA_JS_FILE).read()
                     }
-                )
+                ),
+                'root.filesystem': FileLoader(root=abspath(os.sep))
             }
         )
 
