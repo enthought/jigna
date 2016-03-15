@@ -1,6 +1,5 @@
 <html>
   <script src="https://cdn.jsdelivr.net/vue/latest/vue.js"></script>
-  <!-- <script src="vue.js"></script> -->
     <head>
         <!-- Load the jigna script. The location of jigna script file would
         always be '/jigna/jigna.js' -->
@@ -12,21 +11,21 @@
         </script>
     </head>
 
-    <!-- `id='jigna'` attaches the jigna Vue data application to the current
-    DOM tree. This makes sure that the data is bound to the JS proxy objects.
-      -->
   <body>
+
     Name: <input v-model="person.name">
     Age: <input v-model="person.age" number>
     Fruits: <div v-for="fruit in person.fruits">
       <input v-model="fruit">
     </div>
     <div v-on:click="person.add_fruit()">+</div>
+
     Friends: <div v-for="friend in person.friends">
       Name: <input v-model="friend.name">
       Age: <input v-model="friend.age" number>
     </div>
     <div v-on:click="person.add_friend()">+</div>
+
   </body>
 
   <script>
@@ -39,7 +38,7 @@
       // code.  The problem we have is that vuejs cannot listen to changes to
       // model changes because we use getters/setters.  Internally vue uses an
       // observer to notify dependent elements.  We use the __ob__ attribute
-      // to get the observer and call the `dep.notify()`, this makes
+      // to get the observer and call its `dep.notify()`, this makes
       // everything work really well.
       jigna.add_listener('jigna', 'object_changed', function (event) {
           event.object.__ob__.dep.notify();
