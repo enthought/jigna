@@ -26563,7 +26563,7 @@ jigna.Client.prototype.on_object_changed = function(event){
 
     // Angular listens to this event and forces a digest cycle which is how it
     // detects changes in its watchers.
-    jigna.fire_event('jigna', 'object_changed');
+    jigna.fire_event('jigna', {name: 'object_changed', object: proxy});
 };
 
 jigna.Client.prototype.send_request = function(request) {
