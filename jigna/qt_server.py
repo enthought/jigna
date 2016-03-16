@@ -26,6 +26,9 @@ from jigna.utils.gui import ui_handler
 
 #: Path to jigna.js file
 JIGNA_JS_FILE = join(abspath(dirname(__file__)), 'js', 'dist', 'jigna.js')
+JIGNA_VUE_JS_FILE = join(
+    abspath(dirname(__file__)), 'js', 'dist', 'jigna-vue.js'
+)
 
 
 class QtBridge(Bridge):
@@ -50,7 +53,7 @@ class QtBridge(Bridge):
             self.webview.execute_js(
                 'jigna.client.bridge.handle_event(%r);' % jsonized_event
             )
-            
+
         return
 
     #### 'QtBridge' protocol ##################################################
@@ -104,7 +107,9 @@ class QtServer(Server):
                     root      = abspath(self.base_url),
                     overrides = {
                         index_file: self.html,
-                        join('jigna', 'jigna.js'): open(JIGNA_JS_FILE).read()
+                        join('jigna', 'jigna.js'): open(JIGNA_JS_FILE).read(),
+                        join('jigna', 'jigna-vue.js'):
+                        open(JIGNA_VUE_JS_FILE).read()
                     }
                 ),
                 'root.filesystem': FileLoader(root=abspath(os.sep))
