@@ -220,6 +220,11 @@ jigna.Client.prototype._add_models = function(context) {
         models[model_name] = proxy;
     });
 
+    // Resolve the jigna.ready deferred, at this point the initial set of
+    // models are set.  For example vue.js can now use these data models to
+    // create the initial Vue instance.
+    jigna.ready.resolve();
+
     return models;
 };
 

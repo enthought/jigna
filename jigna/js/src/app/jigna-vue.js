@@ -5,8 +5,8 @@
 // to get the observer and call its `dep.notify()`, this makes
 // everything work really well.
 jigna.add_listener('jigna', 'object_changed', function (event) {
-    var ob = event.object.__ob__;
-    if (ob) {
-        ob.dep.notify();
+    var obj = event.object;
+    if (obj && obj.__ob__) {
+        obj.__ob__.dep.notify();
     }
 });

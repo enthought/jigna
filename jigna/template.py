@@ -1,7 +1,7 @@
 #
 # Enthought product code
 #
-# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# (C) Copyright 2013-2016 Enthought, Inc., Austin, TX
 # All right reserved.
 #
 

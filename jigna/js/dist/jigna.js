@@ -26409,12 +26409,15 @@ var jigna = new EventTarget();
 
 jigna.initialize = function(options) {
     options = options || {};
+    this.ready  = $.Deferred();
     this.debug  = options.debug;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize();
+    return this.ready;
 };
 
 jigna.models = {};
+
 jigna.add_listener('jigna', 'model_added', function(event){
     var models = event.data;
     for (var model_name in models) {
@@ -26696,6 +26699,11 @@ jigna.Client.prototype._add_models = function(context) {
         proxy = client._add_model(model_name, model.value, model.info);
         models[model_name] = proxy;
     });
+
+    // Resolve the jigna.ready deferred, at this point the initial set of
+    // models are set.  For example vue.js can now use these data models to
+    // create the initial Vue instance.
+    jigna.ready.resolve();
 
     return models;
 };

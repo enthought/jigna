@@ -9790,12 +9790,15 @@ var jigna = new EventTarget();
 
 jigna.initialize = function(options) {
     options = options || {};
+    this.ready  = $.Deferred();
     this.debug  = options.debug;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize();
+    return this.ready;
 };
 
 jigna.models = {};
+
 jigna.add_listener('jigna', 'model_added', function(event){
     var models = event.data;
     for (var model_name in models) {
@@ -10077,6 +10080,11 @@ jigna.Client.prototype._add_models = function(context) {
         proxy = client._add_model(model_name, model.value, model.info);
         models[model_name] = proxy;
     });
+
+    // Resolve the jigna.ready deferred, at this point the initial set of
+    // models are set.  For example vue.js can now use these data models to
+    // create the initial Vue instance.
+    jigna.ready.resolve();
 
     return models;
 };
@@ -10852,9 +10860,9 @@ jigna.WebBridge.prototype._push_deferred_request = function(deferred) {
 // to get the observer and call its `dep.notify()`, this makes
 // everything work really well.
 jigna.add_listener('jigna', 'object_changed', function (event) {
-    var ob = event.object.__ob__;
-    if (ob) {
-        ob.dep.notify();
+    var obj = event.object;
+    if (obj && obj.__ob__) {
+        obj.__ob__.dep.notify();
     }
 });
 

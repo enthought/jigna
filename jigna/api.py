@@ -1,4 +1,5 @@
 from template import Template
+from vue_template import VueTemplate
 from core.concurrent import Future
 from html_widget import HTMLWidget
 

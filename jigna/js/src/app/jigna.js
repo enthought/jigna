@@ -7,12 +7,15 @@ var jigna = new EventTarget();
 
 jigna.initialize = function(options) {
     options = options || {};
+    this.ready  = $.Deferred();
     this.debug  = options.debug;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize();
+    return this.ready;
 };
 
 jigna.models = {};
+
 jigna.add_listener('jigna', 'model_added', function(event){
     var models = event.data;
     for (var model_name in models) {

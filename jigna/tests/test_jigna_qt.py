@@ -1,5 +1,5 @@
 from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
-from jigna.api import HTMLWidget, Template
+from jigna.api import HTMLWidget, Template, VueTemplate
 from jigna.utils import gui
 from jigna.qt import QtGui
 
@@ -139,7 +139,7 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual("jigna.models.model.fruits[1]", "peach")
         self.assertJSEqual("jigna.models.model.fruits[2]", "pear")
         self.assertJSEqual("jigna.models.model.fruits[3]", "mango")
-        
+
         # Test setting from the JS side...
         self.execute_js("jigna.models.model.fruits[0] = 'orange'")
         self.assertEqual(fred.fruits, ["orange", "peach", "pear", "mango"])
@@ -172,7 +172,7 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual(
             "Object.keys(jigna.models.model.phonebook).length", 2
         )
-        
+
         # Test setting from the JS side...
         self.execute_js("jigna.models.model.phonebook['joe'] = 567")
         self.assertEqual(567, fred.phonebook['joe'])
@@ -292,6 +292,54 @@ class TestJignaQt(unittest.TestCase):
                 pass
         else:
             raise AssertionError("Async method not finished")
+
+
+body_vue_html = """
+    <div>
+      Name: <input v-model="model.name">
+      Age: <input v-model="model.age" number>
+      <br/>
+      Fruits:
+      <ul>
+        <li v-for="fruit in model.fruits" track-by="$index">
+          <input v-model="fruit">
+        </li>
+      </ul>
+
+      <br/>
+
+      Friends:
+      <ul>
+        <li v-for="friend in model.friends">
+          Name: <input v-model="friend.name">
+          Age: <input v-model="friend.age" number>
+          Fruits:
+          <ul>
+            <li v-for="fruit in friend.fruits">
+              <input v-model="fruit">
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    Spouse: {{model.spouse}}
+"""
+
+class TestJignaVueQt(TestJignaQt):
+
+    @classmethod
+    def setUpClass(cls):
+        qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
+        template = VueTemplate(body_html=body_vue_html)
+        fred = Person(name='Fred', age=42)
+        widget = HTMLWidget(template=template, context={'model':fred})
+        widget.show()
+        gui.process_events()
+        cls.widget = widget
+        cls.fred = fred
+
+
 
 if __name__ == "__main__":
     unittest.main()

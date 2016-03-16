@@ -10,9 +10,9 @@ except ImportError:
     raise unittest.SkipTest("Tornado not installed")
 
 # Local imports.
-from jigna.api import Template, WebApp
+from jigna.api import Template, VueTemplate, WebApp
 from jigna.utils.web import get_free_port
-from test_jigna_qt import TestJignaQt, Person, body_html
+from test_jigna_qt import TestJignaQt, Person, body_html, body_vue_html
 
 class TestJignaWebSync(TestJignaQt):
     @classmethod
@@ -104,6 +104,34 @@ class TestJignaWebSync(TestJignaQt):
         self.execute_js("jigna.models.model.spouse.age = 41")
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
+
+
+class TestJignaVueWebSync(TestJignaWebSync):
+    @classmethod
+    def setUpClass(cls, async=False):
+        ioloop = IOLoop.instance()
+        fred = Person(name='Fred', age=42)
+        template = VueTemplate(body_html=body_vue_html, async=async)
+        port = get_free_port()
+        app = WebApp(template=template, context={'model':fred})
+        app.listen(port)
+
+        # Start the tornado server in a different thread so that we can write
+        # test statements here in the main loop
+        t = Thread(target=ioloop.start)
+        t.setDaemon(True)
+        t.start()
+
+        browser = webdriver.Firefox()
+        browser.get('http://localhost:%d'%port)
+        cls.app = app
+        cls.fred = fred
+        cls.browser = browser
+
+    def setUp(self):
+        super(TestJignaVueWebSync, self).setUp()
+        # Wait for the model to be setup before running the tests.
+        self.get_attribute('jigna.models.model.name', None)
 
 
 # Delete this so running just this file does not run all the tests.
