@@ -21,12 +21,18 @@ class Person(HasTraits):
     def add_fruit(self, name='fruit'):
         self.fruits.append(name)
 
+    def remove_fruit(self, index):
+        del self.fruits[index]
+
     def update_name(self, name):
         print "Name updated to", name
         self.name = name
 
     def add_friend(self):
         self.friends.append(Person(name='Person', age=0))
+
+    def remove_friend(self, index):
+        del self.friends[index]
 
     def _fruits_items_changed(self, l_event):
         print l_event.added, l_event.removed, l_event.index

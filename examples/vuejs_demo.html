@@ -14,14 +14,17 @@
 
     Name: <input v-model="person.name">
     Age: <input v-model="person.age" number>
+    <br/>
     Fruits: <div v-for="fruit in person.fruits">
       <input v-model="fruit">
+        <label v-on:click="person.remove_fruit($index)">-</label>
     </div>
     <div v-on:click="person.add_fruit()">+</div>
 
     Friends: <div v-for="friend in person.friends">
       Name: <input v-model="friend.name">
       Age: <input v-model="friend.age" number>
+            <label v-on:click="person.remove_friend($index)">-</label>
     </div>
     <div v-on:click="person.add_friend()">+</div>
 
