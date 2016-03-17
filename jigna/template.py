@@ -42,9 +42,6 @@ class Template(HasTraits):
     #: The inner HTML for the *head* of the view's document.
     head_html = Str
 
-    #: The foot HTML for the *head* of the view's document.
-    foot_html = Str
-
     #: The file which contains the html. `html_file` takes precedence over
     #: `body_html` and `head_html`.
     html_file = Str
@@ -83,7 +80,6 @@ class Template(HasTraits):
             html = self.html_template.format(
                 body_html = self.body_html,
                 head_html = self.head_html,
-                foot_html = self.foot_html,
                 async     = async,
             )
 
@@ -109,6 +105,5 @@ class Template(HasTraits):
             {body_html}
           </body>
 
-            {foot_html}
         </html>
         """)

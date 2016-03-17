@@ -25,7 +25,6 @@ class VueTemplate(Template):
 
           <body>
             {body_html}
-          </body>
 
           <script type="text/javascript">
               var vm = undefined;
@@ -38,7 +37,7 @@ class VueTemplate(Template):
                   }});
               }});
           </script>
+          </body>
 
-          {foot_html}
         </html>
         """)
