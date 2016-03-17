@@ -36,7 +36,7 @@ function concatenate(options) {
     fs.writeFileSync(dest, concat_str);
 }
 
-// jigna.js
+// jigna.js: this includes angular.js.
 concatenate({
     base_url: 'src/',
     src: [
@@ -70,7 +70,7 @@ concatenate({
     ]
 });
 
-// jigna-vue.js
+// jigna-vue.js: this includes vue.js.
 concatenate({
     base_url: 'src/',
     src: [
