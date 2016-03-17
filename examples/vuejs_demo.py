@@ -6,7 +6,7 @@ a full html file, rather than specifying body_html and head_html.
 #### Imports ####
 
 from traits.api import HasTraits, Int, Str, List, Instance
-from jigna.api import HTMLWidget, Template
+from jigna.api import HTMLWidget, VueTemplate
 from jigna.qt import QtGui
 from jigna.utils.gui import do_after
 
@@ -39,8 +39,6 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-template = Template(html_file='vuejs_demo.html')
-
 #### Entry point ####
 
 def main():
@@ -50,6 +48,8 @@ def main():
     # Instantiate the domain model
 
     fred = Person(name='Fred', age=42, fruits=['pear', 'apple'])
+
+    template = VueTemplate(html_file='vuejs_demo.html')
 
     # Create the jigna based HTML widget which renders the given HTML template
     # with the given context.
