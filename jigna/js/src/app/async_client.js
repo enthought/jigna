@@ -100,7 +100,7 @@ jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
 
             // fire the object changed event to trigger fresh fetches from
             // the cache
-            jigna.fire_event('jigna', 'object_changed');
+            jigna.fire_event('jigna', {name: 'object_changed', object: proxy});
 
             // set the state as free again so that further fetches ask the
             // server again
