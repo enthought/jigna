@@ -10403,8 +10403,8 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
         jigna.Proxy.call(this, type, id, client);
 
         /* Listen for changes to the object that the proxy is a proxy for! */
-        
-        var index; 
+
+        var index;
         var info = this.__info__;
 
         for (index in info.attribute_names) {
@@ -10470,7 +10470,7 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
 }
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
-    var constructor, index, proxy;
+    var constructor;
 
     // We create a constructor for each Python class and then create the
     // actual proxies as from those.
@@ -10479,7 +10479,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
         constructor = this._create_instance_constructor(info);
         this._type_to_constructor_map[info.type_name] = constructor;
     }
-    
+
     return new constructor('instance', id, this._client);
 };
 
@@ -10802,7 +10802,6 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_response;
-    var deferred = new $.Deferred();
 
     $.ajax(
         {

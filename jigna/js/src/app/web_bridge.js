@@ -50,7 +50,6 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_response;
-    var deferred = new $.Deferred();
 
     $.ajax(
         {
