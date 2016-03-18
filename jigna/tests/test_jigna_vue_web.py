@@ -35,10 +35,6 @@ class TestJignaVueWebSync(TestJignaWebSync):
         cls.fred = fred
         cls.browser = browser
 
-    def setUp(self):
-        super(TestJignaVueWebSync, self).setUp()
-        # Wait for the model to be setup before running the tests.
-        self.get_attribute('jigna.models.model.name', None)
 
 del TestJignaWebSync
 

@@ -52,6 +52,8 @@ class TestJignaWebSync(TestJignaQt):
         self.fred.spouse = None
         self.fred.fruits = []
         self.fred.friends = []
+        # Wait for the model to be setup before running the tests.
+        self.get_attribute('jigna.models.model.name', None)
 
     def execute_js(self, js):
         return self.browser.execute_script(js)
