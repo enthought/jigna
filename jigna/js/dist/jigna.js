@@ -26409,12 +26409,15 @@ var jigna = new EventTarget();
 
 jigna.initialize = function(options) {
     options = options || {};
+    this.ready  = $.Deferred();
     this.debug  = options.debug;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize();
+    return this.ready;
 };
 
 jigna.models = {};
+
 jigna.add_listener('jigna', 'model_added', function(event){
     var models = event.data;
     for (var model_name in models) {
@@ -26563,7 +26566,7 @@ jigna.Client.prototype.on_object_changed = function(event){
 
     // Angular listens to this event and forces a digest cycle which is how it
     // detects changes in its watchers.
-    jigna.fire_event('jigna', 'object_changed');
+    jigna.fire_event('jigna', {name: 'object_changed', object: proxy});
 };
 
 jigna.Client.prototype.send_request = function(request) {
@@ -26696,6 +26699,11 @@ jigna.Client.prototype._add_models = function(context) {
         proxy = client._add_model(model_name, model.value, model.info);
         models[model_name] = proxy;
     });
+
+    // Resolve the jigna.ready deferred, at this point the initial set of
+    // models are set.  For example vue.js can now use these data models to
+    // create the initial Vue instance.
+    jigna.ready.resolve();
 
     return models;
 };
@@ -26896,7 +26904,7 @@ jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
 
             // fire the object changed event to trigger fresh fetches from
             // the cache
-            jigna.fire_event('jigna', 'object_changed');
+            jigna.fire_event('jigna', {name: 'object_changed', object: proxy});
 
             // set the state as free again so that further fetches ask the
             // server again
@@ -27014,8 +27022,8 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
         jigna.Proxy.call(this, type, id, client);
 
         /* Listen for changes to the object that the proxy is a proxy for! */
-        
-        var index; 
+
+        var index;
         var info = this.__info__;
 
         for (index in info.attribute_names) {
@@ -27081,7 +27089,7 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
 }
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
-    var constructor, index, proxy;
+    var constructor;
 
     // We create a constructor for each Python class and then create the
     // actual proxies as from those.
@@ -27090,7 +27098,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
         constructor = this._create_instance_constructor(info);
         this._type_to_constructor_map[info.type_name] = constructor;
     }
-    
+
     return new constructor('instance', id, this._client);
 };
 
@@ -27413,7 +27421,6 @@ jigna.WebBridge.prototype.send_request = function(jsonized_request) {
     /* Send a request to the server and wait for the reply. */
 
     var jsonized_response;
-    var deferred = new $.Deferred();
 
     $.ajax(
         {

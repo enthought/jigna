@@ -10,9 +10,10 @@ except ImportError:
     raise unittest.SkipTest("Tornado not installed")
 
 # Local imports.
-from jigna.api import Template, WebApp
+from jigna.api import Template, VueTemplate, WebApp
 from jigna.utils.web import get_free_port
 from test_jigna_qt import TestJignaQt, Person, body_html
+
 
 class TestJignaWebSync(TestJignaQt):
     @classmethod
@@ -51,6 +52,8 @@ class TestJignaWebSync(TestJignaQt):
         self.fred.spouse = None
         self.fred.fruits = []
         self.fred.friends = []
+        # Wait for the model to be setup before running the tests.
+        self.get_attribute('jigna.models.model.name', None)
 
     def execute_js(self, js):
         return self.browser.execute_script(js)
@@ -104,7 +107,6 @@ class TestJignaWebSync(TestJignaQt):
         self.execute_js("jigna.models.model.spouse.age = 41")
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
-
 
 # Delete this so running just this file does not run all the tests.
 del TestJignaQt

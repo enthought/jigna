@@ -1,32 +1,17 @@
 #
 # Enthought product code
 #
-# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# (C) Copyright 2013-2016 Enthought, Inc., Austin, TX
 # All right reserved.
 #
+
+from textwrap import dedent
 
 # Enthought library.
 from traits.api import Bool, HasTraits, Str, Property, Tuple, Int
 
+
 #### HTML template ############################################################
-
-DOCUMENT_HTML_TEMPLATE = """
-<html ng-app='jigna'>
-  <head>
-    <script type="text/javascript" src="/jigna/jigna.js"></script>
-    <script type="text/javascript">
-        jigna.initialize({{async: {async}}});
-    </script>
-
-    {head_html}
-
-  </head>
-
-  <body>
-    {body_html}
-  </body>
-</html>
-"""
 
 class Template(HasTraits):
     """ Encapsulation of the HTML/AngularJS template which can be rendered by
@@ -61,6 +46,9 @@ class Template(HasTraits):
     #: `body_html` and `head_html`.
     html_file = Str
 
+    #: The HTML template used for this.
+    html_template = Str
+
     #: The HTML for the entire document.
     #:
     #: The order of precedence in determining its value is:
@@ -89,7 +77,7 @@ class Template(HasTraits):
         # ...otherwise, create the template out of body and head htmls
         else:
             async = 'true' if self.async else 'false'
-            html = DOCUMENT_HTML_TEMPLATE.format(
+            html = self.html_template.format(
                 body_html = self.body_html,
                 head_html = self.head_html,
                 async     = async,
@@ -99,3 +87,23 @@ class Template(HasTraits):
 
     def _set_html(self, html):
         self._html = html
+
+    def _html_template_default(self):
+        return dedent("""
+        <html ng-app='jigna'>
+          <head>
+            <script type="text/javascript" src="/jigna/jigna.js"></script>
+            <script type="text/javascript">
+                jigna.initialize({{async: {async}}});
+            </script>
+
+            {head_html}
+
+          </head>
+
+          <body>
+            {body_html}
+          </body>
+
+        </html>
+        """)

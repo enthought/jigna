@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <!-- Load the jigna-vue script. The location of jigna-vue script file
+        will always be '/jigna/jigna-vue.js' -->
+        <script type='text/javascript' src='/jigna/jigna-vue.js'></script>
+
+        <!-- Once jigna is loaded, initialize it. -->
+        <script type='text/javascript'>
+            jigna.initialize();
+        </script>
+    </head>
+
+  <body>
+
+    Name: <input v-model="person.name">
+    Age: <input v-model="person.age" number>
+    <br/>
+    Fruits: <div v-for="fruit in person.fruits">
+      <input v-model="fruit">
+        <label v-on:click="person.remove_fruit($index)">-</label>
+    </div>
+    <div v-on:click="person.add_fruit()">+</div>
+
+    Friends: <div v-for="friend in person.friends">
+      Name: <input v-model="friend.name">
+      Age: <input v-model="friend.age" number>
+            <label v-on:click="person.remove_friend($index)">-</label>
+    </div>
+    <div v-on:click="person.add_friend()">+</div>
+
+  <script>
+      var vm = new Vue({
+          el: 'body', // Attach to the body tag.
+          data: jigna.models,
+      });
+    </script>
+
+  </body>
+
+</html>

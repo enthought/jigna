@@ -36,6 +36,7 @@ function concatenate(options) {
     fs.writeFileSync(dest, concat_str);
 }
 
+// jigna.js: this includes angular.js.
 concatenate({
     base_url: 'src/',
     src: [
@@ -65,6 +66,40 @@ concatenate({
     exports: [
         '$',
         'angular',
+        'jigna'
+    ]
+});
+
+// jigna-vue.js: this includes vue.js.
+concatenate({
+    base_url: 'src/',
+    src: [
+        // External dependencies
+        'external/jquery.min.js',
+        'external/vue.js',
+
+        // Internal dependencies
+        'app/event_target.js',
+
+        // Namespace definition
+        'app/jigna.js',
+
+        // App files
+        'app/client.js',
+        'app/async_client.js',
+        'app/proxy_factory.js',
+        'app/proxy.js',
+        'app/subarray.js',
+        'app/list_proxy.js',
+        'app/qt_bridge.js',
+        'app/web_bridge.js',
+        'app/jigna-vue.js',
+    ],
+    dest: 'dist/jigna-vue.js',
+    wrap: true,
+    exports: [
+        '$',
+        'Vue',
         'jigna'
     ]
 });

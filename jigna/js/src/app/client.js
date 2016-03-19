@@ -86,7 +86,7 @@ jigna.Client.prototype.on_object_changed = function(event){
 
     // Angular listens to this event and forces a digest cycle which is how it
     // detects changes in its watchers.
-    jigna.fire_event('jigna', 'object_changed');
+    jigna.fire_event('jigna', {name: 'object_changed', object: proxy});
 };
 
 jigna.Client.prototype.send_request = function(request) {
@@ -219,6 +219,11 @@ jigna.Client.prototype._add_models = function(context) {
         proxy = client._add_model(model_name, model.value, model.info);
         models[model_name] = proxy;
     });
+
+    // Resolve the jigna.ready deferred, at this point the initial set of
+    // models are set.  For example vue.js can now use these data models to
+    // create the initial Vue instance.
+    jigna.ready.resolve();
 
     return models;
 };
