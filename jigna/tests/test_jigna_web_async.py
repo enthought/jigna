@@ -21,6 +21,12 @@ class TestJignaWebAsync(TestJignaWebSync):
         super(TestJignaWebAsync, self).tearDown()
         self.fred.on_trait_change(self._sleep, remove=True)
 
+    def execute_js(self, js):
+        self._sleep()
+        result = super(TestJignaWebAsync, self).execute_js(js)
+        self._sleep()
+        return result
+
     def test_callable(self):
         fred = self.fred
         wilma = Person(name='Wilma', age=40)
