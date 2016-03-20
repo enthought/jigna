@@ -21,12 +21,6 @@ class TestJignaWebAsync(TestJignaWebSync):
         super(TestJignaWebAsync, self).tearDown()
         self.fred.on_trait_change(self._sleep, remove=True)
 
-    def execute_js(self, js):
-        self._sleep()
-        result = super(TestJignaWebAsync, self).execute_js(js)
-        self._sleep()
-        return result
-
     def test_callable(self):
         fred = self.fred
         wilma = Person(name='Wilma', age=40)
@@ -41,6 +35,27 @@ class TestJignaWebAsync(TestJignaWebSync):
         self.assertEqual(fred.called_with, [1,2])
         self.execute_js("var x; jigna.models.model.method(jigna.models.model.spouse).done(function(r){x=r;}); return x;")
         self.assertEqual(fred.called_with, wilma)
+
+    def test_list_sortable(self):
+        # Given
+        fred = self.fred
+        self.execute_js(
+            "jigna.models.model.fruits = ['peach', 'apple', 'banana']"
+        )
+        self.assertJSEqual(
+            "jigna.models.model.fruits", ['peach', 'apple', 'banana']
+        )
+
+        # When
+        self.execute_js("jigna.models.model.fruits.sort()")
+        self.get_attribute("jigna.models.model.fruits", None)
+
+        # Then
+        self.assertJSEqual(
+            "jigna.models.model.fruits", ['apple', 'banana', 'peach']
+        )
+        self.assertEqual(fred.fruits, ['apple', 'banana', 'peach'])
+
 
 
 # Delete this so running just this file does not run all the tests.
