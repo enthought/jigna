@@ -1,5 +1,6 @@
 import unittest
 from unittest import skip
+import time
 
 from test_jigna_web import TestJignaWebSync, Person
 
@@ -7,6 +8,18 @@ class TestJignaWebAsync(TestJignaWebSync):
     @classmethod
     def setUpClass(cls):
         super(TestJignaWebAsync, cls).setUpClass(async=True)
+
+    def _sleep(self):
+        # Yield to the server thread.
+        time.sleep(0)
+
+    def setUp(self):
+        super(TestJignaWebAsync, self).setUp()
+        self.fred.on_trait_change(self._sleep)
+
+    def tearDown(self):
+        super(TestJignaWebAsync, self).tearDown()
+        self.fred.on_trait_change(self._sleep, remove=True)
 
     def test_callable(self):
         fred = self.fred
