@@ -327,15 +327,8 @@ class Server(HasTraits):
         # the client will have already built a prototype based on the previous
         # info.
         else:
-            attribute_names = self._get_attribute_names(obj)
-            attribute_values = self._get_attribute_values(
-                obj, attribute_names
-            )
-            info = dict(
-                type_name       = type_name,
-                attribute_names = attribute_names,
-                attribute_values = attribute_values
-            )
+            info = dict(type_name = type_name)
+
         return info
 
     def _get_list_info(self, obj):

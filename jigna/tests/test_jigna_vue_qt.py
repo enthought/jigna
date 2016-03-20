@@ -35,7 +35,8 @@ body_vue_html = """
       </ul>
     </div>
 
-    Spouse: {{model.spouse}}
+    Spouse: <br/>
+    Name: {{model.spouse.name}} Age: {{model.spouse.age}}
 """
 
 class TestJignaVueQt(TestJignaQt):

@@ -1,10 +1,8 @@
-
 import unittest
 from unittest import skip
 
 from test_jigna_web import TestJignaWebSync, Person
 
-@skip("Async Web tests don't work at the moment")
 class TestJignaWebAsync(TestJignaWebSync):
     @classmethod
     def setUpClass(cls):
@@ -24,7 +22,6 @@ class TestJignaWebAsync(TestJignaWebSync):
         self.assertEqual(fred.called_with, [1,2])
         self.execute_js("var x; jigna.models.model.method(jigna.models.model.spouse).done(function(r){x=r;}); return x;")
         self.assertEqual(fred.called_with, wilma)
-
 
 
 # Delete this so running just this file does not run all the tests.

@@ -176,17 +176,14 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
     // actual proxies as from those.
     constructor = this._type_to_constructor_map[info.type_name];
     if (constructor === undefined) {
+        info.attribute_values = this._client._unmarshal_all(
+            info.attribute_values
+        );
         constructor = this._create_instance_constructor(info);
         this._type_to_constructor_map[info.type_name] = constructor;
     }
 
-    proxy = new constructor('instance', id, this._client);
-    var obj;
-    for (var i=0; i < info.attribute_names.length; i++) {
-        obj = this._client._unmarshal(info.attribute_values[i]);
-        proxy.__cache__[info.attribute_names[i]] = obj;
-    }
-    return proxy;
+    return new constructor('instance', id, this._client);
 };
 
 // Dict proxy creation /////////////////////////////////////////////////////////
@@ -258,9 +255,7 @@ jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     for (var index=0; index < info.length; index++) {
         this._add_item_attribute(proxy, index);
         if (data !== undefined) {
-            proxy.__cache__[index] = this._client._unmarshal(
-                info.data[index]
-            );
+            proxy.__cache__[index] = this._client._unmarshal(data[index]);
         }
     }
 
