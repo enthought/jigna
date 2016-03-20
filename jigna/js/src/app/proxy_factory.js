@@ -170,7 +170,7 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
 }
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
-    var constructor;
+    var constructor, proxy;
 
     // We create a constructor for each Python class and then create the
     // actual proxies as from those.
@@ -180,7 +180,13 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
         this._type_to_constructor_map[info.type_name] = constructor;
     }
 
-    return new constructor('instance', id, this._client);
+    proxy = new constructor('instance', id, this._client);
+    var obj;
+    for (var i=0; i < info.attribute_names.length; i++) {
+        obj = this._client._unmarshal(info.attribute_values[i]);
+        proxy.__cache__[info.attribute_names[i]] = obj;
+    }
+    return proxy;
 };
 
 // Dict proxy creation /////////////////////////////////////////////////////////
@@ -203,17 +209,30 @@ jigna.ProxyFactory.prototype._delete_dict_keys = function(proxy) {
 };
 
 jigna.ProxyFactory.prototype._populate_dict_proxy = function(proxy, info) {
-    var index;
+    var index, key;
 
-    for (index in info.keys) {
-        this._add_item_attribute(proxy, info.keys[index]);
+    for (index=0; index<info.keys.length; index++) {
+        key = info.keys[index];
+        this._add_item_attribute(proxy, key);
+        proxy.__cache__[key] = this._client._unmarshal(info.values[index]);
     }
 };
 
 jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
-    proxy.__cache__ = {}
-    this._delete_dict_keys(proxy);
-    this._populate_dict_proxy(proxy, info);
+    var cache = proxy.__cache__;
+    var key, added, removed;
+    removed = info[0];
+    added = info[1];
+
+    for (key in added) {
+        cache[key] = this._client._unmarshal(added[key]);
+        this._add_item_attribute(proxy, key);
+    }
+    for (var index=0; index < removed.length; index++) {
+        key = removed[index];
+        delete cache[key];
+        delete proxy[key];
+    }
 };
 
 // List proxy creation /////////////////////////////////////////////////////////
@@ -221,7 +240,6 @@ jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
 jigna.ProxyFactory.prototype._create_list_proxy = function(id, info) {
     var proxy = new jigna.ListProxy('list', id, this._client);
     this._populate_list_proxy(proxy, info);
-
     return proxy;
 };
 
@@ -236,8 +254,14 @@ jigna.ProxyFactory.prototype._delete_list_items = function(proxy) {
 jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     /* Populate the items in a list proxy. */
 
+    var data = info.data;
     for (var index=0; index < info.length; index++) {
         this._add_item_attribute(proxy, index);
+        if (data !== undefined) {
+            proxy.__cache__[index] = this._client._unmarshal(
+                info.data[index]
+            );
+        }
     }
 
     return proxy;
@@ -246,15 +270,21 @@ jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
 jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     /* Update the given proxy.
      *
-     * This removes all previous items and then repopulates the proxy with
-     * items that reflect the (possibly) new length.
      */
-    this._delete_list_items(proxy);
-    this._populate_list_proxy(proxy, info);
-
-    // Get rid of any cached items (items we have already requested from the
-    // server-side.
-    proxy.__cache__ = []
+    var splice_args = this._client._unmarshal_all(info.data);
+    var extra = splice_args.length - 2 - splice_args[1];
+    var cache = proxy.__cache__;
+    var end = cache.length;
+    if (extra < 0) {
+        for (var index=end; index > (end+extra) ; index--) {
+            delete proxy[index-1];
+        }
+    } else {
+        for (var index=0; index < extra; index++){
+            this._add_item_attribute(proxy, end+index);
+        }
+    }
+    cache.splice.apply(cache, splice_args);
 };
 
 // Common for list and dict proxies ////////////////////////////////////////////

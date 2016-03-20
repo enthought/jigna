@@ -113,7 +113,7 @@ class Server(HasTraits):
     def print_JS_message(self, request):
         """ Prints a message coming from the JS client for testing purposes """
 
-        print 'JS: ' + request['value']
+        print 'JS: ' + str(request['value'])
 
         return
 
@@ -267,10 +267,19 @@ class Server(HasTraits):
 
         return attribute_names
 
+    def _get_attribute_values(self, obj, attribute_names):
+        """ Get the values of all 'public' attributes on an object.
+
+        Return a list of strings.
+
+        """
+        return [self._marshal(getattr(obj, name)) for name in attribute_names]
+
+
     def _get_dict_info(self, obj):
         """ Get a description of a dict. """
 
-        return dict(keys=obj.keys())
+        return dict(keys=obj.keys(), values=self._marshal_all(obj.values()))
 
     def _get_event_names(self, obj):
         """ Get the names of all the attributes on an object.
@@ -281,7 +290,7 @@ class Server(HasTraits):
 
         # We ignore these triats that are added by the trait machinery :)
         ignore = ['trait_added', 'trait_modified']
-        
+
         event_names = []
 
         if isinstance(obj, HasTraits):
@@ -301,11 +310,16 @@ class Server(HasTraits):
         # need to include the full info for it (its attributes, events and
         # methods etc)...
         if type_name not in self._visited_type_names:
+            attribute_names = self._get_attribute_names(obj)
+            attribute_values = self._get_attribute_values(
+                obj, attribute_names
+            )
             info = dict(
-                type_name       = type_name,
-                attribute_names = self._get_attribute_names(obj),
-                event_names     = self._get_event_names(obj),
-                method_names    = self._get_public_method_names(type(obj))
+                type_name        = type_name,
+                attribute_names  = attribute_names,
+                attribute_values = attribute_values,
+                event_names      = self._get_event_names(obj),
+                method_names     = self._get_public_method_names(type(obj))
             )
             self._visited_type_names.add(type_name)
 
@@ -313,14 +327,21 @@ class Server(HasTraits):
         # the client will have already built a prototype based on the previous
         # info.
         else:
-            info = dict(type_name = type_name)
-
+            attribute_names = self._get_attribute_names(obj)
+            attribute_values = self._get_attribute_values(
+                obj, attribute_names
+            )
+            info = dict(
+                type_name       = type_name,
+                attribute_names = attribute_names,
+                attribute_values = attribute_values
+            )
         return info
 
     def _get_list_info(self, obj):
         """ Get a description of a list. """
 
-        return dict(length=len(obj))
+        return dict(length=len(obj), data=self._marshal_all(obj))
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
@@ -426,9 +447,23 @@ class Server(HasTraits):
         if trait_name.startswith('_'):
             return
 
-        if isinstance(new, (TraitListEvent, TraitDictEvent)):
+        if isinstance(new, TraitListEvent):
             trait_name  = trait_name[:-len('_items')]
-            new         = getattr(obj, trait_name)
+            new = [new.index, len(new.removed)] + new.added
+            value = id(getattr(obj, trait_name))
+            info = self._marshal(new)
+            data = dict(type='list', value=value, info=info['info'])
+            items_event = True
+        elif isinstance(new, TraitDictEvent):
+            trait_name  = trait_name[:-len('_items')]
+            trait = getattr(obj, trait_name)
+            value = id(trait)
+            added, removed = new.added, list(new.removed.keys())
+            for key in new.changed:
+                added[key] = trait[key]
+            added = dict((k, self._marshal(v)) for k, v in added.items())
+            info = [removed, added]
+            data = dict(type='dict', value=value, info=info)
             items_event = True
 
         else:
@@ -436,6 +471,7 @@ class Server(HasTraits):
             if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
                 self._register_object(new)
 
+            data = self._marshal(new)
             items_event = False
 
         event = dict(
@@ -444,7 +480,7 @@ class Server(HasTraits):
             # fixme: This smells a bit, but marshalling the new value gives us
             # a type/value pair which we need on the client side to determine
             # what (if any) proxy we need to create.
-            data = self._marshal(new),
+            data = data,
 
             # fixme: This is how we currently detect an 'xxx_items' event on the
             # JS side.
