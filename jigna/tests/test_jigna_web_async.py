@@ -19,7 +19,8 @@ class TestJignaWebAsync(TestJignaWebSync):
         result = self.execute_js(check_js)
         count = 0
         while (result != expect) and count < 10:
-            time.sleep(0.1)
+            self.execute_js(get_js)
+            time.sleep(0.025)
             result = self.execute_js(check_js)
             count += 1
         self.reset_user_var()

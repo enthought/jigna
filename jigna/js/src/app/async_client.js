@@ -109,15 +109,5 @@ jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
         });
     }
 
-    var result;
-    var info = proxy.__info__;
-    if (info && (info.attribute_values !== undefined)) {
-        // This is an object.
-        var index = info.attribute_names.indexOf(attribute);
-        result = info.attribute_values[index];
-    } else {
-        // this is a dict/list.
-        result = proxy.__cache__[attribute];
-    }
-    return result;
+    return proxy.__cache__[attribute];
 };
