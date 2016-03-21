@@ -305,6 +305,7 @@ class TestJignaQt(unittest.TestCase):
 
         # When
         self.execute_js("window.location.reload();")
+        time.sleep(0.5)
 
         # Then
         self.assertJSEqual("jigna.models.model.name", fred.name)
