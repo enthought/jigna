@@ -273,7 +273,12 @@ class Server(HasTraits):
         Return a list of strings.
 
         """
-        return [self._marshal(getattr(obj, name)) for name in attribute_names]
+        def _getattr(obj, name):
+            v = getattr(obj, name)
+            if isinstance(v, (list, dict)):
+                v = type(v)()
+            return v
+        return [self._marshal(_getattr(obj, name)) for name in attribute_names]
 
 
     def _get_dict_info(self, obj):

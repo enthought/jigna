@@ -63,7 +63,7 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
             if (value === undefined) {
                 var info = this.__info__;
                 if (info && (info.attribute_values !== undefined)) {
-                    var index = info.attribute_names.indexOf(attribute);
+                    var index = info.attribute_names.indexOf(attribute_name);
                     value = info.attribute_values[index];
                 }
             } else {
