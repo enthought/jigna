@@ -107,7 +107,10 @@ class Server(HasTraits):
 
     def update_context(self, request):
         """ Update the context on the JS side """
-
+        # This method is called on a page reload or if a new client is used.
+        # In these cases, the visited_type_names is no longer relevant as the
+        # new client does not have the required data, so clear it.
+        self._visited_type_names = set()
         return self._send_context_updated_event(self.context)
 
     def print_JS_message(self, request):

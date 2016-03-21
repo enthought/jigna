@@ -293,6 +293,30 @@ class TestJignaQt(unittest.TestCase):
         else:
             raise AssertionError("Async method not finished")
 
+    def test_reload_works_correctly(self):
+        # Given
+        fred = self.fred
+        fred.fruits = ["peach", "pear"]
+        dino = Person(name="Dino", age=10)
+        fred.friends = [dino]
+        fred.phonebook = {'joe' : 123, 'joan' : 345}
+        wilma = Person(name='Wilma', age=40)
+        fred.spouse = wilma
+
+        # When
+        self.execute_js("window.location.reload();")
+
+        # Then
+        self.assertJSEqual("jigna.models.model.name", fred.name)
+        self.assertJSEqual("jigna.models.model.friends[0].name", "Dino")
+        self.assertJSEqual("jigna.models.model.friends[0].age", 10)
+        self.assertJSEqual("jigna.models.model.phonebook.joe", 123)
+        self.assertJSEqual("jigna.models.model.phonebook.joan", 345)
+        self.assertJSEqual("jigna.models.model.phonebook", fred.phonebook)
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+        self.assertJSEqual("jigna.models.model.spouse.name", 'Wilma')
+        self.assertJSEqual("jigna.models.model.spouse.age", 40)
+
 
 if __name__ == "__main__":
     unittest.main()
