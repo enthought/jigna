@@ -1,23 +1,49 @@
 from threading import Thread
+import time
+import sys
 import unittest
 from unittest import skip
-import time
 
 try:
     from tornado.ioloop import IOLoop
-    from selenium import webdriver
 except ImportError:
     raise unittest.SkipTest("Tornado not installed")
 
+try:
+    from selenium import webdriver
+except ImportError:
+    raise unittest.SkipTest("selenium not installed")
+
 # Local imports.
-from jigna.api import Template, VueTemplate, WebApp
 from jigna.utils.web import get_free_port
 from test_jigna_qt import TestJignaQt, Person, body_html
+
+
+def patch_sys_modules():
+    backup = sys.modules.copy()
+    for name in list(sys.modules.keys()):
+        if 'PySide' in name or 'PyQt' in name:
+            del sys.modules[name]
+
+    return backup
+
+def restore_sys_modules(backup):
+    sys.modules = backup
+
+def assert_no_qt_in_sys_modules():
+    for name in list(sys.modules.keys()):
+        if 'PySide' in name or 'PyQt' in name:
+            raise AssertionError("Qt import found: %s."%name)
 
 
 class TestJignaWebSync(TestJignaQt):
     @classmethod
     def setUpClass(cls, async=False):
+
+        cls._backup_modules = patch_sys_modules()
+
+        from jigna.template import Template
+        from jigna.web_app import WebApp
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
         template = Template(body_html=body_html, async=async)
@@ -43,6 +69,12 @@ class TestJignaWebSync(TestJignaQt):
         cls.browser.quit()
         IOLoop.instance().stop()
         time.sleep(1)
+
+        # Smells a bit but doing this here ensures that none of the tested
+        # cases imports Qt.
+        assert_no_qt_in_sys_modules()
+
+        restore_sys_modules(cls._backup_modules)
 
     def setUp(self):
         cls = self.__class__

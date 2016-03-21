@@ -38,7 +38,7 @@ def start_web_app(template, context, port=8000):
     template and context.
     """
     from tornado.ioloop import IOLoop
-    from jigna.api import WebApp
+    from jigna.web_app import WebApp
 
     ioloop = IOLoop.instance()
 

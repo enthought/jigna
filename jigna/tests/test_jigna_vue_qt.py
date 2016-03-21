@@ -1,7 +1,3 @@
-from jigna.api import HTMLWidget, VueTemplate
-from jigna.utils import gui
-from jigna.qt import QtGui
-
 import unittest
 
 from test_jigna_qt import Person, TestJignaQt
@@ -42,6 +38,9 @@ class TestJignaVueQt(TestJignaQt):
 
     @classmethod
     def setUpClass(cls):
+        from jigna.api import HTMLWidget, VueTemplate
+        from jigna.utils import gui
+        from jigna.qt import QtGui
         qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
         template = VueTemplate(body_html=body_vue_html)
         fred = Person(name='Fred', age=42)
