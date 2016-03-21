@@ -9,17 +9,19 @@ class TestJignaWebAsync(TestJignaWebSync):
     def setUpClass(cls):
         super(TestJignaWebAsync, cls).setUpClass(async=True)
 
-    def _sleep(self):
-        # Yield to the server thread.
-        time.sleep(0)
+    def get_attribute(self, js, expect):
+        self.reset_user_var()
+        get_js = """return %s;"""%js
+        self.execute_js(get_js)
 
-    def setUp(self):
-        super(TestJignaWebAsync, self).setUp()
-        self.fred.on_trait_change(self._sleep)
-
-    def tearDown(self):
-        super(TestJignaWebAsync, self).tearDown()
-        self.fred.on_trait_change(self._sleep, remove=True)
+        check_js = get_js
+        result = self.execute_js(check_js)
+        count = 0
+        while (result != expect) and count < 10:
+            time.sleep(0.1)
+            result = self.execute_js(check_js)
+            count += 1
+        return result
 
     def test_callable(self):
         fred = self.fred
@@ -35,26 +37,6 @@ class TestJignaWebAsync(TestJignaWebSync):
         self.assertEqual(fred.called_with, [1,2])
         self.execute_js("var x; jigna.models.model.method(jigna.models.model.spouse).done(function(r){x=r;}); return x;")
         self.assertEqual(fred.called_with, wilma)
-
-    def test_list_sortable(self):
-        # Given
-        fred = self.fred
-        self.execute_js(
-            "jigna.models.model.fruits = ['peach', 'apple', 'banana']"
-        )
-        self.assertJSEqual(
-            "jigna.models.model.fruits", ['peach', 'apple', 'banana']
-        )
-
-        # When
-        self.execute_js("jigna.models.model.fruits.sort()")
-        self.get_attribute("jigna.models.model.fruits", None)
-
-        # Then
-        self.assertJSEqual(
-            "jigna.models.model.fruits", ['apple', 'banana', 'peach']
-        )
-        self.assertEqual(fred.fruits, ['apple', 'banana', 'peach'])
 
 
 
