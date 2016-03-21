@@ -11,16 +11,18 @@ class TestJignaWebAsync(TestJignaWebSync):
 
     def get_attribute(self, js, expect):
         self.reset_user_var()
-        get_js = """return %s;"""%js
+        get_js = """jigna.wait_for(\'%s\').done(function(result)
+                                {jigna.user = result;})"""%js
         self.execute_js(get_js)
 
-        check_js = get_js
+        check_js = "return jigna.user;"
         result = self.execute_js(check_js)
         count = 0
-        while (result != expect) and count < 10:
+        while (result is not None) and (result != expect) and count < 10:
             time.sleep(0.1)
             result = self.execute_js(check_js)
             count += 1
+        self.reset_user_var()
         return result
 
     def test_callable(self):
