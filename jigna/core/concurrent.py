@@ -16,6 +16,11 @@ from traits.api import (HasTraits, Any, Range, Undefined, Instance, Str,
     Property, Enum, ReadOnly, DelegatesTo, Event)
 
 
+def set_trait_later(obj, trait, value):
+    from ..utils import gui
+    gui.set_trait_later(obj, trait, value)
+
+
 ################################################################################
 # `Signal` class.
 ################################################################################
@@ -226,7 +231,6 @@ class Deferred(HasTraits):
             and set the progress to 1.0
         """
         if self.dispatch == 'ui':
-            from ..utils.gui import set_trait_later
             promise = self.promise
             set_trait_later(promise, '_result', value)
             set_trait_later(promise, '_progress', 1.0)
@@ -240,7 +244,6 @@ class Deferred(HasTraits):
     def error(self, value):
         """ Complete the deferred with failure and specified result. """
         if self.dispatch == 'ui':
-            from ..utils.gui import set_trait_later
             promise = self.promise
             set_trait_later(promise, '_error', value)
             set_trait_later(promise, '_status', 'error')
@@ -252,7 +255,6 @@ class Deferred(HasTraits):
     def progress(self, value):
         """ Set the progress of the operation (0 <= value <= 1). """
         if self.dispatch == 'ui':
-            from ..utils.gui import set_trait_later
             set_trait_later(self.promise, '_progress', value)
         else:
             with self.promise._lock:
