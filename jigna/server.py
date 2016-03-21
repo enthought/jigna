@@ -275,9 +275,12 @@ class Server(HasTraits):
         """
         def _getattr(obj, name):
             v = getattr(obj, name)
-            if isinstance(v, (list, dict)):
-                v = type(v)()
+            if isinstance(v, list):
+                v = []
+            elif isinstance(v, dict):
+                v = {}
             return v
+
         return [self._marshal(_getattr(obj, name)) for name in attribute_names]
 
 
