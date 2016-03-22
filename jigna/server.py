@@ -174,7 +174,6 @@ class Server(HasTraits):
 
     def get_instance_attribute(self, request):
         """ Get the value of an instance attribute. """
-
         obj            = self._id_to_object_map[request['id']]
         attribute_name = request['attribute_name']
 
@@ -287,7 +286,8 @@ class Server(HasTraits):
     def _get_dict_info(self, obj):
         """ Get a description of a dict. """
 
-        return dict(keys=obj.keys(), values=self._marshal_all(obj.values()))
+        values = self._get_list_info(list(obj.values()))
+        return dict(keys=list(obj.keys()), values=values)
 
     def _get_event_names(self, obj):
         """ Get the names of all the attributes on an object.
@@ -312,12 +312,13 @@ class Server(HasTraits):
     def _get_instance_info(self, obj):
         """ Get a description of an instance. """
 
-        type_name = type(obj).__module__ + '.' + type(obj).__name__
+        type_name = self._get_type_name(obj)
 
         # The first time we send the details of a type over to the client we
         # need to include the full info for it (its attributes, events and
         # methods etc)...
         if type_name not in self._visited_type_names:
+            self._visited_type_names.add(type_name)
             attribute_names = self._get_attribute_names(obj)
             attribute_values = self._get_attribute_values(
                 obj, attribute_names
@@ -329,7 +330,6 @@ class Server(HasTraits):
                 event_names      = self._get_event_names(obj),
                 method_names     = self._get_public_method_names(type(obj))
             )
-            self._visited_type_names.add(type_name)
 
         # ... for subsequent calls, we only need to send the type name as the
         # the client will have already built a prototype based on the previous
@@ -341,8 +341,15 @@ class Server(HasTraits):
 
     def _get_list_info(self, obj):
         """ Get a description of a list. """
+        data = self._marshal_all(obj)
+        new_types = {}
+        for x in data:
+            if x['type'] == 'instance' and len(x['info']) > 1:
+                new_types[x['info']['type_name']] = x['info']
 
-        return dict(length=len(obj), data=self._marshal_all(obj))
+        return dict(
+            length=len(obj), data=self._marshal_all(obj), new_types=new_types
+        )
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
@@ -363,6 +370,10 @@ class Server(HasTraits):
                         public_method_names.append(name)
 
         return public_method_names
+
+    def _get_type_name(self, obj):
+        t = type(obj)
+        return t.__module__ + '.' + t.__name__
 
     def _marshal(self, obj):
         """ Marshal a value. """
@@ -450,10 +461,12 @@ class Server(HasTraits):
 
         if isinstance(new, TraitListEvent):
             trait_name  = trait_name[:-len('_items')]
-            new = [new.index, len(new.removed)] + new.added
             value = id(getattr(obj, trait_name))
-            info = self._marshal(new)
-            data = dict(type='list', value=value, info=info['info'])
+            info = dict(
+                index=new.index, removed=len(new.removed),
+                added=self._get_list_info(new.added)
+            )
+            data = dict(type='list', value=value, info=info)
             items_event = True
         elif isinstance(new, TraitDictEvent):
             trait_name  = trait_name[:-len('_items')]
@@ -462,8 +475,7 @@ class Server(HasTraits):
             added, removed = new.added, list(new.removed.keys())
             for key in new.changed:
                 added[key] = trait[key]
-            added = dict((k, self._marshal(v)) for k, v in added.items())
-            info = [removed, added]
+            info = dict(removed=removed, added=self._get_dict_info(added))
             data = dict(type='dict', value=value, info=info)
             items_event = True
 

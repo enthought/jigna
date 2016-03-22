@@ -2,6 +2,11 @@
 // ProxyFactory
 ///////////////////////////////////////////////////////////////////////////////
 
+jigna._SavedData = function(data) {
+    // Used internally to save marshaled data to unmarshal later.
+    this.data = data;
+}
+
 jigna.ProxyFactory = function(client) {
     // Private protocol.
     this._client = client;
@@ -64,7 +69,9 @@ jigna.ProxyFactory.prototype._add_instance_attribute = function(proxy, attribute
                 var info = this.__info__;
                 if (info && (info.attribute_values !== undefined)) {
                     var index = info.attribute_names.indexOf(attribute_name);
-                    value = info.attribute_values[index];
+                    value = this.__client__._unmarshal(
+                        info.attribute_values[index]
+                    );
                 }
             } else {
                 this.__cache__[attribute_name] = value;
@@ -174,6 +181,8 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
         constructor.prototype, '__type_name__', {value : info.type_name}
     );
 
+    this._type_to_constructor_map[info.type_name] = constructor;
+
     return constructor;
 }
 
@@ -184,11 +193,7 @@ jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
     // actual proxies as from those.
     constructor = this._type_to_constructor_map[info.type_name];
     if (constructor === undefined) {
-        info.attribute_values = this._client._unmarshal_all(
-            info.attribute_values
-        );
         constructor = this._create_instance_constructor(info);
-        this._type_to_constructor_map[info.type_name] = constructor;
     }
 
     return new constructor('instance', id, this._client);
@@ -216,23 +221,26 @@ jigna.ProxyFactory.prototype._delete_dict_keys = function(proxy) {
 jigna.ProxyFactory.prototype._populate_dict_proxy = function(proxy, info) {
     var index, key;
 
-    for (index=0; index<info.keys.length; index++) {
+    var values = info.values;
+    for (key in values.new_types) {
+        this._create_instance_constructor(values.new_types[key]);
+    }
+
+    for (index=0; index < info.keys.length; index++) {
         key = info.keys[index];
         this._add_item_attribute(proxy, key);
-        proxy.__cache__[key] = this._client._unmarshal(info.values[index]);
+        proxy.__cache__[key] = new jigna._SavedData(values.data[index]);
     }
 };
 
 jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
     var cache = proxy.__cache__;
-    var key, added, removed;
-    removed = info[0];
-    added = info[1];
+    var key, removed;
+    removed = info.removed;
 
-    for (key in added) {
-        cache[key] = this._client._unmarshal(added[key]);
-        this._add_item_attribute(proxy, key);
-    }
+    // Add the keys in the added.
+    this._populate_dict_proxy(proxy, info.added);
+
     for (var index=0; index < removed.length; index++) {
         key = removed[index];
         delete cache[key];
@@ -259,11 +267,15 @@ jigna.ProxyFactory.prototype._delete_list_items = function(proxy) {
 jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     /* Populate the items in a list proxy. */
 
+    for (var key in info.new_types) {
+        this._create_instance_constructor(info.new_types[key]);
+    }
+
     var data = info.data;
     for (var index=0; index < info.length; index++) {
         this._add_item_attribute(proxy, index);
         if (data !== undefined) {
-            proxy.__cache__[index] = this._client._unmarshal(data[index]);
+            proxy.__cache__[index] = new jigna._SavedData(data[index]);
         }
     }
 
@@ -274,7 +286,16 @@ jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     /* Update the given proxy.
      *
      */
-    var splice_args = this._client._unmarshal_all(info.data);
+
+    // Register any new types.
+    for (var key in info.added.new_types) {
+        this._create_instance_constructor(info.added.new_types[key]);
+    }
+
+    var splice_args = [info.index, info.removed].concat(
+        info.added.data.map(function(x) {return new jigna._SavedData(x);})
+    );
+
     var extra = splice_args.length - 2 - splice_args[1];
     var cache = proxy.__cache__;
     var end = cache.length;
@@ -300,6 +321,9 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
         var value = this.__cache__[index];
         if (value === undefined) {
             value = this.__client__.get_attribute(this, index);
+            this.__cache__[index] = value;
+        } else if (value instanceof jigna._SavedData) {
+            value = this.__client__._unmarshal(value.data);
             this.__cache__[index] = value;
         }
 
