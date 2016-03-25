@@ -56,10 +56,7 @@ class HTMLWidget(QtGui.QWidget):
     def closeEvent(self, event):
         """ Called when there is a request to close the widget. """
 
-        print 'HTMLWidget.closeEvent'
-
         if event.isAccepted():
-            print 'shutting down server'
             self._server.shutdown()
             self._server = None
             
