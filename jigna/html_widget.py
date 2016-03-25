@@ -21,7 +21,7 @@ from .qt_server import QtServer
 class HTMLWidget(QtGui.QWidget):
     """ A Qt based HTML widget to render a jigna UI. """
 
-    #### 'object' protocol #####################################################
+    #### 'object' protocol ####################################################
     
     def __init__(
         self, parent=None, window_flags=0, context=None, template=None,
@@ -51,6 +51,18 @@ class HTMLWidget(QtGui.QWidget):
 
         return self._server.webview.execute_js(js)
 
+    #### 'QWidget' protocol ###################################################
+
+    def closeEvent(self, event):
+        """ Called when there is a request to close the widget. """
+
+        print 'HTMLWidget.closeEvent'
+
+        if event.isAccepted():
+            print 'shutting down server'
+            self._server.shutdown()
+            self._server = None
+            
     #### Private protocol #####################################################
 
     def _create_server(self):

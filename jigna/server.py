@@ -103,6 +103,20 @@ class Server(HasTraits):
 
         return json.dumps(response, default=lambda obj: repr(type(obj)));
 
+    def shutdown(self):
+        """ Shutdown the server.
+
+        This unhooks the listeners to trait change events on any objects
+        that we know about.
+
+        """
+
+        for obj in self._id_to_object_map.values():
+            if isinstance(obj, HasTraits):
+                obj.on_trait_change(
+                    self._send_object_changed_event, remove=True
+                )
+
     #### Handlers for each kind of request ####################################
 
     def update_context(self, request):
