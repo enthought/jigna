@@ -463,8 +463,8 @@ class Server(HasTraits):
             # what (if any) proxy we need to create.
             data = self._marshal(new),
 
-            # fixme: This is how we currently detect an 'xxx_items' event on the
-            # JS side.
+            # fixme: This is how we currently detect an 'xxx_items' event on
+            # the JS side.
             items_event = items_event
         )
 
