@@ -1,7 +1,5 @@
 from traits.api import Dict, HasTraits, Instance, Int, Str, List, Event
-from jigna.api import HTMLWidget, Template, VueTemplate
-from jigna.utils import gui
-from jigna.qt import QtGui
+from jigna.template import Template
 
 import unittest
 import time
@@ -66,6 +64,9 @@ class TestJignaQt(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from jigna.qt import QtGui
+        from jigna.html_widget import HTMLWidget
+        from jigna.utils import gui
         qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
         template = Template(body_html=body_html)
         fred = Person(name='Fred', age=42)
@@ -86,6 +87,7 @@ class TestJignaQt(unittest.TestCase):
         self.fred.method_slow_called_with = None
 
     def execute_js(self, js):
+        from jigna.utils import gui
         gui.process_events()
         result = self.widget.execute_js(js)
         gui.process_events()

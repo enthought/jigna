@@ -1,7 +1,6 @@
 #
-# Enthought product code
 #
-# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# (C) Copyright 2013-2016 Enthought, Inc., Austin, TX
 # All right reserved.
 #
 
@@ -16,8 +15,11 @@ from functools import wraps
 from traits.api import (HasTraits, Any, Range, Undefined, Instance, Str,
     Property, Enum, ReadOnly, DelegatesTo, Event)
 
-# Local imports.
-from ..utils.gui import invoke_later, set_trait_later
+
+def set_trait_later(obj, trait, value):
+    from ..utils import gui
+    gui.set_trait_later(obj, trait, value)
+
 
 ################################################################################
 # `Signal` class.
@@ -58,6 +60,7 @@ def do_callback(dispatch, callback, *args):
     """Invoke the callback with a suitable dispatch.
     """
     if dispatch == 'ui':
+        from ..utils.gui import invoke_later
         invoke_later(callback, *args)
     else:
         callback(*args)
@@ -173,6 +176,7 @@ class Promise(HasTraits):
     def _get_progress(self):
         with self._lock:
             return self._progress
+
 
 
 ################################################################################

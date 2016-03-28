@@ -3,19 +3,26 @@ import unittest
 
 try:
     from tornado.ioloop import IOLoop
-    from selenium import webdriver
 except ImportError:
     raise unittest.SkipTest("Tornado not installed")
 
+try:
+    from selenium import webdriver
+except ImportError:
+    raise unittest.SkipTest("selenium not installed")
+
 # Local imports.
-from jigna.api import VueTemplate, WebApp
 from jigna.utils.web import get_free_port
-from test_jigna_web import TestJignaWebSync, Person
+from test_jigna_web import TestJignaWebSync, Person, patch_sys_modules
 from test_jigna_vue_qt import body_vue_html
+
 
 class TestJignaVueWebSync(TestJignaWebSync):
     @classmethod
     def setUpClass(cls, async=False):
+        cls._backup_modules = patch_sys_modules()
+        from jigna.vue_template import VueTemplate
+        from jigna.web_app import WebApp
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
         template = VueTemplate(body_html=body_vue_html, async=async)

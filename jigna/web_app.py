@@ -21,10 +21,12 @@ class WebApp(web.Application):
     the web where it can be viewed using a regular web browser. """
 
     def __init__(self, handlers=None, default_host="", transforms=None,
-                 context=None, template=None, **kw):
+                 context=None, template=None, trait_change_dispatch="same",
+                 **kw):
 
         self.context = context
         self.template = template
+        self.trait_change_dispatch = trait_change_dispatch
 
         if handlers is None:
             handlers = []
@@ -42,9 +44,10 @@ class WebApp(web.Application):
 
         # Set up the WebServer to serve the domain models in context
         server = WebServer(
-            base_url    = join(os.getcwd(), self.template.base_url),
-            html        = self.template.html,
-            context     = self.context
+            base_url              = join(os.getcwd(), self.template.base_url),
+            html                  = self.template.html,
+            context               = self.context,
+            trait_change_dispatch = self.trait_change_dispatch
         )
 
         return server.handlers
