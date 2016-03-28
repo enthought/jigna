@@ -277,9 +277,9 @@ class TestJignaQt(unittest.TestCase):
         """)
 
         # The following is a way to test async methods.
-        # Basically, we keep on checking for a condition which becomes true when
-        # the function is finished, and raise an error if the timeout occurs before
-        # the condition becomes true
+        # Basically, we keep on checking for a condition which becomes true
+        # when the function is finished, and raise an error if the timeout
+        # occurs before the condition becomes true
         timeout = 1.5
         dt = 0.1
         for i in range(int(timeout/dt)):

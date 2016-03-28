@@ -58,8 +58,7 @@ class HTMLWidget(QtGui.QWidget):
 
         if event.isAccepted():
             self._server.shutdown()
-            self._server = None
-            
+
     #### Private protocol #####################################################
 
     def _create_server(self):
