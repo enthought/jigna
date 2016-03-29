@@ -12,10 +12,6 @@ mimeInitialized = False
 
 logger = logging.getLogger(__name__)
 
-# On Windows, the mime type for 'ttf' (True Type Fonts) isn't recognized
-# correctly. We, therefore, add the correct mime type here.
-mimetypes.add_type('application/font-sfnt', '.ttf')
-
 
 def guess_type(path):
     """ Thread-safe wrapper around the @#%^$$# non-thread safe mimetypes module. NEVER
@@ -30,7 +26,14 @@ def guess_type(path):
         with mimeLock:
             if not mimeInitialized:
                 mimetypes.init()
+
+                # On Windows, the mime type for 'ttf' (True Type Fonts) isn't
+                # recognized correctly. We, therefore, add the correct mime
+                # type here.
+                mimetypes.add_type('application/font-sfnt', '.ttf')
+
                 mimeInitialized = True
+
     guessed = mimetypes.guess_type(path)
 
     return (guessed[0] or "", guessed[1] or "")
