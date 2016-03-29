@@ -33,10 +33,7 @@ def guess_type(path):
                 mimeInitialized = True
     guessed = mimetypes.guess_type(path)
 
-    guessed[0] = guessed[0] or ""
-    guessed[1] = guessed[1] or ""
-
-    return guessed
+    return (guessed[0] or "", guessed[1] or "")
 
 
 class FileLoader(HasTraits):
