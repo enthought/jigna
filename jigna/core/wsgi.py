@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # On Windows, the mime type for 'ttf' (True Type Fonts) isn't recognized
 # correctly. We, therefore, add the correct mime type here.
-mimetypes.add_type('application/x-font-ttf', '.ttf')
+mimetypes.add_type('application/font-sfnt', '.ttf')
 
 
 def guess_type(path):
