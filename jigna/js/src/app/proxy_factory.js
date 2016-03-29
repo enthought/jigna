@@ -220,31 +220,44 @@ jigna.ProxyFactory.prototype._delete_dict_keys = function(proxy) {
 
 jigna.ProxyFactory.prototype._populate_dict_proxy = function(proxy, info) {
     var index, key;
-
     var values = info.values;
-    for (key in values.new_types) {
-        this._create_instance_constructor(values.new_types[key]);
+
+    if (values !== undefined) {
+        for (key in values.new_types) {
+            this._create_instance_constructor(values.new_types[key]);
+        }
     }
 
     for (index=0; index < info.keys.length; index++) {
         key = info.keys[index];
         this._add_item_attribute(proxy, key);
-        proxy.__cache__[key] = new jigna._SavedData(values.data[index]);
+        if (values !== undefined) {
+            proxy.__cache__[key] = new jigna._SavedData(values.data[index]);
+        }
     }
 };
 
 jigna.ProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
-    var cache = proxy.__cache__;
-    var key, removed;
-    removed = info.removed;
+    var removed = info.removed;
 
-    // Add the keys in the added.
-    this._populate_dict_proxy(proxy, info.added);
+    if (removed !== undefined) {
+        // The async case has an additional removed key.
+        var cache = proxy.__cache__;
+        var key;
 
-    for (var index=0; index < removed.length; index++) {
-        key = removed[index];
-        delete cache[key];
-        delete proxy[key];
+        // Add the keys in the added.
+        this._populate_dict_proxy(proxy, info.added);
+
+        for (var index=0; index < removed.length; index++) {
+            key = removed[index];
+            delete cache[key];
+            delete proxy[key];
+        }
+    } else {
+        // The sync case.
+        proxy.__cache__ = {};
+        this._delete_dict_keys(proxy);
+        this._populate_dict_proxy(proxy, info);
     }
 };
 
@@ -283,32 +296,44 @@ jigna.ProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
 };
 
 jigna.ProxyFactory.prototype._update_list_proxy = function(proxy, info) {
-    /* Update the given proxy.
-     *
-     */
-
-    // Register any new types.
-    for (var key in info.added.new_types) {
-        this._create_instance_constructor(info.added.new_types[key]);
-    }
-
-    var splice_args = [info.index, info.removed].concat(
-        info.added.data.map(function(x) {return new jigna._SavedData(x);})
-    );
-
-    var extra = splice_args.length - 2 - splice_args[1];
-    var cache = proxy.__cache__;
-    var end = cache.length;
-    if (extra < 0) {
-        for (var index=end; index > (end+extra) ; index--) {
-            delete proxy[index-1];
+    /* Update the given proxy. */
+    if (info.added !== undefined) {
+        // For the async case
+        // Register any new types.
+        for (var key in info.added.new_types) {
+            this._create_instance_constructor(info.added.new_types[key]);
         }
+
+        var splice_args = [info.index, info.removed].concat(
+            info.added.data.map(function(x) {return new jigna._SavedData(x);})
+        );
+
+        var extra = splice_args.length - 2 - splice_args[1];
+        var cache = proxy.__cache__;
+        var end = cache.length;
+        if (extra < 0) {
+            for (var index=end; index > (end+extra) ; index--) {
+                delete proxy[index-1];
+            }
+        } else {
+            for (var index=0; index < extra; index++){
+                this._add_item_attribute(proxy, end+index);
+            }
+        }
+        cache.splice.apply(cache, splice_args);
     } else {
-        for (var index=0; index < extra; index++){
-            this._add_item_attribute(proxy, end+index);
-        }
+
+        /* This is the sync case.
+         * This removes all previous items and then repopulates the proxy with
+         * items that reflect the (possibly) new length.
+         */
+        this._delete_list_items(proxy);
+        this._populate_list_proxy(proxy, info);
+
+        // Get rid of any cached items (items we have already requested from
+        // the server-side.
+        proxy.__cache__ = []
     }
-    cache.splice.apply(cache, splice_args);
 };
 
 // Common for list and dict proxies ////////////////////////////////////////////

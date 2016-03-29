@@ -15,8 +15,8 @@ import traceback
 
 # Enthought library.
 from traits.api import (
-    Any, Dict, Event, HasTraits, Instance, Property, Str, TraitDictEvent,
-    TraitListEvent
+    Any, Bool, Dict, Event, HasTraits, Instance, Property, Str,
+    TraitDictEvent, TraitListEvent
 )
 
 # Logging.
@@ -38,6 +38,10 @@ class Server(HasTraits):
     """ Server that serves a Jigna view. """
 
     #### 'Server' protocol ####################################################
+
+    #: Use async communication, this is useful when the client only
+    # communicates via websockets.
+    async = Bool(False)
 
     #: Base url for serving content.
     base_url = Property(Str, depends_on='_base_url')
@@ -302,9 +306,11 @@ class Server(HasTraits):
 
     def _get_dict_info(self, obj):
         """ Get a description of a dict. """
-
-        values = self._get_list_info(list(obj.values()))
-        return dict(keys=list(obj.keys()), values=values)
+        if self.async:
+            values = self._get_list_info(list(obj.values()))
+            return dict(keys=list(obj.keys()), values=values)
+        else:
+            return dict(keys=obj.keys())
 
     def _get_event_names(self, obj):
         """ Get the names of all the attributes on an object.
@@ -337,16 +343,17 @@ class Server(HasTraits):
         if type_name not in self._visited_type_names:
             self._visited_type_names.add(type_name)
             attribute_names = self._get_attribute_names(obj)
-            attribute_values = self._get_attribute_values(
-                obj, attribute_names
-            )
             info = dict(
                 type_name        = type_name,
                 attribute_names  = attribute_names,
-                attribute_values = attribute_values,
                 event_names      = self._get_event_names(obj),
                 method_names     = self._get_public_method_names(type(obj))
             )
+            if self.async:
+                attribute_values = self._get_attribute_values(
+                    obj, attribute_names
+                )
+                info['attribute_values'] = attribute_values
 
         # ... for subsequent calls, we only need to send the type name as the
         # the client will have already built a prototype based on the previous
@@ -358,15 +365,16 @@ class Server(HasTraits):
 
     def _get_list_info(self, obj):
         """ Get a description of a list. """
-        data = self._marshal_all(obj)
-        new_types = {}
-        for x in data:
-            if x['type'] == 'instance' and len(x['info']) > 1:
-                new_types[x['info']['type_name']] = x['info']
+        if self.async:
+            data = self._marshal_all(obj)
+            new_types = {}
+            for x in data:
+                if x['type'] == 'instance' and len(x['info']) > 1:
+                    new_types[x['info']['type_name']] = x['info']
 
-        return dict(
-            length=len(obj), data=self._marshal_all(obj), new_types=new_types
-        )
+            return dict(length=len(obj), data=data, new_types=new_types)
+        else:
+            return dict(length=len(obj))
 
     def _get_public_method_names(self, cls):
         """ Get the names of all public methods on a class.
@@ -472,6 +480,45 @@ class Server(HasTraits):
 
     def _send_object_changed_event(self, obj, trait_name, old, new):
         """ Send an object changed event. """
+        if self.async:
+            return self._send_object_changed_event_async(
+                obj, trait_name, old, new
+            )
+
+        if trait_name.startswith('_'):
+            return
+
+        if isinstance(new, (TraitListEvent, TraitDictEvent)):
+            trait_name  = trait_name[:-len('_items')]
+            new         = getattr(obj, trait_name)
+            items_event = True
+
+        else:
+            # fixme: intent is non-scalar or maybe container?
+            if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
+                self._register_object(new)
+
+            items_event = False
+
+        event = dict(
+            obj  = str(id(obj)),
+            name = trait_name,
+            # fixme: This smells a bit, but marshalling the new value gives us
+            # a type/value pair which we need on the client side to determine
+            # what (if any) proxy we need to create.
+            data = self._marshal(new),
+
+            # fixme: This is how we currently detect an 'xxx_items' event on
+            # the JS side.
+            items_event = items_event
+        )
+
+        self.send_event(event)
+
+        return
+
+    def _send_object_changed_event_async(self, obj, trait_name, old, new):
+        """ Send an object changed event. """
 
         if trait_name.startswith('_'):
             return
@@ -485,6 +532,7 @@ class Server(HasTraits):
             )
             data = dict(type='list', value=value, info=info)
             items_event = True
+
         elif isinstance(new, TraitDictEvent):
             trait_name  = trait_name[:-len('_items')]
             trait = getattr(obj, trait_name)

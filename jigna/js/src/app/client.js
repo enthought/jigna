@@ -70,12 +70,15 @@ jigna.Client.prototype.on_object_changed = function(event){
         // For us(!), it means that we won't have seen the new list before we
         // get an items changed event on it.
         if (collection_proxy === undefined) {
-            collection_proxy = proxy.__cache__[event.name];
-            this._id_to_proxy_map[event.data.value] = collection_proxy;
+            proxy.__cache__[event.name] = this._create_proxy(
+                event.data.type, event.data.value, event.data.info
+            );
+
+        } else {
+            this._proxy_factory.update_proxy(
+                collection_proxy, event.data.type, event.data.info
+            );
         }
-        this._proxy_factory.update_proxy(
-            collection_proxy, event.data.type, event.data.info
-        );
 
     } else {
         proxy.__cache__[event.name] = this._unmarshal(event.data);
@@ -316,15 +319,4 @@ jigna.Client.prototype._unmarshal = function(obj) {
             return value;
         }
     }
-};
-
-jigna.Client.prototype._unmarshal_all = function(objs) {
-    var index;
-
-    for (index in objs) {
-        objs[index] = this._unmarshal(objs[index]);
-    }
-
-    // For convenience, as we modify the array in-place.
-    return objs;
 };
