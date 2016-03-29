@@ -48,8 +48,8 @@ class QtBridge(Bridge):
             raise RuntimeError("WebView does not exist")
 
         else:
-            # This looks weird but this is how we fake an event being 'received'
-            # on the client side when using the Qt bridge!
+            # This looks weird but this is how we fake an event being
+            # 'received' on the client side when using the Qt bridge!
             self.webview.execute_js(
                 'jigna.client.bridge.handle_event(%r);' % jsonized_event
             )
@@ -68,8 +68,10 @@ class QtServer(Server):
     #### 'Server' protocol ####################################################
 
     def __init__(self, **traits):
-        """ Initialize the Qt server. This simply configures the widget to serve
-        the Python model.
+        """ Initialize the Qt server.
+
+        This simply configures the widget to serve the Python model.
+        
         """
 
         # This statement makes sure that when we dispatch traits events on the
@@ -89,6 +91,17 @@ class QtServer(Server):
 
     #: The trait change dispatch mechanism to use when traits change.
     trait_change_dispatch = Str('ui')
+
+    def shutdown(self):
+        """ Shutdown the server.
+
+        Overridden to make sure we close up the QWebView.
+
+        """
+
+        super(QtServer, self).shutdown()
+
+        self.webview.close()
 
     ### 'QtServer' protocol ##################################################
 
@@ -128,7 +141,7 @@ class QtServer(Server):
         """ Allow generic qwidgets to be embedded in the generated QWebView.
         """
         global_settings = QtWebKit.QWebSettings.globalSettings()
-        global_settings.setAttribute(QtWebKit.QWebSettings.PluginsEnabled, True)
+        global_settings.setAttribute(QtWebKit.QWebSettings.PluginsEnabled,True)
 
         self._plugin_factory = QtWebPluginFactory(context=self.context)
         self.webview.page().setPluginFactory(self._plugin_factory)

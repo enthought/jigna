@@ -89,5 +89,21 @@ class TestHTMLWidget(unittest.TestCase):
         self.assertEqual(attr1, self.model.attr1)
         self.assertEqual(attr2, self.model.attr2)
 
+    def test_events_are_not_sent_after_widget_is_closed(self):
+        # Given
+        template = Template(body_html="Attr1: {{model.attr1}}")
+        widget = HTMLWidget(template=template, context={'model': self.model})
+
+        # When
+        self.model.attr1 = "one"
+        widget.close()
+        self.model.attr1 = "two"
+
+        # Then
+        #
+        # After the widget is closed, we should not fire any further object
+        # changed events.
+        self.assertEqual(widget.execute_js("jigna.models.model.attr1"), "one")
+
 if __name__ == "__main__":
     unittest.main()
