@@ -64,8 +64,9 @@ class ProxyQWebView(QtWebKit.QWebView):
     def execute_js(self, js):
         """ Execute JavaScript synchronously.
 
-        Warning: under most circumstances, this method should not be called when
-        the page is loading.
+        Warning: under most circumstances, this method should not be called
+        when the page is loading.
+
         """
         frame = self._page.mainFrame()
         result = frame.evaluateJavaScript(js)
@@ -74,10 +75,10 @@ class ProxyQWebView(QtWebKit.QWebView):
         return result
 
     def expose_python_namespace(self, python_namespace, callbacks):
-        """
-        Exposes the given python namespace to Javascript, using which Javascript
-        can access the given list of callbacks as if they were methods on the
-        object described by the python namespace.
+        """ Exposes the given python namespace to Javascript.
+
+        Javascript can access the given list of callbacks as if they were
+        methods on the object described by the python namespace.
 
         python_namespace: str:
             Namespace to expose to the JS world. This creates an object of the
@@ -94,13 +95,14 @@ class ProxyQWebView(QtWebKit.QWebView):
 
             expose_python_namespace('python', ['say_hello', say_hello])
 
-        will create a window level object on the JS side which looks like this::
+        will create a window level object on the JS side which looks like
+        this::
 
             window.python.say_hello == <a function which calls Python land>
 
         """
         frame = self._page.mainFrame()
-        js_wrapper = create_js_object_wrapper(callbacks=callbacks, parent=frame)
+        js_wrapper = create_js_object_wrapper(callbacks=callbacks,parent=frame)
         frame.javaScriptWindowObjectCleared.connect(
             lambda: frame.addToJavaScriptWindowObject(
                 python_namespace, js_wrapper
@@ -132,11 +134,13 @@ class ProxyQWebView(QtWebKit.QWebView):
 
     @staticmethod
     def _apply_null_fix(obj):
-        """ Makes sure that None objects coming from Qt bridge are actually None.
+        """ Makes sure that None objects coming from Qt bridge are actually
+        None.
 
         We need this because NoneType objects coming from PyQt are of a
         `QPyNullVariant` type, not None. This method converts such objects to
         the standard None type.
+
         """
         if isinstance(obj, getattr(QtCore, 'QPyNullVariant', NoneType)):
             return None
