@@ -1,10 +1,8 @@
 # Standard library imports
 import threading
 import mimetypes
-import sys
-import os
 import logging
-from os.path import dirname, exists, join, sep
+from os.path import exists, join, sep
 
 # Enthought library imports
 from traits.api import HasTraits, Str, Dict, Directory, on_trait_change
@@ -14,9 +12,17 @@ mimeInitialized = False
 
 logger = logging.getLogger(__name__)
 
-def guess_type(content):
+# On Windows, the mime type for 'ttf' (True Type Fonts) isn't recognized
+# correctly. We, therefore, add the correct mime type here.
+mimetypes.add_type('application/x-font-ttf', '.ttf')
+
+
+def guess_type(path):
     """ Thread-safe wrapper around the @#%^$$# non-thread safe mimetypes module. NEVER
-        call mimetypes directly. """
+    call mimetypes directly.
+
+    """
+
     global mimeLock
     global mimeInitialized
 
@@ -25,10 +31,10 @@ def guess_type(content):
             if not mimeInitialized:
                 mimetypes.init()
                 mimeInitialized = True
-    guessed = mimetypes.guess_type(content)
+    guessed = mimetypes.guess_type(path)
 
-    if guessed[1] is None:
-        guessed = (guessed[0], "")
+    guessed[0] = guessed[0] or ""
+    guessed[1] = guessed[1] or ""
 
     return guessed
 
