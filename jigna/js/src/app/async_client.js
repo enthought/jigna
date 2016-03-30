@@ -166,3 +166,9 @@ jigna.AsyncClient.prototype.on_object_changed = function(event){
     // detects changes in its watchers.
     jigna.fire_event('jigna', {name: 'object_changed', object: proxy});
 };
+
+// Private protocol //////////////////////////////////////////////////////////
+
+jigna.AsyncClient.prototype._create_proxy_factory = function() {
+    return new jigna.AsyncProxyFactory(this);
+};

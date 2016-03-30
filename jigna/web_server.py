@@ -1,7 +1,5 @@
 #
-# Enthought product code
-#
-# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# (C) Copyright 2013-2016 Enthought, Inc., Austin, TX
 # All right reserved.
 #
 
@@ -19,7 +17,9 @@ from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler, StaticFileHandler
 
 # Enthought library.
-from traits.api import List, Str, Instance
+from traits.api import (
+    Bool, List, Str, Instance, TraitDictEvent, TraitListEvent
+)
 
 # Jigna library.
 from jigna.server import Bridge, Server
@@ -79,6 +79,10 @@ class WebServer(Server):
 
     ### 'WebServer' protocol ##################################################
 
+    #: Use async communication, this is useful when the client only
+    # communicates via websockets.
+    async = Bool(False)
+
     #: The list of tornado handlers which map URL patterns to callables
     handlers = List
     def _handlers_default(self):
@@ -114,6 +118,117 @@ class WebServer(Server):
     _bridge = Instance(WebBridge)
     def __bridge_default(self):
         return WebBridge()
+
+    def _get_attribute_values(self, obj, attribute_names):
+        """ Get the values of all 'public' attributes on an object.
+
+        Return a list of strings.
+
+        """
+        def _getattr(obj, name):
+            v = getattr(obj, name)
+            if isinstance(v, list):
+                v = []
+            elif isinstance(v, dict):
+                v = {}
+            return v
+
+        return [self._marshal(_getattr(obj, name)) for name in attribute_names]
+
+    def _get_dict_info(self, obj):
+        """ Get a description of a dict. """
+        if self.async:
+            values = self._get_list_info(list(obj.values()))
+            return dict(keys=list(obj.keys()), values=values)
+        else:
+            return super(WebServer, self)._get_dict_info(obj)
+
+    def _get_instance_info(self, obj):
+        """ Get a description of an instance. """
+
+        info = super(WebServer, self)._get_instance_info(obj)
+
+        if self.async:
+            # If this is a new type, also send the attribute_values.
+            if 'attribute_names' in info:
+                attribute_values = self._get_attribute_values(
+                    obj, info['attribute_names']
+                )
+                info['attribute_values'] = attribute_values
+
+        return info
+
+    def _get_list_info(self, obj):
+        """ Get a description of a list. """
+        if self.async:
+            data = self._marshal_all(obj)
+            new_types = {}
+            for x in data:
+                if x['type'] == 'instance' and len(x['info']) > 1:
+                    new_types[x['info']['type_name']] = x['info']
+
+            return dict(length=len(obj), data=data, new_types=new_types)
+        else:
+            return super(WebServer, self)._get_list_info(obj)
+
+    def _send_object_changed_event(self, obj, trait_name, old, new):
+        """ Send an object changed event. """
+        if not self.async:
+            return super(WebServer, self)._send_object_changed_event(
+                obj, trait_name, old, new
+            )
+
+        # Otherwise send all the async related info.
+
+        if trait_name.startswith('_'):
+            return
+
+        if isinstance(new, TraitListEvent):
+            trait_name  = trait_name[:-len('_items')]
+            value = id(getattr(obj, trait_name))
+            info = dict(
+                index=new.index, removed=len(new.removed),
+                added=self._get_list_info(new.added)
+            )
+            data = dict(type='list', value=value, info=info)
+            items_event = True
+
+        elif isinstance(new, TraitDictEvent):
+            trait_name  = trait_name[:-len('_items')]
+            trait = getattr(obj, trait_name)
+            value = id(trait)
+            added, removed = new.added, list(new.removed.keys())
+            for key in new.changed:
+                added[key] = trait[key]
+            info = dict(removed=removed, added=self._get_dict_info(added))
+            data = dict(type='dict', value=value, info=info)
+            items_event = True
+
+        else:
+            # fixme: intent is non-scalar or maybe container?
+            if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
+                self._register_object(new)
+
+            data = self._marshal(new)
+            items_event = False
+
+        event = dict(
+            obj  = str(id(obj)),
+            name = trait_name,
+            # fixme: This smells a bit, but marshalling the new value gives us
+            # a type/value pair which we need on the client side to determine
+            # what (if any) proxy we need to create.
+            data = data,
+
+            # fixme: This is how we currently detect an 'xxx_items' event on
+            # the JS side.
+            items_event = items_event
+        )
+
+        self.send_event(event)
+
+        return
+
 
 ##### Request handlers ########################################################
 
