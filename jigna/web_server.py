@@ -125,15 +125,23 @@ class WebServer(Server):
         Return a list of strings.
 
         """
-        def _getattr(obj, name):
-            v = getattr(obj, name)
-            if isinstance(v, list):
-                v = []
-            elif isinstance(v, dict):
-                v = {}
-            return v
 
-        return [self._marshal(_getattr(obj, name)) for name in attribute_names]
+        return [self._marshal(self._get_attribute_default(obj, name))
+                for name in attribute_names]
+
+    def _get_attribute_default(self, obj, name):
+        value = getattr(obj, name)
+        if isinstance(value, list):
+            value = []
+        elif isinstance(value, dict):
+            value = {}
+        elif hasattr(value, '__dict__'):
+            pass
+        elif value is None:
+            pass
+        else:
+            value = type(value)()
+        return value
 
     def _get_dict_info(self, obj):
         """ Get a description of a dict. """
@@ -173,6 +181,7 @@ class WebServer(Server):
 
     def _send_object_changed_event(self, obj, trait_name, old, new):
         """ Send an object changed event. """
+
         if not self.async:
             return super(WebServer, self)._send_object_changed_event(
                 obj, trait_name, old, new

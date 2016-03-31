@@ -99,11 +99,15 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
+    var constructor = this._type_to_constructor_map[info.type_name];
+    if (constructor !== undefined) {
+        return constructor;
+    }
+
     constructor = function(type, id, client) {
         jigna.Proxy.call(this, type, id, client);
 
         /* Listen for changes to the object that the proxy is a proxy for! */
-
         var index;
         var info = this.__info__;
 

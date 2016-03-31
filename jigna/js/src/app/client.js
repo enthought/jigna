@@ -216,8 +216,10 @@ jigna.Client.prototype._add_models = function(context) {
     var client = this;
     var models = {};
     $.each(context, function(model_name, model) {
-        proxy = client._add_model(model_name, model.value, model.info);
-        models[model_name] = proxy;
+        if (jigna.models[model_name] === undefined) {
+            proxy = client._add_model(model_name, model.value, model.info);
+            models[model_name] = proxy;
+        }
     });
 
     // Resolve the jigna.ready deferred, at this point the initial set of

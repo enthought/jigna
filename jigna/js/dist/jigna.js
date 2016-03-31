@@ -26696,8 +26696,10 @@ jigna.Client.prototype._add_models = function(context) {
     var client = this;
     var models = {};
     $.each(context, function(model_name, model) {
-        proxy = client._add_model(model_name, model.value, model.info);
-        models[model_name] = proxy;
+        if (jigna.models[model_name] === undefined) {
+            proxy = client._add_model(model_name, model.value, model.info);
+            models[model_name] = proxy;
+        }
     });
 
     // Resolve the jigna.ready deferred, at this point the initial set of
@@ -27083,11 +27085,15 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
+    var constructor = this._type_to_constructor_map[info.type_name];
+    if (constructor !== undefined) {
+        return constructor;
+    }
+
     constructor = function(type, id, client) {
         jigna.Proxy.call(this, type, id, client);
 
         /* Listen for changes to the object that the proxy is a proxy for! */
-
         var index;
         var info = this.__info__;
 
@@ -27376,6 +27382,7 @@ jigna.AsyncProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     return proxy;
 };
 
+
 jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     /* Update the given proxy. */
 
@@ -27402,6 +27409,7 @@ jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     }
     cache.splice.apply(cache, splice_args);
 };
+
 
 // Common for list and dict proxies ////////////////////////////////////////////
 

@@ -105,6 +105,7 @@ jigna.AsyncProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     return proxy;
 };
 
+
 jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     /* Update the given proxy. */
 
@@ -131,6 +132,7 @@ jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     }
     cache.splice.apply(cache, splice_args);
 };
+
 
 // Common for list and dict proxies ////////////////////////////////////////////
 
