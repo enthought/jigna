@@ -185,16 +185,28 @@ class AsyncWebServer(WebServer):
             return
 
         if isinstance(new, TraitListEvent):
-            # FIXME: This does not yet handle extended slices like:
-            # obj.list[::2] = [1,2,3]
-            # del obj.list[::2] etc.
-            # Note: can't do this with trait lists: obj.list[::-1] = [1,2,3]!
             trait_name  = trait_name[:-len('_items')]
             value = id(getattr(obj, trait_name))
-            info = dict(
-                index=new.index, removed=len(new.removed),
-                added=self._get_list_info(new.added)
-            )
+            if isinstance(new.index, slice):
+                # Handle an extended slice.  Note that one cannot increase the
+                # size of the list here.  So one is either deleting elements
+                # or changing them.
+                s = new.index
+                start = s.start if s.start <= s.stop else s.stop
+                stop = s.stop if s.stop >= s.start else s.start
+                added = new.added[0] if len(new.added) > 0 else []
+                info = dict(
+                    start=start, stop=stop, step=s.step,
+                    removed=len(new.removed[0]),
+                    added=self._get_list_info(added)
+                )
+            else:
+                # This information can be used by the Array.splice method.
+                info = dict(
+                    index=new.index, removed=len(new.removed),
+                    added=self._get_list_info(new.added)
+                )
+
             data = dict(type='list', value=value, info=info)
             items_event = True
 

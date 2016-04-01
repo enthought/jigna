@@ -150,6 +150,27 @@ class TestJignaQt(unittest.TestCase):
         self.execute_js("jigna.models.model.fruits = ['apple']")
         self.assertEqual(fred.fruits, ["apple"])
 
+    def test_list_slicing(self):
+        fred = self.fred
+        fred.fruits = ["peach", "pear", "banana", "fruit", "apple"]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        # Test that deleting a single element works.
+        del fred.fruits[3]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        # Now try a complex slice.
+        fred.fruits[::2] = ["mango", "litchi"]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        # Now try deleting a slice
+        del fred.fruits[::2]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        fred.fruits = ["peach", "pear", "banana", "fruit", "apple"]
+        del fred.fruits[::3]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
     def test_dict_of_primitives(self):
         self.assertJSEqual("jigna.models.model.phonebook", {})
         fred = self.fred

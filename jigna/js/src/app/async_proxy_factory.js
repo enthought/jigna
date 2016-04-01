@@ -105,7 +105,6 @@ jigna.AsyncProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     return proxy;
 };
 
-
 jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     /* Update the given proxy. */
 
@@ -114,23 +113,55 @@ jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
         this._create_instance_constructor(info.added.new_types[key]);
     }
 
-    var splice_args = [info.index, info.removed].concat(
-        info.added.data.map(function(x) {return new jigna._SavedData(x);})
-    );
-
-    var extra = splice_args.length - 2 - splice_args[1];
-    var cache = proxy.__cache__;
-    var end = cache.length;
-    if (extra < 0) {
-        for (var index=end; index > (end+extra) ; index--) {
-            delete proxy[index-1];
+    if (info.index === undefined) {
+        // This is an extended slice.  Note that one cannot increase the size
+        // of the list with an extended slice.  So one is either deleting
+        // elements or changing them.
+        var index;
+        var added = info.added;
+        var removed = info.removed - added.length;
+        var cache = proxy.__cache__;
+        var end = cache.length;
+        if (removed > 0) {
+            // Delete the proxy indices at the end.
+            for (index=end; index > (end-removed) ; index--) {
+                delete proxy[index-1];
+            }
+            var to_remove = [];
+            for (index=info.start; index<info.stop; index+=info.step) {
+                to_remove.push(index);
+            }
+            // Delete the cached entries in sequence from the back.
+            for (index=to_remove.length; index > 0; index--) {
+                cache.splice(to_remove[index-1], 1);
+            }
+        } else {
+            // When nothing is removed, just update the cache entries.
+            for (var i=0; i < added.length; i++) {
+                index = info.start + i*info.step;
+                cache[index] = new jigna._SavedData(added.data[i]);
+            }
         }
     } else {
-        for (var index=0; index < extra; index++){
-            this._add_item_attribute(proxy, end+index);
+        // This is not an extended slice.
+        var splice_args = [info.index, info.removed].concat(
+            info.added.data.map(function(x) {return new jigna._SavedData(x);})
+        );
+
+        var extra = splice_args.length - 2 - splice_args[1];
+        var cache = proxy.__cache__;
+        var end = cache.length;
+        if (extra < 0) {
+            for (var index=end; index > (end+extra) ; index--) {
+                delete proxy[index-1];
+            }
+        } else {
+            for (var index=0; index < extra; index++){
+                this._add_item_attribute(proxy, end+index);
+            }
         }
+        cache.splice.apply(cache, splice_args);
     }
-    cache.splice.apply(cache, splice_args);
 };
 
 
