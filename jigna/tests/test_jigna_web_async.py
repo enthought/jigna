@@ -1,6 +1,5 @@
 import unittest
 from unittest import skip
-import time
 
 from test_jigna_web import TestJignaWebSync, Person
 
