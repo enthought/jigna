@@ -1,3 +1,4 @@
+from textwrap import dedent
 from threading import Thread
 import time
 import sys
@@ -90,23 +91,25 @@ class TestJignaWebSync(TestJignaQt):
     def execute_js(self, js):
         return self.browser.execute_script(js)
 
-    def reset_user_var(self):
-        self.execute_js("jigna.user = undefined;")
-
     def get_attribute(self, js, expect):
-        self.reset_user_var()
-        get_js = """jigna.wait_for(\'%s\').done(function(result)
-                                {jigna.user = result;})"""%js
+        get_js = dedent("""
+        var result;
+        try {
+            result = eval(\'%s\');
+        } catch (err) {
+            result = undefined;
+        }
+        return result;
+        """%js)
         self.execute_js(get_js)
 
-        check_js = "return jigna.user;"
+        check_js = get_js
         result = self.execute_js(check_js)
         count = 0
-        while result is None and expect is not None and count < 10:
-            time.sleep(0.1)
+        while result != expect and count < 10:
+            time.sleep(0.025)
             result = self.execute_js(check_js)
             count += 1
-        self.reset_user_var()
         return result
 
     def assertJSEqual(self, js, value):
