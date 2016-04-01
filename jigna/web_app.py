@@ -13,7 +13,7 @@ from os.path import join
 from tornado import web
 
 # Local Library
-from .web_server import WebServer
+from .web_server import WebServer, AsyncWebServer
 
 
 class WebApp(web.Application):
@@ -46,8 +46,8 @@ class WebApp(web.Application):
         """
 
         # Set up the WebServer to serve the domain models in context
-        server = WebServer(
-            async                 = self.async,
+        klass = AsyncWebServer if self.async else WebServer
+        server = klass(
             base_url              = join(os.getcwd(), self.template.base_url),
             html                  = self.template.html,
             context               = self.context,

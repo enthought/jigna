@@ -79,10 +79,6 @@ class WebServer(Server):
 
     ### 'WebServer' protocol ##################################################
 
-    #: Use async communication, this is useful when the client only
-    # communicates via websockets.
-    async = Bool(False)
-
     #: The list of tornado handlers which map URL patterns to callables
     handlers = List
     def _handlers_default(self):
@@ -119,6 +115,16 @@ class WebServer(Server):
     def __bridge_default(self):
         return WebBridge()
 
+
+class AsyncWebServer(WebServer):
+    """ Asynchronous Web-based server implementation.
+
+    This implementation uses web-sockets for making two-way communication.
+    A GET request is not used in this case.  This allows one to embed
+    jigna on another web application.
+
+    """
+
     def _get_attribute_values(self, obj, attribute_names):
         """ Get the values of all 'public' attributes on an object.
 
@@ -145,54 +151,44 @@ class WebServer(Server):
 
     def _get_dict_info(self, obj):
         """ Get a description of a dict. """
-        if self.async:
-            values = self._get_list_info(list(obj.values()))
-            return dict(keys=list(obj.keys()), values=values)
-        else:
-            return super(WebServer, self)._get_dict_info(obj)
+        values = self._get_list_info(list(obj.values()))
+        return dict(keys=list(obj.keys()), values=values)
 
     def _get_instance_info(self, obj):
         """ Get a description of an instance. """
 
         info = super(WebServer, self)._get_instance_info(obj)
 
-        if self.async:
-            # If this is a new type, also send the attribute_values.
-            if 'attribute_names' in info:
-                attribute_values = self._get_attribute_values(
-                    obj, info['attribute_names']
-                )
-                info['attribute_values'] = attribute_values
+        # If this is a new type, also send the attribute_values.
+        if 'attribute_names' in info:
+            attribute_values = self._get_attribute_values(
+                obj, info['attribute_names']
+            )
+            info['attribute_values'] = attribute_values
 
         return info
 
     def _get_list_info(self, obj):
         """ Get a description of a list. """
-        if self.async:
-            data = self._marshal_all(obj)
-            new_types = {}
-            for x in data:
-                if x['type'] == 'instance' and len(x['info']) > 1:
-                    new_types[x['info']['type_name']] = x['info']
+        data = self._marshal_all(obj)
+        new_types = {}
+        for x in data:
+            if x['type'] == 'instance' and len(x['info']) > 1:
+                new_types[x['info']['type_name']] = x['info']
 
-            return dict(length=len(obj), data=data, new_types=new_types)
-        else:
-            return super(WebServer, self)._get_list_info(obj)
+        return dict(length=len(obj), data=data, new_types=new_types)
 
     def _send_object_changed_event(self, obj, trait_name, old, new):
         """ Send an object changed event. """
-
-        if not self.async:
-            return super(WebServer, self)._send_object_changed_event(
-                obj, trait_name, old, new
-            )
-
-        # Otherwise send all the async related info.
 
         if trait_name.startswith('_'):
             return
 
         if isinstance(new, TraitListEvent):
+            # FIXME: This does not yet handle extended slices like:
+            # obj.list[::2] = [1,2,3]
+            # del obj.list[::2] etc.
+            # Note: can't do this with trait lists: obj.list[::-1] = [1,2,3]!
             trait_name  = trait_name[:-len('_items')]
             value = id(getattr(obj, trait_name))
             info = dict(
