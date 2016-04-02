@@ -16,6 +16,7 @@ import traceback
 try:
     from urllib import unquote
 except ImportError:
+    # The above import will not work on Python-3.x.
     from urllib.parse import unquote
 
 # 3rd party library.
