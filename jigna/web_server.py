@@ -13,6 +13,10 @@ import json
 import mimetypes
 from os.path import abspath, dirname, join
 import traceback
+try:
+    from urllib import unquote
+except ImportError:
+    from urllib.parse import unquote
 
 # 3rd party library.
 from tornado.websocket import WebSocketHandler
@@ -126,7 +130,7 @@ class MainHandler(RequestHandler):
         return
 
     def get(self):
-        path = self.request.path[1:]
+        path = unquote(self.request.path[1:])
         if not len(path):
             self.write(self.server.html)
         else:
