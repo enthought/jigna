@@ -9788,10 +9788,9 @@ EventTarget.prototype = {
 // Namespace for all Jigna-related objects.
 var jigna = new EventTarget();
 
-jigna.ready = $.Deferred();
-
 jigna.initialize = function(options) {
     options = options || {};
+    this.ready  = $.Deferred();
     this.debug  = options.debug;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize().done(
@@ -9880,6 +9879,7 @@ jigna.Client.prototype.initialize = function() {
     // Add all of the models being edited
     var client = this;
     this.bridge.ready.done(function(){
+        client.print_JS_message('bridge ready');
         client._add_models(client.get_context());
         client.ready.resolve();
     });

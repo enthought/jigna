@@ -20,6 +20,7 @@ jigna.angular.app.run(['$rootScope', '$compile', function($rootScope, $compile){
         for (var model_name in models) {
             $rootScope[model_name] = models[model_name];
         }
+        $rootScope.$digest();
     });
 
     // Start the $digest cycle on rootScope whenever anything in the

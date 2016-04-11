@@ -121,6 +121,7 @@ class TestJignaQt(unittest.TestCase):
     def test_simple_primitive_traits(self):
         fred = self.fred
         fred.name = "Freddie"
+        print 'asserting'
         self.assertJSEqual("jigna.models.model.name", fred.name)
         fred.age = 43
         self.assertJSEqual("jigna.models.model.age", fred.age)

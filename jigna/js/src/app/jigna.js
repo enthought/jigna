@@ -5,7 +5,7 @@
 // Namespace for all Jigna-related objects.
 var jigna = new EventTarget();
 
-jigna.ready = $.Deferred();
+jigna.ready  = $.Deferred();
 
 jigna.initialize = function(options) {
     options = options || {};
