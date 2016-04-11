@@ -66,16 +66,6 @@ class Server(HasTraits):
     def _context_changed(self):
         self._register_objects(self.context)
 
-    def _context_items_changed(self, dict_event):
-        context = dict(dict_event.added)
-        context.update(dict_event.changed)
-
-        self._register_objects(context)
-
-        self._send_context_updated_event(context)
-
-        return
-
     def send_event(self, event):
         """ Send an event to the client(s). """
 
@@ -119,13 +109,17 @@ class Server(HasTraits):
 
     #### Handlers for each kind of request ####################################
 
-    def update_context(self, request):
-        """ Update the context on the JS side """
-        # This method is called on a page reload or if a new client is used.
-        # In these cases, the visited_type_names is no longer relevant as the
-        # new client does not have the required data, so clear it.
-        self._visited_type_names = set()
-        return self._send_context_updated_event(self.context)
+    def get_context(self, request):
+        """ Get the model names and models in the context. """
+
+        print 'getting context from the server'
+        context = {
+            name: self._marshal(obj) for name, obj in self.context.iteritems()
+        }
+
+        print 'context:', context
+
+        return context
 
     def print_JS_message(self, request):
         """ Prints a message coming from the JS client for testing purposes """
@@ -251,16 +245,6 @@ class Server(HasTraits):
     _visited_type_names = Any
     def __visited_type_names_default(self):
         return set()
-
-    def _context_ids(self, context):
-        """ Return a dictionary keyed with object ids of the objects in
-        self._context and whose values are the object ids.
-        """
-        context_ids = {}
-        for obj_name, obj in context.items():
-            context_ids[obj_name] = self._marshal(obj)
-
-        return context_ids
 
     def _get_attribute_names(self, obj):
         """ Get the names of all 'public' attributes on an object.
@@ -466,19 +450,6 @@ class Server(HasTraits):
             # fixme: This is how we currently detect an 'xxx_items' event on
             # the JS side.
             items_event = items_event
-        )
-
-        self.send_event(event)
-
-        return
-
-    def _send_context_updated_event(self, context):
-        """ Send a context_updated event. """
-
-        event = dict(
-            obj  = 'jigna',
-            name = 'context_updated',
-            data = self._context_ids(context)
         )
 
         self.send_event(event)

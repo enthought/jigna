@@ -5,13 +5,16 @@
 // Namespace for all Jigna-related objects.
 var jigna = new EventTarget();
 
+jigna.ready = $.Deferred();
+
 jigna.initialize = function(options) {
     options = options || {};
-    this.ready  = $.Deferred();
     this.debug  = options.debug;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
-    this.client.initialize();
-    return this.ready;
+    this.client.initialize().done(
+        function(){jigna.ready.resolve();}
+    );
+    return
 };
 
 jigna.models = {};

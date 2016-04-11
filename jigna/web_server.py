@@ -11,7 +11,7 @@
 # Standard library.
 import json
 import mimetypes
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, exists, join
 import traceback
 
 # 3rd party library.
@@ -132,7 +132,9 @@ class MainHandler(RequestHandler):
         else:
             mime_type, _ = mimetypes.guess_type(path)
             self.set_header('Content-Type', mime_type)
-            self.write(open(join(self.server.base_url, path)).read())
+            path = join(self.server.base_url, path)
+            if exists(path):
+                self.write(open(path).read())
 
         return
 

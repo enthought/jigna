@@ -36,7 +36,7 @@ def main():
 
     # Create a jigna based HTML widget to render the HTML template with the
     # given context.
-    widget = HTMLWidget(template=template, context={'person': fred})
+    widget = HTMLWidget(template=template, context={'person': fred}, debug=True)
     widget.show()
 
     # Start the event loop

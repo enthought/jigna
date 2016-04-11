@@ -13,13 +13,14 @@ jigna.angular.app.run(['$rootScope', '$compile', function($rootScope, $compile){
     // ng-click, ng-mouseover etc.
     $rootScope.jigna = jigna;
 
-    var add_to_scope = function(models){
+    jigna.ready.done(function(){
+        var models = jigna.models;
+
+        jigna.client.print_JS_message('adding models');
         for (var model_name in models) {
             $rootScope[model_name] = models[model_name];
         }
-    };
-    // add the existing models to the angular scope
-    add_to_scope(jigna.models);
+    });
 
     // Start the $digest cycle on rootScope whenever anything in the
     // model object is changed.
@@ -29,8 +30,6 @@ jigna.angular.app.run(['$rootScope', '$compile', function($rootScope, $compile){
     // new GET requests for each model attribute that is being used in
     // the registered watchers.
     jigna.add_listener('jigna', 'object_changed', function() {
-        add_to_scope(jigna.models);
-
         if ($rootScope.$$phase === null){
             $rootScope.$digest();
         }

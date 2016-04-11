@@ -6,6 +6,7 @@ jigna.Client = function() {};
 
 jigna.Client.prototype.initialize = function() {
     // jigna.Client protocol.
+    this.ready            = $.Deferred()
     this.bridge           = this._get_bridge();
 
     // Private protocol.
@@ -13,19 +14,13 @@ jigna.Client.prototype.initialize = function() {
     this._proxy_factory   = new jigna.ProxyFactory(this);
 
     // Add all of the models being edited
-    jigna.add_listener(
-        'jigna',
-        'context_updated',
-        function(event){this._add_models(event.data);},
-        this
-    );
-
-    // Wait for the bridge to be ready, and when it is ready, update the
-    // context so that initial models are added to jigna scope
     var client = this;
     this.bridge.ready.done(function(){
-        client.update_context();
+        client._add_models(client.get_context());
+        client.ready.resolve();
     });
+
+    return this.ready;
 };
 
 jigna.Client.prototype.handle_event = function(jsonized_event) {
@@ -92,7 +87,9 @@ jigna.Client.prototype.on_object_changed = function(event){
 jigna.Client.prototype.send_request = function(request) {
     /* Send a request to the server and wait for (and return) the response. */
 
+    console.log('sending request');
     var jsonized_request  = JSON.stringify(request);
+
     var jsonized_response = this.bridge.send_request(jsonized_request);
 
     return JSON.parse(jsonized_response).result;
@@ -146,6 +143,17 @@ jigna.Client.prototype.call_instance_method_thread = function(id, method_name, a
     return deferred.promise();
 };
 
+jigna.Client.prototype.get_context = function() {
+    /* Get the model names and models in the context. */
+
+    console.log('getting context');
+    var request  = {kind : 'get_context'};
+    var response = this.send_request(request);
+    console.log('response:', response);
+
+    return response;
+};
+
 jigna.Client.prototype.get_attribute = function(proxy, attribute) {
     /* Get the specified attribute of the proxy from the server. */
 
@@ -188,12 +196,6 @@ jigna.Client.prototype.set_item = function(id, index, value) {
     this.send_request(request);
 };
 
-jigna.Client.prototype.update_context = function() {
-    var request  = {kind : 'update_context'};
-
-    this.send_request(request);
-};
-
 // Private protocol //////////////////////////////////////////////////////////
 
 jigna.Client.prototype._add_model = function(model_name, id, info) {
@@ -219,11 +221,6 @@ jigna.Client.prototype._add_models = function(context) {
         proxy = client._add_model(model_name, model.value, model.info);
         models[model_name] = proxy;
     });
-
-    // Resolve the jigna.ready deferred, at this point the initial set of
-    // models are set.  For example vue.js can now use these data models to
-    // create the initial Vue instance.
-    jigna.ready.resolve();
 
     return models;
 };
