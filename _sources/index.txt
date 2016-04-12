@@ -6,6 +6,8 @@
 Welcome to the Jigna documentation!
 ===================================
 
+.. include:: stub_warning.rst
+
 Contents:
 
 .. toctree::
