@@ -141,7 +141,7 @@ class AsyncWebServer(WebServer):
                 for name in attribute_names]
 
     def _get_attribute_default(self, obj, name):
-        value = getattr(obj, name)
+        value = getattr(obj, name, None)
         if isinstance(value, list):
             value = []
         elif isinstance(value, dict):
@@ -170,6 +170,7 @@ class AsyncWebServer(WebServer):
                 obj, info['attribute_names']
             )
             info['attribute_values'] = attribute_values
+            self._send_new_type_event(info)
 
         return info
 
@@ -250,6 +251,17 @@ class AsyncWebServer(WebServer):
         self.send_event(event)
 
         return
+
+    def _send_new_type_event(self, data):
+        """Send a new_type event.  The data passed is the type information
+        dict.
+        """
+        event = dict(
+            obj  = 'jigna',
+            name = 'new_type',
+            data = data
+        )
+        self.send_event(event)
 
 
 ##### Request handlers ########################################################

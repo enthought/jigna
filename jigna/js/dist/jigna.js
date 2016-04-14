@@ -26411,6 +26411,7 @@ jigna.initialize = function(options) {
     options = options || {};
     this.ready  = $.Deferred();
     this.debug  = options.debug;
+    this.async  = options.async;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize();
     return this.ready;
@@ -26950,6 +26951,15 @@ jigna.ProxyFactory = function(client) {
     // We create a constructor for each Python class and then create the
     // actual proxies from those.
     this._type_to_constructor_map = {};
+
+    // Create a new instance constructor when a "new_type" event is fired.
+    jigna.add_listener(
+        'jigna',
+        'new_type',
+        function(event){this._create_instance_constructor(event.data);},
+        this
+    );
+
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, id, info) {

@@ -9,6 +9,7 @@ jigna.initialize = function(options) {
     options = options || {};
     this.ready  = $.Deferred();
     this.debug  = options.debug;
+    this.async  = options.async;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize();
     return this.ready;
