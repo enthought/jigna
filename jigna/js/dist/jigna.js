@@ -27305,10 +27305,6 @@ jigna.AsyncProxyFactory.prototype._populate_dict_proxy = function(proxy, info) {
     var index, key;
     var values = info.values;
 
-    for (key in values.new_types) {
-        this._create_instance_constructor(values.new_types[key]);
-    }
-
     for (index=0; index < info.keys.length; index++) {
         key = info.keys[index];
         this._add_item_attribute(proxy, key);
@@ -27334,10 +27330,6 @@ jigna.AsyncProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
 jigna.AsyncProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
     /* Populate the items in a list proxy. */
 
-    for (var key in info.new_types) {
-        this._create_instance_constructor(info.new_types[key]);
-    }
-
     var data = info.data;
     for (var index=0; index < info.length; index++) {
         this._add_item_attribute(proxy, index);
@@ -27349,11 +27341,6 @@ jigna.AsyncProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
 
 jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     /* Update the given proxy. */
-
-    // Register any new types.
-    for (var key in info.added.new_types) {
-        this._create_instance_constructor(info.added.new_types[key]);
-    }
 
     if (info.index === undefined) {
         // This is an extended slice.  Note that one cannot increase the size

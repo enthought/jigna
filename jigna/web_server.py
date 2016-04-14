@@ -177,12 +177,7 @@ class AsyncWebServer(WebServer):
     def _get_list_info(self, obj):
         """ Get a description of a list. """
         data = self._marshal_all(obj)
-        new_types = {}
-        for x in data:
-            if x['type'] == 'instance' and len(x['info']) > 1:
-                new_types[x['info']['type_name']] = x['info']
-
-        return dict(length=len(obj), data=data, new_types=new_types)
+        return dict(length=len(obj), data=data)
 
     def _send_object_changed_event(self, obj, trait_name, old, new):
         """ Send an object changed event. """
