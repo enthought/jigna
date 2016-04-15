@@ -172,6 +172,9 @@ class AsyncWebServer(WebServer):
             )
             info['attribute_values'] = attribute_values
             self._send_new_type_event(info)
+            # Now that the type info is sent we do not need to send all that
+            # information again.
+            info = dict(type_name=info['type_name'])
 
         return info
 
