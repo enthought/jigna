@@ -125,7 +125,7 @@ class ProxyQWebView(QtWebKit.QWebView):
 
         self._page.loadFinished.connect(on_load)
 
-        super(ProxyQWebView, self).setUrl(url)
+        super(ProxyQWebView, self).setUrl(QtCore.QUrl(url))
 
         if not self._loaded:
             event_loop.exec_()
