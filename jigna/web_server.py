@@ -10,6 +10,7 @@
 import json
 import mimetypes
 from os.path import abspath, dirname, join
+import threading
 import traceback
 try:
     from urllib import unquote
@@ -303,6 +304,7 @@ class AsyncWebSocketHandler(WebSocketHandler):
     def initialize(self, bridge, server):
         self.bridge = bridge
         self.server = server
+        self.lock = threading.RLock()
         return
 
     def open(self):
@@ -322,5 +324,9 @@ class AsyncWebSocketHandler(WebSocketHandler):
     def on_close(self):
         self.bridge.remove_socket(self)
         return
+
+    def write_message(self, msg):
+        with self.lock:
+            super(AsyncWebSocketHandler, self).write_message(msg)
 
 #### EOF ######################################################################
