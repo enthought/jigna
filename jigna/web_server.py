@@ -328,8 +328,10 @@ class AsyncWebSocketHandler(WebSocketHandler):
         self.bridge.remove_socket(self)
         return
 
-    def write_message(self, msg):
+    def write_message(self, msg, binary=False):
         with self.lock:
-            super(AsyncWebSocketHandler, self).write_message(msg)
+            return super(AsyncWebSocketHandler, self).write_message(
+                msg, binary
+            )
 
 #### EOF ######################################################################

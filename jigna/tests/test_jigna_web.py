@@ -17,7 +17,7 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_qt import TestJignaQt, Person, body_html
+from test_jigna_qt import TestJignaQt, Person, body_html, AddressBook
 
 
 def patch_sys_modules():
@@ -47,9 +47,13 @@ class TestJignaWebSync(TestJignaQt):
         from jigna.web_app import WebApp
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
+        addressbook = AddressBook()
         template = Template(body_html=body_html, async=async)
         port = get_free_port()
-        app = WebApp(template=template, context={'model':fred}, async=async)
+        app = WebApp(
+            template=template,
+            context={'model':fred, 'addressbook': addressbook}, async=async
+        )
         app.listen(port)
 
         # Start the tornado server in a different thread so that we can write

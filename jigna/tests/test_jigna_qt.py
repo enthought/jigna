@@ -26,6 +26,29 @@ class Person(HasTraits):
         time.sleep(sleep_for)
         self.method_slow_called_with = value
 
+
+class AddressBook(HasTraits):
+    contacts = List
+
+    def create(self):
+        for i in range(10):
+            self.contacts.append(Contact(name=str(i), number=str(i)))
+        for i in range(10, 20):
+            self.contacts.append(Company(
+                name=str(i), number=str(i), address=str(i)
+            ))
+
+
+class Company(HasTraits):
+    name = Str
+    number = Str
+    address = Str
+
+class Contact(HasTraits):
+    name = Str
+    number = Str
+
+
 #### UI for model ####
 
 body_html = """
@@ -59,6 +82,19 @@ body_html = """
 
     Spouse: <br/>
     Name: {{model.spouse.name}} Age: {{model.spouse.age}}
+
+   <h3>Addressbook</h3>
+   <button ng-click="jigna.threaded(addressbook, 'create')" id="create">
+    Create
+   </button>
+   <br/>
+   <ul>
+    <li ng-repeat="contact in addressbook.contacts track by $index">
+     <label>Name:</label> <input ng-model="contact.name">
+     <label>Number:</label> <input ng-model="contact.number">
+    </li>
+   </ul>
+
 """
 
 class TestJignaQt(unittest.TestCase):
@@ -71,7 +107,11 @@ class TestJignaQt(unittest.TestCase):
         qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
         template = Template(body_html=body_html)
         fred = Person(name='Fred', age=42)
-        widget = HTMLWidget(template=template, context={'model':fred})
+        addressbook = AddressBook()
+        widget = HTMLWidget(
+            template=template,
+            context={'model':fred, 'addressbook': addressbook}
+        )
         widget.show()
         gui.process_events()
         cls.widget = widget
@@ -316,6 +356,18 @@ class TestJignaQt(unittest.TestCase):
                 pass
         else:
             raise AssertionError("Async method not finished")
+
+    def test_nested_object_with_threaded_creation(self):
+        # When
+        self.execute_js("$('#create').trigger('click');")
+        time.sleep(0.1)
+        # Then.
+        self.assertJSEqual('jigna.models.addressbook.contacts.length', 20)
+        self.assertJSEqual('jigna.models.addressbook.contacts[1].name', '1')
+        self.assertJSEqual('jigna.models.addressbook.contacts[1].number', '1')
+        self.assertJSEqual('jigna.models.addressbook.contacts[10].name', '10')
+        self.assertJSEqual('jigna.models.addressbook.contacts[10].number', '10')
+        self.assertJSEqual('jigna.models.addressbook.contacts[10].address', '10')
 
 
 if __name__ == "__main__":
