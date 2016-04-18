@@ -10,7 +10,8 @@ fi
 
 # Get core dependencies
 enpkg traits
-if [ $QT_API == 'pyqt' ]; then
+if [ "$QT_API" == "pyqt" ]
+then
     enpkg sip pyqt
 else
     enpkg pyside
