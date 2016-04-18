@@ -1,12 +1,17 @@
 """ Simple minimal compatibility code for using PyQt4 and PySide
-interchangably only to the extent needed by jigna
+interchangeably only to the extent needed by jigna.
+
 """
 
+
 def load_pyside():
+    print 'loading pyside'
     global QtCore, QtGui, QtNetwork, QtWebKit
     from PySide import QtCore, QtGui, QtNetwork, QtWebKit
 
+
 def load_pyqt():
+    print 'loading pyqt'
     global QtCore, QtGui, QtNetwork, QtWebKit
 
     import sip
@@ -27,7 +32,8 @@ def load_pyqt():
 
 def main():
 
-    import os, sys
+    import os
+    import sys
 
     if os.environ.get('QT_API') == 'pyside' or 'PySide' in sys.modules:
         load_pyside()

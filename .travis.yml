@@ -16,6 +16,9 @@ env:
 
     # Display
     - DISPLAY=:99.0
+  matrix:
+    - QT_API='pyqt'
+    - QT_API='pyside'
 
 before_install:
 
