@@ -1,3 +1,4 @@
+from textwrap import dedent
 from threading import Thread
 import time
 import sys
@@ -16,7 +17,7 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_qt import TestJignaQt, Person, body_html
+from test_jigna_qt import TestJignaQt, Person, body_html, AddressBook
 
 
 def patch_sys_modules():
@@ -46,9 +47,13 @@ class TestJignaWebSync(TestJignaQt):
         from jigna.web_app import WebApp
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
+        addressbook = AddressBook()
         template = Template(body_html=body_html, async=async)
         port = get_free_port()
-        app = WebApp(template=template, context={'model':fred})
+        app = WebApp(
+            template=template,
+            context={'model':fred, 'addressbook': addressbook}, async=async
+        )
         app.listen(port)
 
         # Start the tornado server in a different thread so that we can write
@@ -85,28 +90,30 @@ class TestJignaWebSync(TestJignaQt):
         self.fred.fruits = []
         self.fred.friends = []
         # Wait for the model to be setup before running the tests.
-        self.get_attribute('jigna.models.model.name', None)
+        self.get_attribute('jigna.models.model.name', self.fred.name)
 
     def execute_js(self, js):
         return self.browser.execute_script(js)
 
-    def reset_user_var(self):
-        self.execute_js("jigna.user = undefined;")
-
     def get_attribute(self, js, expect):
-        self.reset_user_var()
-        get_js = """jigna.wait_for(\'%s\').done(function(result)
-                                {jigna.user = result;})"""%js
+        get_js = dedent("""
+        var result;
+        try {
+            result = eval(\'%s\');
+        } catch (err) {
+            result = undefined;
+        }
+        return result;
+        """%js)
         self.execute_js(get_js)
 
-        check_js = "return jigna.user;"
+        check_js = get_js
         result = self.execute_js(check_js)
         count = 0
-        while result is None and expect is not None and count < 10:
-            time.sleep(0.1)
+        while result != expect and count < 10:
+            time.sleep(0.025)
             result = self.execute_js(check_js)
             count += 1
-        self.reset_user_var()
         return result
 
     def assertJSEqual(self, js, value):

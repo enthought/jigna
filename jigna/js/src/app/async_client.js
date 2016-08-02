@@ -111,3 +111,64 @@ jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
 
     return proxy.__cache__[attribute];
 };
+
+jigna.AsyncClient.prototype.on_object_changed = function(event){
+    if (jigna.debug) {
+        this.print_JS_message('------------on_object_changed--------------');
+        this.print_JS_message('object id  : ' + event.obj);
+        this.print_JS_message('attribute  : ' + event.name);
+        this.print_JS_message('items event: ' + event.items_event);
+        this.print_JS_message('new type   : ' + event.data.type);
+        this.print_JS_message('new value  : ' + event.data.value);
+        this.print_JS_message('new info   : ' + event.data.info);
+        this.print_JS_message('-------------------------------------------');
+    }
+
+    var proxy = this._id_to_proxy_map[event.obj];
+
+    // If the *contents* of a list/dict have changed then we need to update
+    // the associated proxy to reflect the change.
+    if (event.items_event) {
+        var collection_proxy = this._id_to_proxy_map[event.data.value];
+        // The collection proxy can be undefined if on the Python side you
+        // have re-initialized a list/dict with the same value that it
+        // previously had, e.g.
+        //
+        // class Person(HasTraits):
+        //     friends = List([1, 2, 3])
+        //
+        // fred = Person()
+        // fred.friends = [1, 2, 3] # No trait changed event!!
+        //
+        // This is because even though traits does copy on assignment for
+        // lists/dicts (and hence the new list will have a new Id), it fires
+        // the trait change events only if it considers the old and new values
+        // to be different (ie. if does not compare the identity of the lists).
+        //
+        // For us(!), it means that we won't have seen the new list before we
+        // get an items changed event on it.
+        if (collection_proxy === undefined) {
+            // In the async case, we do not create a new proxy instead we
+            // update the id_to_proxy map and update the proxy with the
+            // dict/list event info.
+            collection_proxy = proxy.__cache__[event.name];
+            this._id_to_proxy_map[event.data.value] = collection_proxy;
+        }
+        this._proxy_factory.update_proxy(
+            collection_proxy, event.data.type, event.data.info
+        );
+
+    } else {
+        proxy.__cache__[event.name] = this._unmarshal(event.data);
+    }
+
+    // Angular listens to this event and forces a digest cycle which is how it
+    // detects changes in its watchers.
+    jigna.fire_event('jigna', {name: 'object_changed', object: proxy});
+};
+
+// Private protocol //////////////////////////////////////////////////////////
+
+jigna.AsyncClient.prototype._create_proxy_factory = function() {
+    return new jigna.AsyncProxyFactory(this);
+};

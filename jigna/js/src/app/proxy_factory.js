@@ -9,6 +9,15 @@ jigna.ProxyFactory = function(client) {
     // We create a constructor for each Python class and then create the
     // actual proxies from those.
     this._type_to_constructor_map = {};
+
+    // Create a new instance constructor when a "new_type" event is fired.
+    jigna.add_listener(
+        'jigna',
+        'new_type',
+        function(event){this._create_instance_constructor(event.data);},
+        this
+    );
+
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, id, info) {
@@ -99,11 +108,15 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
+    var constructor = this._type_to_constructor_map[info.type_name];
+    if (constructor !== undefined) {
+        return constructor;
+    }
+
     constructor = function(type, id, client) {
         jigna.Proxy.call(this, type, id, client);
 
         /* Listen for changes to the object that the proxy is a proxy for! */
-
         var index;
         var info = this.__info__;
 
@@ -166,18 +179,19 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
         constructor.prototype, '__type_name__', {value : info.type_name}
     );
 
+    this._type_to_constructor_map[info.type_name] = constructor;
+
     return constructor;
 }
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
-    var constructor;
+    var constructor, proxy;
 
     // We create a constructor for each Python class and then create the
     // actual proxies as from those.
     constructor = this._type_to_constructor_map[info.type_name];
     if (constructor === undefined) {
         constructor = this._create_instance_constructor(info);
-        this._type_to_constructor_map[info.type_name] = constructor;
     }
 
     return new constructor('instance', id, this._client);

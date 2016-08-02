@@ -1,10 +1,8 @@
-
 import unittest
 from unittest import skip
 
 from test_jigna_web import TestJignaWebSync, Person
 
-@skip("Async Web tests don't work at the moment")
 class TestJignaWebAsync(TestJignaWebSync):
     @classmethod
     def setUpClass(cls):

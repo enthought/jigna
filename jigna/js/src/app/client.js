@@ -10,7 +10,7 @@ jigna.Client.prototype.initialize = function() {
 
     // Private protocol.
     this._id_to_proxy_map = {};
-    this._proxy_factory   = new jigna.ProxyFactory(this);
+    this._proxy_factory   = this._create_proxy_factory();
 
     // Add all of the models being edited
     jigna.add_listener(
@@ -216,8 +216,10 @@ jigna.Client.prototype._add_models = function(context) {
     var client = this;
     var models = {};
     $.each(context, function(model_name, model) {
-        proxy = client._add_model(model_name, model.value, model.info);
-        models[model_name] = proxy;
+        if (jigna.models[model_name] === undefined) {
+            proxy = client._add_model(model_name, model.value, model.info);
+            models[model_name] = proxy;
+        }
     });
 
     // Resolve the jigna.ready deferred, at this point the initial set of
@@ -226,6 +228,10 @@ jigna.Client.prototype._add_models = function(context) {
     jigna.ready.resolve();
 
     return models;
+};
+
+jigna.Client.prototype._create_proxy_factory = function() {
+    return new jigna.ProxyFactory(this);
 };
 
 jigna.Client.prototype._create_proxy = function(type, obj, info) {

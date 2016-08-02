@@ -13,7 +13,8 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_web import TestJignaWebSync, Person, patch_sys_modules
+from test_jigna_web import TestJignaWebSync, Person, AddressBook, \
+    patch_sys_modules
 from test_jigna_vue_qt import body_vue_html
 
 
@@ -25,9 +26,14 @@ class TestJignaVueWebSync(TestJignaWebSync):
         from jigna.web_app import WebApp
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
+        addressbook = AddressBook()
         template = VueTemplate(body_html=body_vue_html, async=async)
         port = get_free_port()
-        app = WebApp(template=template, context={'model':fred})
+        app = WebApp(
+            template=template,
+            context={'model':fred, 'addressbook':addressbook},
+            async=async
+        )
         app.listen(port)
 
         # Start the tornado server in a different thread so that we can write

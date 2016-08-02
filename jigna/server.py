@@ -1,7 +1,5 @@
 #
-# Enthought product code
-#
-# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# (C) Copyright 2013-2016 Enthought, Inc., Austin, TX
 # All right reserved.
 #
 """ Abstract base classes for the Jigna server and bridge. """
@@ -130,7 +128,7 @@ class Server(HasTraits):
     def print_JS_message(self, request):
         """ Prints a message coming from the JS client for testing purposes """
 
-        print 'JS: ' + request['value']
+        print 'JS: ' + str(request['value'])
 
         return
 
@@ -298,7 +296,7 @@ class Server(HasTraits):
 
         # We ignore these triats that are added by the trait machinery :)
         ignore = ['trait_added', 'trait_modified']
-        
+
         event_names = []
 
         if isinstance(obj, HasTraits):
@@ -312,7 +310,7 @@ class Server(HasTraits):
     def _get_instance_info(self, obj):
         """ Get a description of an instance. """
 
-        type_name = type(obj).__module__ + '.' + type(obj).__name__
+        type_name = self._get_type_name(obj)
 
         # The first time we send the details of a type over to the client we
         # need to include the full info for it (its attributes, events and
@@ -358,6 +356,10 @@ class Server(HasTraits):
                         public_method_names.append(name)
 
         return public_method_names
+
+    def _get_type_name(self, obj):
+        t = type(obj)
+        return t.__module__ + '.' + t.__name__
 
     def _marshal(self, obj):
         """ Marshal a value. """
