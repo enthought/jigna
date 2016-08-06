@@ -1,3 +1,4 @@
+import sys
 from threading import Thread
 import unittest
 
@@ -42,7 +43,11 @@ class TestJignaVueWebSync(TestJignaWebSync):
         t.setDaemon(True)
         t.start()
 
-        browser = webdriver.Firefox()
+        if sys.platform.startswith('darwin'):
+            browser = webdriver.Chrome()
+        else:
+            browser = webdriver.Firefox()
+
         browser.get('http://localhost:%d'%port)
         cls.app = app
         cls.fred = fred

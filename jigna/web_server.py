@@ -191,7 +191,11 @@ class AsyncWebServer(WebServer):
 
         if isinstance(new, TraitListEvent):
             trait_name  = trait_name[:-len('_items')]
-            value = id(getattr(obj, trait_name))
+            trait = getattr(obj, trait_name)
+            value = id(trait)
+            # The old_len sent in the info dict below is used as a simple
+            # check to prevent errors due to multiple copies of an
+            # object_changed_event being received on the JS side.
             if isinstance(new.index, slice):
                 # Handle an extended slice.  Note that one cannot increase the
                 # size of the list here.  So one is either deleting elements
@@ -200,16 +204,18 @@ class AsyncWebServer(WebServer):
                 start = s.start if s.start <= s.stop else s.stop
                 stop = s.stop if s.stop >= s.start else s.start
                 added = new.added[0] if len(new.added) > 0 else []
+                old_len = len(trait) - len(added) + len(new.removed[0])
                 info = dict(
                     start=start, stop=stop, step=s.step,
                     removed=len(new.removed[0]),
-                    added=self._get_list_info(added)
+                    added=self._get_list_info(added), old_len=old_len
                 )
             else:
                 # This information can be used by the Array.splice method.
+                old_len = len(trait) - len(new.added) + len(new.removed)
                 info = dict(
                     index=new.index, removed=len(new.removed),
-                    added=self._get_list_info(new.added)
+                    added=self._get_list_info(new.added), old_len=old_len
                 )
 
             data = dict(type='list', value=value, info=info)
