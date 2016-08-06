@@ -280,7 +280,7 @@ class MainHandler(RequestHandler):
         else:
             mime_type, _ = mimetypes.guess_type(path)
             self.set_header('Content-Type', mime_type)
-            self.write(open(join(self.server.base_url, path)).read())
+            self.write(open(join(self.server.base_url, path), 'rb').read())
 
         return
 
