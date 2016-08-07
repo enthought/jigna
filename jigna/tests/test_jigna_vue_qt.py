@@ -65,6 +65,7 @@ class TestJignaVueQt(TestJignaQt):
         gui.process_events()
         cls.widget = widget
         cls.fred = fred
+        cls.addressbook = addressbook
 
 del TestJignaQt
 

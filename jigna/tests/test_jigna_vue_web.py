@@ -52,6 +52,8 @@ class TestJignaVueWebSync(TestJignaWebSync):
         cls.app = app
         cls.fred = fred
         cls.browser = browser
+        cls.addressbook = addressbook
+        cls.thread = t
 
 
 del TestJignaWebSync

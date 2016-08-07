@@ -72,6 +72,8 @@ class TestJignaWebSync(TestJignaQt):
         cls.app = app
         cls.fred = fred
         cls.browser = browser
+        cls.addressbook = addressbook
+        cls.thread = t
 
     @classmethod
     def tearDownClass(cls):
@@ -79,6 +81,7 @@ class TestJignaWebSync(TestJignaQt):
         cls.browser.quit()
         IOLoop.instance().stop()
         time.sleep(1)
+        cls.thread.join()
 
         # Smells a bit but doing this here ensures that none of the tested
         # cases imports Qt.
@@ -96,6 +99,9 @@ class TestJignaWebSync(TestJignaQt):
         self.fred.friends = []
         # Wait for the model to be setup before running the tests.
         self.get_attribute('jigna.models.model.name', self.fred.name)
+
+    def process_events(self):
+        pass
 
     def execute_js(self, js):
         return self.browser.execute_script(js)
