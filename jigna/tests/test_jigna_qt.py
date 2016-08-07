@@ -6,10 +6,20 @@ import time
 
 
 def sleep_while(condition, timeout, dt=0.1):
+    def _check_cond():
+        try:
+            return condition()
+        except Exception:
+            return True
+
     t = 0.0
-    while condition() and t < timeout:
+    while _check_cond():
         time.sleep(dt)
         t += dt
+        if t > timeout:
+            return False
+    return True
+
 
 
 #### Test model ####
@@ -137,6 +147,9 @@ class TestJignaQt(unittest.TestCase):
         self.fred.called_with = None
         self.fred.method_slow_called_with = None
         self.addressbook = cls.addressbook
+
+    def wait_and_assert(self, condition, timeout=1.0):
+        self.assertTrue(sleep_while(condition, timeout=timeout))
 
     def execute_js(self, js):
         from jigna.utils import gui
