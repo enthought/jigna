@@ -99,15 +99,6 @@ jigna.AsyncProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
 
 jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
     /* Update the given proxy. */
-    if (info.old_len != proxy.__cache__.length) {
-        // This is a strange situation and occurs when a websocket message is
-        // repeated!  The same list event is repeated even though only one
-        // event is sent from the Python side.  To handle this a simple test
-        // is performed, if the length of the proxy array is not the same as
-        // the original length of the Python array, the message is just
-        // dropped as the event has already been handled.
-        return;
-    }
 
     if (info.index === undefined) {
         // This is an extended slice.  Note that one cannot increase the size

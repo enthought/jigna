@@ -21,6 +21,7 @@ except ImportError:
 # 3rd party library.
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler, StaticFileHandler
+from tornado.ioloop import IOLoop
 
 # Enthought library.
 from traits.api import (
@@ -41,6 +42,9 @@ class WebBridge(Bridge):
 
     def send_event(self, event):
         """ Send an event. """
+        main_thread = isinstance(
+            threading.current_thread(), threading._MainThread
+        )
 
         try:
             jsonized_event = json.dumps(event)
@@ -50,7 +54,10 @@ class WebBridge(Bridge):
         message_id = -1
         data = json.dumps([message_id, jsonized_event])
         for socket in self._active_sockets:
-            socket.write_message(data)
+            if main_thread:
+                socket.write_message(data)
+            else:
+                IOLoop.instance().add_callback(socket.write_message, data)
 
         return
 
@@ -193,9 +200,6 @@ class AsyncWebServer(WebServer):
             trait_name  = trait_name[:-len('_items')]
             trait = getattr(obj, trait_name)
             value = id(trait)
-            # The old_len sent in the info dict below is used as a simple
-            # check to prevent errors due to multiple copies of an
-            # object_changed_event being received on the JS side.
             if isinstance(new.index, slice):
                 # Handle an extended slice.  Note that one cannot increase the
                 # size of the list here.  So one is either deleting elements
@@ -204,18 +208,16 @@ class AsyncWebServer(WebServer):
                 start = s.start if s.start <= s.stop else s.stop
                 stop = s.stop if s.stop >= s.start else s.start
                 added = new.added[0] if len(new.added) > 0 else []
-                old_len = len(trait) - len(added) + len(new.removed[0])
                 info = dict(
                     start=start, stop=stop, step=s.step,
                     removed=len(new.removed[0]),
-                    added=self._get_list_info(added), old_len=old_len
+                    added=self._get_list_info(added)
                 )
             else:
                 # This information can be used by the Array.splice method.
-                old_len = len(trait) - len(new.added) + len(new.removed)
                 info = dict(
                     index=new.index, removed=len(new.removed),
-                    added=self._get_list_info(new.added), old_len=old_len
+                    added=self._get_list_info(new.added)
                 )
 
             data = dict(type='list', value=value, info=info)
@@ -313,7 +315,6 @@ class AsyncWebSocketHandler(WebSocketHandler):
     def initialize(self, bridge, server):
         self.bridge = bridge
         self.server = server
-        self.lock = threading.RLock()
         return
 
     def open(self):
@@ -335,9 +336,6 @@ class AsyncWebSocketHandler(WebSocketHandler):
         return
 
     def write_message(self, msg, binary=False):
-        with self.lock:
-            return super(AsyncWebSocketHandler, self).write_message(
-                msg, binary
-            )
+        return super(AsyncWebSocketHandler, self).write_message(msg, binary)
 
 #### EOF ######################################################################
