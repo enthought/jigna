@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from textwrap import dedent
 from threading import Thread
 import time
@@ -17,7 +18,7 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_qt import TestJignaQt, Person, body_html, AddressBook
+from .test_jigna_qt import TestJignaQt, Person, body_html, AddressBook
 
 
 def patch_sys_modules():

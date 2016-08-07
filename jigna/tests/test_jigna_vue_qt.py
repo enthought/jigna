@@ -1,6 +1,8 @@
+from __future__ import absolute_import
+
 import unittest
 
-from test_jigna_qt import Person, TestJignaQt, AddressBook
+from .test_jigna_qt import Person, TestJignaQt, AddressBook
 
 body_vue_html = """
     <div>

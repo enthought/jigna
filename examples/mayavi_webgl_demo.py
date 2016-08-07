@@ -3,6 +3,7 @@ backend for VTK.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 import json
 import numpy as np
@@ -137,7 +138,7 @@ def main():
     app.listen(8000)
 
     # Start serving the web app on port 8000.
-    print 'Serving on port 8000...'
+    print('Serving on port 8000...')
     ioloop.start()
 
 if __name__ == '__main__':

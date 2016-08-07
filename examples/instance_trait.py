@@ -3,6 +3,7 @@ This example shows two-way data binding on an `Instance` trait.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 from traits.api import HasTraits, Instance, Str
 from jigna.api import HTMLWidget, Template
@@ -60,7 +61,7 @@ def main():
     app.exec_()
 
     # Check the final values of the instance
-    print fred.name, fred.spouse.name, wilma.name
+    print(fred.name, fred.spouse.name, wilma.name)
 
 if __name__ == "__main__":
     main()

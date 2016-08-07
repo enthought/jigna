@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import unittest
 from unittest import skip
 
-from test_jigna_web import TestJignaWebSync, Person
+from .test_jigna_web import TestJignaWebSync, Person
 
 class TestJignaWebAsync(TestJignaWebSync):
     @classmethod

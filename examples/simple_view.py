@@ -3,6 +3,7 @@ This example is the simplest example which shows how to start a jigna view.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 from jigna.api import HTMLWidget, Template
 from jigna.qt import QtGui
@@ -43,7 +44,7 @@ def main():
     app.exec_()
 
     # Check the values after the UI is closed
-    print fred.name, fred.age
+    print(fred.name, fred.age)
 
 if __name__ == "__main__":
     main()

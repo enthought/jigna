@@ -6,10 +6,15 @@
 #
 
 # Standard library imports.
+try:
+    from builtins import unicode
+except ImportError:
+    from builtins import str as unicode
+
 import logging
 import sys
 import threading
-from StringIO import StringIO
+from io import StringIO
 
 # System library imports.
 from jigna.qt import QtCore, QtNetwork
@@ -36,7 +41,7 @@ class ProxyAccessManager(QtNetwork.QNetworkAccessManager):
         handler = self.hosts.get(url.host())
 
         if handler is None:
-            for root, _handler in self.root_paths.iteritems():
+            for root, _handler in self.root_paths.items():
                 if url.path().split('/')[1] == root:
                     handler = _handler
 
@@ -166,7 +171,7 @@ class ProxyReplyWorker(QtCore.QThread):
             'QUERY_STRING': str(url.encodedQuery()),
             'wsgi.version': (1, 0),
             'wsgi.url_scheme': url.scheme(),
-            'wsgi.input': StringIO(reply.req_data),
+            'wsgi.input': StringIO(unicode(reply.req_data)),
             'wsgi.errors': sys.stderr,
             'wsgi.multithread': False,
             'wsgi.multiprocess': True,
