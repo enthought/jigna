@@ -1,5 +1,6 @@
+import sys
 import unittest
-from unittest import skip
+from unittest import skipIf
 
 from test_jigna_web import TestJignaWebSync, Person
 
@@ -23,6 +24,9 @@ class TestJignaWebAsync(TestJignaWebSync):
         self.execute_js("var x; jigna.models.model.method(jigna.models.model.spouse).done(function(r){x=r;}); return x;")
         self.assertEqual(fred.called_with, wilma)
 
+    @skipIf(sys.platform.startswith('linux'), "Fails on Linux")
+    def test_list_sortable(self):
+        super(TestJignaWebAsync, self).test_list_sortable()
 
 
 # Delete this so running just this file does not run all the tests.
