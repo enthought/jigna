@@ -18,7 +18,8 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_qt import TestJignaQt, Person, body_html, AddressBook
+from test_jigna_qt import (TestJignaQt, Person, body_html, AddressBook,
+    sleep_while)
 
 
 def patch_sys_modules():
@@ -155,6 +156,7 @@ class TestJignaWebSync(TestJignaQt):
         # Set in the JS side.
         self.execute_js("jigna.models.model.spouse.name = 'Wilmaji'")
         self.execute_js("jigna.models.model.spouse.age = 41")
+        sleep_while(lambda: wilma.name != 'Wilmaji', timeout=1.0)
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
 

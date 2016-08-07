@@ -4,6 +4,14 @@ from jigna.template import Template
 import unittest
 import time
 
+
+def sleep_while(condition, timeout, dt=0.1):
+    t = 0.0
+    while condition() and t < timeout:
+        time.sleep(dt)
+        t += dt
+
+
 #### Test model ####
 
 class Person(HasTraits):
@@ -310,11 +318,7 @@ class TestJignaQt(unittest.TestCase):
             "jigna.models.model.fruits", ['apple', 'banana', 'peach']
         )
 
-        t = 0.0
-        timeout = 1.0
-        while fred.fruits[0] != 'apple' and t < timeout:
-            time.sleep(0.1)
-            t += 0.1
+        sleep_while(lambda: fred.fruits[0] != 'apple', timeout=1.0)
         self.assertEqual(fred.fruits, ['apple', 'banana', 'peach'])
 
     def test_callable(self):
