@@ -309,6 +309,12 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual(
             "jigna.models.model.fruits", ['apple', 'banana', 'peach']
         )
+
+        t = 0.0
+        timeout = 1.0
+        while fred.fruits[0] != 'apple' and t < timeout:
+            time.sleep(0.1)
+            t += 0.1
         self.assertEqual(fred.fruits, ['apple', 'banana', 'peach'])
 
     def test_callable(self):
