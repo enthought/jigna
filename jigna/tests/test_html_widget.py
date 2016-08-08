@@ -1,5 +1,5 @@
 try:
-    from builtins import basestring
+    from __builtin__ import basestring
 except ImportError:
     from builtins import str as basestring
 

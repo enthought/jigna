@@ -8,7 +8,7 @@
 
 # System library imports.
 try:
-    from builtins import unicode as utext
+    from __builtin__ import unicode as utext
 except ImportError:
     from builtins import str as utext
 

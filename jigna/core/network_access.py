@@ -7,7 +7,7 @@
 
 # Standard library imports.
 try:
-    from builtins import unicode
+    from __builtin__ import unicode
 except ImportError:
     from builtins import str as unicode
 
