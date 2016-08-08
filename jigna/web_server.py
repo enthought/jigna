@@ -42,6 +42,12 @@ class WebBridge(Bridge):
 
     def send_event(self, event):
         """ Send an event. """
+
+        # Tornado does not support multiple threads calling send_message.
+        # Instead one should add a callback on the IOLoop instance as done
+        # below.  See:
+        # http://www.tornadoweb.org/en/stable/web.html?highlight=thread#thread-safety-notes
+
         main_thread = isinstance(
             threading.current_thread(), threading._MainThread
         )
