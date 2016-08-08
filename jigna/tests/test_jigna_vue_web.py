@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import sys
 from threading import Thread
 import unittest
 
@@ -43,11 +44,20 @@ class TestJignaVueWebSync(TestJignaWebSync):
         t.setDaemon(True)
         t.start()
 
-        browser = webdriver.Firefox()
+        # Recent Firefox releases (>45) do not seem to work with Selenium so
+        # we switch to Chrome on darwin but continue with FF on travis.  See:
+        # https://github.com/seleniumhq/selenium/issues/1851
+        if sys.platform.startswith('darwin'):
+            browser = webdriver.Chrome()
+        else:
+            browser = webdriver.Firefox()
+
         browser.get('http://localhost:%d'%port)
         cls.app = app
         cls.fred = fred
         cls.browser = browser
+        cls.addressbook = addressbook
+        cls.thread = t
 
 
 del TestJignaWebSync

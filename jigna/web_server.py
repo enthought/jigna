@@ -21,6 +21,7 @@ except ImportError:
 # 3rd party library.
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler, StaticFileHandler
+from tornado.ioloop import IOLoop
 
 # Enthought library.
 from traits.api import (
@@ -42,6 +43,15 @@ class WebBridge(Bridge):
     def send_event(self, event):
         """ Send an event. """
 
+        # Tornado does not support multiple threads calling send_message.
+        # Instead one should add a callback on the IOLoop instance as done
+        # below.  See:
+        # http://www.tornadoweb.org/en/stable/web.html?highlight=thread#thread-safety-notes
+
+        main_thread = isinstance(
+            threading.current_thread(), threading._MainThread
+        )
+
         try:
             jsonized_event = json.dumps(event)
         except TypeError:
@@ -50,7 +60,10 @@ class WebBridge(Bridge):
         message_id = -1
         data = json.dumps([message_id, jsonized_event])
         for socket in self._active_sockets:
-            socket.write_message(data)
+            if main_thread:
+                socket.write_message(data)
+            else:
+                IOLoop.instance().add_callback(socket.write_message, data)
 
         return
 
@@ -191,7 +204,8 @@ class AsyncWebServer(WebServer):
 
         if isinstance(new, TraitListEvent):
             trait_name  = trait_name[:-len('_items')]
-            value = id(getattr(obj, trait_name))
+            trait = getattr(obj, trait_name)
+            value = id(trait)
             if isinstance(new.index, slice):
                 # Handle an extended slice.  Note that one cannot increase the
                 # size of the list here.  So one is either deleting elements
@@ -280,7 +294,7 @@ class MainHandler(RequestHandler):
         else:
             mime_type, _ = mimetypes.guess_type(path)
             self.set_header('Content-Type', mime_type)
-            self.write(open(join(self.server.base_url, path)).read())
+            self.write(open(join(self.server.base_url, path), 'rb').read())
 
         return
 
@@ -307,7 +321,6 @@ class AsyncWebSocketHandler(WebSocketHandler):
     def initialize(self, bridge, server):
         self.bridge = bridge
         self.server = server
-        self.lock = threading.RLock()
         return
 
     def open(self):
@@ -329,9 +342,6 @@ class AsyncWebSocketHandler(WebSocketHandler):
         return
 
     def write_message(self, msg, binary=False):
-        with self.lock:
-            return super(AsyncWebSocketHandler, self).write_message(
-                msg, binary
-            )
+        return super(AsyncWebSocketHandler, self).write_message(msg, binary)
 
 #### EOF ######################################################################
