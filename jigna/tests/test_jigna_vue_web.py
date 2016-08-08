@@ -43,6 +43,9 @@ class TestJignaVueWebSync(TestJignaWebSync):
         t.setDaemon(True)
         t.start()
 
+        # Recent Firefox releases (>45) do not seem to work with Selenium so
+        # we switch to Chrome on darwin but continue with FF on travis.  See:
+        # https://github.com/seleniumhq/selenium/issues/1851
         if sys.platform.startswith('darwin'):
             browser = webdriver.Chrome()
         else:
