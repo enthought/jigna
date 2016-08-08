@@ -1,3 +1,4 @@
+import sys
 from textwrap import dedent
 from threading import Thread
 import time
@@ -17,7 +18,8 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_qt import TestJignaQt, Person, body_html, AddressBook
+from test_jigna_qt import (TestJignaQt, Person, body_html, AddressBook,
+    sleep_while)
 
 
 def patch_sys_modules():
@@ -62,11 +64,20 @@ class TestJignaWebSync(TestJignaQt):
         t.setDaemon(True)
         t.start()
 
-        browser = webdriver.Firefox()
+        # Recent Firefox releases (>45) do not seem to work with Selenium so
+        # we switch to Chrome on darwin but continue with FF on travis.  See:
+        # https://github.com/seleniumhq/selenium/issues/1851
+        if sys.platform.startswith('darwin'):
+            browser = webdriver.Chrome()
+        else:
+            browser = webdriver.Firefox()
+
         browser.get('http://localhost:%d'%port)
         cls.app = app
         cls.fred = fred
         cls.browser = browser
+        cls.addressbook = addressbook
+        cls.thread = t
 
     @classmethod
     def tearDownClass(cls):
@@ -74,6 +85,7 @@ class TestJignaWebSync(TestJignaQt):
         cls.browser.quit()
         IOLoop.instance().stop()
         time.sleep(1)
+        cls.thread.join()
 
         # Smells a bit but doing this here ensures that none of the tested
         # cases imports Qt.
@@ -91,6 +103,9 @@ class TestJignaWebSync(TestJignaQt):
         self.fred.friends = []
         # Wait for the model to be setup before running the tests.
         self.get_attribute('jigna.models.model.name', self.fred.name)
+
+    def process_events(self):
+        pass
 
     def execute_js(self, js):
         return self.browser.execute_script(js)
@@ -144,6 +159,7 @@ class TestJignaWebSync(TestJignaQt):
         # Set in the JS side.
         self.execute_js("jigna.models.model.spouse.name = 'Wilmaji'")
         self.execute_js("jigna.models.model.spouse.age = 41")
+        sleep_while(lambda: wilma.name != 'Wilmaji', timeout=1.0)
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
 

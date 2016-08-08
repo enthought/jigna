@@ -4,6 +4,24 @@ from jigna.template import Template
 import unittest
 import time
 
+
+def sleep_while(condition, timeout, dt=0.1):
+    def _check_cond():
+        try:
+            return condition()
+        except Exception:
+            return True
+
+    t = 0.0
+    while _check_cond():
+        time.sleep(dt)
+        t += dt
+        if t > timeout:
+            return False
+    return True
+
+
+
 #### Test model ####
 
 class Person(HasTraits):
@@ -31,9 +49,10 @@ class AddressBook(HasTraits):
     contacts = List
 
     def create(self):
-        for i in range(10):
+        n = 10
+        for i in range(n):
             self.contacts.append(Contact(name=str(i), number=str(i)))
-        for i in range(10, 20):
+        for i in range(n, 2*n):
             self.contacts.append(Company(
                 name=str(i), number=str(i), address=str(i)
             ))
@@ -116,6 +135,7 @@ class TestJignaQt(unittest.TestCase):
         gui.process_events()
         cls.widget = widget
         cls.fred = fred
+        cls.addressbook = addressbook
 
     def setUp(self):
         cls = self.__class__
@@ -126,6 +146,10 @@ class TestJignaQt(unittest.TestCase):
         self.fred.friends = []
         self.fred.called_with = None
         self.fred.method_slow_called_with = None
+        self.addressbook = cls.addressbook
+
+    def wait_and_assert(self, condition, timeout=1.0):
+        self.assertTrue(sleep_while(condition, timeout=timeout))
 
     def execute_js(self, js):
         from jigna.utils import gui
@@ -133,6 +157,10 @@ class TestJignaQt(unittest.TestCase):
         result = self.widget.execute_js(js)
         gui.process_events()
         return result
+
+    def process_events(self):
+        from jigna.utils import gui
+        gui.process_events()
 
     def assertJSEqual(self, js, value):
         result = self.execute_js(js)
@@ -302,6 +330,8 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual(
             "jigna.models.model.fruits", ['apple', 'banana', 'peach']
         )
+
+        sleep_while(lambda: fred.fruits[0] != 'apple', timeout=1.0)
         self.assertEqual(fred.fruits, ['apple', 'banana', 'peach'])
 
     def test_callable(self):
@@ -359,8 +389,20 @@ class TestJignaQt(unittest.TestCase):
 
     def test_nested_object_with_threaded_creation(self):
         # When
-        self.execute_js("$('#create').trigger('click');")
-        time.sleep(0.1)
+
+        # We trigger the click on setTimeout so as to avoid problems with
+        # the JS code blocking any event processing
+        self.execute_js(
+            "setTimeout(function(){$('#create').trigger('click');});"
+        )
+
+        # Wait till the call is made.
+        t = 0
+        while len(self.addressbook.contacts) != 20 and t < 2.0:
+            self.process_events()
+            time.sleep(0.05)
+            t += 0.05
+
         # Then.
         self.assertJSEqual('jigna.models.addressbook.contacts.length', 20)
         self.assertJSEqual('jigna.models.addressbook.contacts[1].name', '1')
