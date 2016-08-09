@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sys
 from threading import Thread
 import unittest
@@ -14,9 +15,9 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_web import TestJignaWebSync, Person, AddressBook, \
+from .test_jigna_web import TestJignaWebSync, Person, AddressBook, \
     patch_sys_modules
-from test_jigna_vue_qt import body_vue_html
+from .test_jigna_vue_qt import body_vue_html
 
 
 class TestJignaVueWebSync(TestJignaWebSync):

@@ -38,7 +38,7 @@ class Person(HasTraits):
         self.called_with = value
 
     def printme(self, val):
-        print "JS:", val
+        print("JS: %s"%val)
 
     def method_slow(self, value, sleep_for):
         time.sleep(sleep_for)

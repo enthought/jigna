@@ -9,7 +9,8 @@ import os.path
 from setuptools import setup, find_packages
 
 data = {}
-execfile(os.path.join('jigna', '__init__.py'), data)
+fname = os.path.join('jigna', '__init__.py')
+exec(compile(open(fname).read(), fname, 'exec'), data)
 
 setup(
     name='jigna',

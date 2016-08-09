@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sys
 from textwrap import dedent
 from threading import Thread
@@ -18,7 +19,7 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_qt import (TestJignaQt, Person, body_html, AddressBook,
+from .test_jigna_qt import (TestJignaQt, Person, body_html, AddressBook,
     sleep_while)
 
 
@@ -159,9 +160,8 @@ class TestJignaWebSync(TestJignaQt):
         # Set in the JS side.
         self.execute_js("jigna.models.model.spouse.name = 'Wilmaji'")
         self.execute_js("jigna.models.model.spouse.age = 41")
-        sleep_while(lambda: wilma.name != 'Wilmaji', timeout=1.0)
-        self.assertEqual(wilma.name, "Wilmaji")
-        self.assertEqual(wilma.age, 41)
+        self.wait_and_assert(lambda: wilma.name != 'Wilmaji')
+        self.wait_and_assert(lambda: wilma.age != 41)
 
     def test_reload_works_correctly(self):
         # Given

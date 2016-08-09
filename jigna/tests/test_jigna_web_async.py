@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import sys
 import unittest
 from unittest import skipIf
 
-from test_jigna_qt import sleep_while
-from test_jigna_web import TestJignaWebSync, Person
+from .test_jigna_qt import sleep_while
+from .test_jigna_web import TestJignaWebSync, Person
 
 class TestJignaWebAsync(TestJignaWebSync):
     @classmethod

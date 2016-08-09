@@ -4,6 +4,7 @@ the primitive type.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 from traits.api import HasTraits, Str, List
 from jigna.api import HTMLWidget, Template
@@ -68,7 +69,7 @@ def main():
     app.exec_()
 
     # Check the final values of the list attribute
-    print basket.fruits
+    print(basket.fruits)
 
 if __name__ == "__main__":
     main()

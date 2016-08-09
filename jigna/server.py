@@ -128,7 +128,7 @@ class Server(HasTraits):
     def print_JS_message(self, request):
         """ Prints a message coming from the JS client for testing purposes """
 
-        print 'JS: ' + str(request['value'])
+        print('JS: ' + str(request['value']))
 
         return
 
@@ -285,7 +285,7 @@ class Server(HasTraits):
     def _get_dict_info(self, obj):
         """ Get a description of a dict. """
 
-        return dict(keys=obj.keys())
+        return dict(keys=list(obj.keys()))
 
     def _get_event_names(self, obj):
         """ Get the names of all the attributes on an object.

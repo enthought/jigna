@@ -45,5 +45,5 @@ def start_web_app(template, context, port=8000):
     app = WebApp(template=template, context=context)
     app.listen(port)
 
-    print 'Starting the web app on port %s ...' % port
+    print('Starting the web app on port %s ...' % port)
     ioloop.start()

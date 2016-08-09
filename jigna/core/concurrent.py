@@ -7,6 +7,11 @@
 """Module to support asynchronous execution of code."""
 
 # System library imports.
+try:
+    from __builtin__ import unicode as utext
+except ImportError:
+    from builtins import str as utext
+
 import sys
 from threading import Thread, RLock
 from functools import wraps
@@ -405,7 +410,7 @@ class Future(Promise):
                 self._deferred.error(sys.exc_info())
 
         # Pass self to the function if it needs it.
-        if future_kw is not None and type(future_kw) in (str, unicode):
+        if future_kw is not None and type(future_kw) in (str, utext):
             kw[future_kw] = self
         args = args or ()
         kw = kw or {}

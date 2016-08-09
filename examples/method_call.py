@@ -5,6 +5,7 @@ also pass instances.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 from traits.api import HasTraits, Int, Str, Instance
 from jigna.api import HTMLWidget, Template
@@ -19,7 +20,7 @@ class Person(HasTraits):
 
     def greet(self):
         """ Simple method without any arguments. """
-        print 'Greetings %s, from the Javascript world!' % self.name
+        print('Greetings %s, from the Javascript world!' % self.name)
 
     def update_age(self, age):
         """ Method which takes a primitive argument. """
@@ -71,7 +72,7 @@ def main():
     app.exec_()
 
     # Check the final values after the UI is closed
-    print fred.name, fred.age, fred.spouse.name
+    print(fred.name, fred.age, fred.spouse.name)
 
 if __name__ == '__main__':
     main()

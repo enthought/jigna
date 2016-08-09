@@ -8,6 +8,7 @@ safety related issues with that method.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 from traits.api import HasTraits, Int, Str, Instance
 from jigna.api import HTMLWidget, Template
@@ -99,7 +100,7 @@ def main():
     app.exec_()
 
     # Check the final values
-    print installer.current.name, installer.current.version
+    print(installer.current.name, installer.current.version)
 
 if __name__ == '__main__':
     main()
