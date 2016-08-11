@@ -402,6 +402,7 @@ class TestJignaQt(unittest.TestCase):
             self.process_events()
             time.sleep(0.05)
             t += 0.05
+        self.process_events()
 
         # Then.
         self.assertJSEqual('jigna.models.addressbook.contacts.length', 20)
