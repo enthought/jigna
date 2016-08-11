@@ -27,5 +27,5 @@ install:
 
     - cmd /v:on /e:on /c ".\appveyor-install-deps.cmd"
 
-tes_script:
+test_script:
     - cmd /v:on /e:on /c ".\appveyor-run-tests.cmd"
