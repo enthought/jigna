@@ -11,4 +11,4 @@ pip install --cache-dir c:/temp coverage
 pip install --cache-dir c:/temp mock
 
 rem install jigna
-pip setup.py develop
+python setup.py develop
