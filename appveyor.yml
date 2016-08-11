@@ -24,3 +24,8 @@ install:
     - ps: python -m pip install --upgrade --no-binary wheel pip
     - ps: pip install --upgrade wheel
     - ps: pip --version
+
+    - cmd /v:on /e:on /c ".\appveyor-install-deps.cmd"
+
+tes_script:
+    - cmd /v:on /e:on /c ".\appveyor-run-tests.cmd"
