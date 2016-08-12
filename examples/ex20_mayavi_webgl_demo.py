@@ -121,7 +121,7 @@ class Plotter3D(HasTraits):
 
 #### UI layer ####
 
-template = Template(html_file='mayavi_webgl_demo.html')
+template = Template(html_file='ex20_mayavi_webgl_demo.html')
 
 #### Entry point ####
 

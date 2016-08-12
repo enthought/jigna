@@ -1,6 +1,6 @@
 """
-This example shows how to include HTML templates for creating reusable
-components.
+This example shows how to add additional resources like CSS, javascript
+and image files in your html by specifying a base url.
 """
 
 #### Imports ####
@@ -17,45 +17,43 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-html = """
-  <html ng-app='templating'>
-    <head>
-      <script type='text/javascript' src='/jigna/jigna.js'></script>
-      <script type='text/javascript' src='templating.js'></script>
-    </head>
-    <body>
-      <person-view person="fred"></person-view>
-      <person-view person="wilma"></person-view>
-    </body>
-  </html>
+body_html = """
+    <div>
+        <img ng-src='{{person.name}}.png' /><br/>
+        <div id="caption" class='red'>
+            {{person.name}} - {{person.age}} years old
+        </div>
+    </div>
+
+    <script type='text/javascript' src='color_change.js'></script>
+    <link rel='stylesheet' href='colors.css' />
 """
 
 # The base_url field specifies where to look when trying to get external
 # resources(defaults to an empty string, i.e. the current directory)
-template = Template(html=html)
+template = Template(body_html=body_html, base_url='ex5_data/',
+    recommended_size=(600, 600)
+)
 
 #### Entry point ####
-
 
 def main():
     # Start the Qt application
     app = QtGui.QApplication([])
 
     # Instantiate the domain model
-    fred = Person(name='Fred', age=28)
-    wilma = Person(name='Wilma', age=25)
+    lena = Person(name='Lena', age=28)
 
     # Create the jigna based HTML widget which renders the given HTML template
     # with the given context.
-    widget = HTMLWidget(
-        template=template, context={'fred': fred, 'wilma': wilma}
-    )
+    widget = HTMLWidget(template=template, context={'person':lena})
     widget.show()
 
     # Start the event loop.
     #
-    # You should see that the person-view component's template is rendered with
-    # the correct domain models.
+    # You should see that user resources like CSS, images and custom JS are
+    # pulled in properly from the `user_resources_data` directory and displayed
+    # in the view.
     app.exec_()
 
 if __name__ == "__main__":

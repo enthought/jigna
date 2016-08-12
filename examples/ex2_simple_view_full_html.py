@@ -21,7 +21,7 @@ class Person(HasTraits):
 
 #### UI layer ####
 
-template = Template(html_file='simple_view_full.html')
+template = Template(html_file='ex2_simple_view_full.html')
 
 #### Entry point ####
 
