@@ -30,6 +30,7 @@ from traits.api import (
 
 # Jigna library.
 from jigna.server import Bridge, Server
+from jigna.core.wsgi import guess_type
 
 #: Path to jigna.js file
 JIGNA_JS_FILE = join(abspath(dirname(__file__)), 'js', 'dist', 'jigna.js')
@@ -292,7 +293,7 @@ class MainHandler(RequestHandler):
         if not len(path):
             self.write(self.server.html)
         else:
-            mime_type, _ = mimetypes.guess_type(path)
+            mime_type, _ = guess_type(path)
             self.set_header('Content-Type', mime_type)
             self.write(open(join(self.server.base_url, path), 'rb').read())
 
