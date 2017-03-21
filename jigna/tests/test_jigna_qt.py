@@ -4,6 +4,24 @@ from jigna.template import Template
 import unittest
 import time
 
+
+def sleep_while(condition, timeout, dt=0.1):
+    def _check_cond():
+        try:
+            return condition()
+        except Exception:
+            return True
+
+    t = 0.0
+    while _check_cond():
+        time.sleep(dt)
+        t += dt
+        if t > timeout:
+            return False
+    return True
+
+
+
 #### Test model ####
 
 class Person(HasTraits):
@@ -20,11 +38,35 @@ class Person(HasTraits):
         self.called_with = value
 
     def printme(self, val):
-        print "JS:", val
+        print("JS: %s"%val)
 
     def method_slow(self, value, sleep_for):
         time.sleep(sleep_for)
         self.method_slow_called_with = value
+
+
+class AddressBook(HasTraits):
+    contacts = List
+
+    def create(self):
+        n = 10
+        for i in range(n):
+            self.contacts.append(Contact(name=str(i), number=str(i)))
+        for i in range(n, 2*n):
+            self.contacts.append(Company(
+                name=str(i), number=str(i), address=str(i)
+            ))
+
+
+class Company(HasTraits):
+    name = Str
+    number = Str
+    address = Str
+
+class Contact(HasTraits):
+    name = Str
+    number = Str
+
 
 #### UI for model ####
 
@@ -57,7 +99,21 @@ body_html = """
       </ul>
     </div>
 
-    Spouse: {{model.spouse}}
+    Spouse: <br/>
+    Name: {{model.spouse.name}} Age: {{model.spouse.age}}
+
+   <h3>Addressbook</h3>
+   <button ng-click="jigna.threaded(addressbook, 'create')" id="create">
+    Create
+   </button>
+   <br/>
+   <ul>
+    <li ng-repeat="contact in addressbook.contacts track by $index">
+     <label>Name:</label> <input ng-model="contact.name">
+     <label>Number:</label> <input ng-model="contact.number">
+    </li>
+   </ul>
+
 """
 
 class TestJignaQt(unittest.TestCase):
@@ -70,11 +126,16 @@ class TestJignaQt(unittest.TestCase):
         qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
         template = Template(body_html=body_html)
         fred = Person(name='Fred', age=42)
-        widget = HTMLWidget(template=template, context={'model':fred})
+        addressbook = AddressBook()
+        widget = HTMLWidget(
+            template=template,
+            context={'model':fred, 'addressbook': addressbook}
+        )
         widget.show()
         gui.process_events()
         cls.widget = widget
         cls.fred = fred
+        cls.addressbook = addressbook
 
     def setUp(self):
         cls = self.__class__
@@ -85,6 +146,10 @@ class TestJignaQt(unittest.TestCase):
         self.fred.friends = []
         self.fred.called_with = None
         self.fred.method_slow_called_with = None
+        self.addressbook = cls.addressbook
+
+    def wait_and_assert(self, condition, timeout=1.0):
+        self.assertTrue(sleep_while(condition, timeout=timeout))
 
     def execute_js(self, js):
         from jigna.utils import gui
@@ -92,6 +157,10 @@ class TestJignaQt(unittest.TestCase):
         result = self.widget.execute_js(js)
         gui.process_events()
         return result
+
+    def process_events(self):
+        from jigna.utils import gui
+        gui.process_events()
 
     def assertJSEqual(self, js, value):
         result = self.execute_js(js)
@@ -148,6 +217,27 @@ class TestJignaQt(unittest.TestCase):
 
         self.execute_js("jigna.models.model.fruits = ['apple']")
         self.assertEqual(fred.fruits, ["apple"])
+
+    def test_list_slicing(self):
+        fred = self.fred
+        fred.fruits = ["peach", "pear", "banana", "fruit", "apple"]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        # Test that deleting a single element works.
+        del fred.fruits[3]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        # Now try a complex slice.
+        fred.fruits[::2] = ["mango", "litchi"]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        # Now try deleting a slice
+        del fred.fruits[::2]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        fred.fruits = ["peach", "pear", "banana", "fruit", "apple"]
+        del fred.fruits[::3]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
 
     def test_dict_of_primitives(self):
         self.assertJSEqual("jigna.models.model.phonebook", {})
@@ -240,6 +330,8 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual(
             "jigna.models.model.fruits", ['apple', 'banana', 'peach']
         )
+
+        sleep_while(lambda: fred.fruits[0] != 'apple', timeout=1.0)
         self.assertEqual(fred.fruits, ['apple', 'banana', 'peach'])
 
     def test_callable(self):
@@ -294,6 +386,31 @@ class TestJignaQt(unittest.TestCase):
                 pass
         else:
             raise AssertionError("Async method not finished")
+
+    def test_nested_object_with_threaded_creation(self):
+        # When
+
+        # We trigger the click on setTimeout so as to avoid problems with
+        # the JS code blocking any event processing
+        self.execute_js(
+            "setTimeout(function(){$('#create').trigger('click');});"
+        )
+
+        # Wait till the call is made.
+        t = 0
+        while len(self.addressbook.contacts) != 20 and t < 2.0:
+            self.process_events()
+            time.sleep(0.05)
+            t += 0.05
+        self.process_events()
+
+        # Then.
+        self.assertJSEqual('jigna.models.addressbook.contacts.length', 20)
+        self.assertJSEqual('jigna.models.addressbook.contacts[1].name', '1')
+        self.assertJSEqual('jigna.models.addressbook.contacts[1].number', '1')
+        self.assertJSEqual('jigna.models.addressbook.contacts[10].name', '10')
+        self.assertJSEqual('jigna.models.addressbook.contacts[10].number', '10')
+        self.assertJSEqual('jigna.models.addressbook.contacts[10].address', '10')
 
 
 if __name__ == "__main__":

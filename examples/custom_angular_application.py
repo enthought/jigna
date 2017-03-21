@@ -4,6 +4,7 @@ would need a custom angularjs application to add some view related logic.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 from jigna.api import HTMLWidget, Template
 from jigna.qt import QtGui
@@ -54,7 +55,7 @@ def main():
     app.exec_()
 
     # Check the values after the UI is closed
-    print stop_watch.time, "seconds"
+    print(stop_watch.time, "seconds")
 
 if __name__ == "__main__":
     main()

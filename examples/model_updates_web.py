@@ -4,6 +4,7 @@ the web version.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 import datetime
 from jigna.api import Template, WebApp
@@ -56,7 +57,7 @@ def main():
     )
 
     # Start serving the web app on port 8000.
-    print 'Serving on port 8000...'
+    print('Serving on port 8000...')
     ioloop.start()
 
 if __name__ == "__main__":

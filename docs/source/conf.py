@@ -41,8 +41,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Jigna'
-copyright = u'2014, Jigna developers'
+project = 'Jigna'
+copyright = '2014-2016, Jigna developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -186,8 +186,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Jigna.tex', u'Jigna Documentation',
-   u'Jigna developers', 'manual'),
+  ('index', 'Jigna.tex', 'Jigna Documentation',
+   'Jigna developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -216,8 +216,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'jigna', u'Jigna Documentation',
-     [u'Jigna developers'], 1)
+    ('index', 'jigna', 'Jigna Documentation',
+     ['Jigna developers'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -230,8 +230,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Jigna', u'Jigna Documentation',
-   u'Jigna developers', 'Jigna', 'One line description of project.',
+  ('index', 'Jigna', 'Jigna Documentation',
+   'Jigna developers', 'Jigna', 'One line description of project.',
    'Miscellaneous'),
 ]
 

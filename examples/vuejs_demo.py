@@ -4,6 +4,7 @@ a full html file, rather than specifying body_html and head_html.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 from traits.api import HasTraits, Int, Str, List, Instance
 from jigna.api import HTMLWidget, VueTemplate
@@ -25,7 +26,7 @@ class Person(HasTraits):
         del self.fruits[index]
 
     def update_name(self, name):
-        print "Name updated to", name
+        print("Name updated to", name)
         self.name = name
 
     def add_friend(self):
@@ -35,7 +36,7 @@ class Person(HasTraits):
         del self.friends[index]
 
     def _fruits_items_changed(self, l_event):
-        print l_event.added, l_event.removed, l_event.index
+        print(l_event.added, l_event.removed, l_event.index)
 
 #### UI layer ####
 
@@ -66,7 +67,7 @@ def main():
     app.exec_()
 
     # Check the values after the UI is closed
-    print fred.name, fred.age, fred.fruits, fred.friends
+    print(fred.name, fred.age, fred.fruits, fred.friends)
 
 if __name__ == "__main__":
     main()

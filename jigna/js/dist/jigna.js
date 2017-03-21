@@ -26411,6 +26411,7 @@ jigna.initialize = function(options) {
     options = options || {};
     this.ready  = $.Deferred();
     this.debug  = options.debug;
+    this.async  = options.async;
     this.client = options.async ? new jigna.AsyncClient() : new jigna.Client();
     this.client.initialize();
     return this.ready;
@@ -26432,51 +26433,6 @@ jigna.threaded = function(obj, method_name, args) {
     return this.client.call_instance_method_thread(obj.__id__, method_name, args);
 };
 
-// A convenience function to get a particular expression once it is really
-// set.  This returns a promise object.
-// Arguments:
-//   - expr a javascript expression to evaluate,
-//   - timeout (optional) in seconds; defaults to 2 seconds,
-jigna.wait_for = function (expr, timeout) {
-    var deferred = new $.Deferred();
-
-    var result;
-    try {
-        result = eval(expr);
-    }
-    catch(err) {
-        result = undefined;
-        if (timeout <= 0) {
-            deferred.reject(err);
-        }
-    }
-
-    // resolve with the obtained result if it wasn't undefined
-    if (result !== undefined) {
-        deferred.resolve(result);
-    }
-    // otherwise, try again after some time until the given timeout
-    else {
-        timeout = timeout || 2;
-        // keep polling for the result every 100 ms or so. Keep decreasing
-        // the time remaining on each call by 100 ms and break when we reach
-        // 0.
-        if (timeout > 0) {
-            var wait = 100;
-            setTimeout(function(){
-                expr_loaded = jigna.wait_for(expr, (timeout*1000 - wait)/1000.0);
-                expr_loaded.done(function(value){deferred.resolve(value);});
-                expr_loaded.fail(function(err){deferred.reject(err);});
-            }, wait);
-        }
-        else {
-            deferred.reject("Timeout exceeded while waiting for expression: " + expr);
-        }
-    }
-
-    return deferred.promise();
-};
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Client
@@ -26490,7 +26446,7 @@ jigna.Client.prototype.initialize = function() {
 
     // Private protocol.
     this._id_to_proxy_map = {};
-    this._proxy_factory   = new jigna.ProxyFactory(this);
+    this._proxy_factory   = this._create_proxy_factory();
 
     // Add all of the models being edited
     jigna.add_listener(
@@ -26696,8 +26652,10 @@ jigna.Client.prototype._add_models = function(context) {
     var client = this;
     var models = {};
     $.each(context, function(model_name, model) {
-        proxy = client._add_model(model_name, model.value, model.info);
-        models[model_name] = proxy;
+        if (jigna.models[model_name] === undefined) {
+            proxy = client._add_model(model_name, model.value, model.info);
+            models[model_name] = proxy;
+        }
     });
 
     // Resolve the jigna.ready deferred, at this point the initial set of
@@ -26706,6 +26664,10 @@ jigna.Client.prototype._add_models = function(context) {
     jigna.ready.resolve();
 
     return models;
+};
+
+jigna.Client.prototype._create_proxy_factory = function() {
+    return new jigna.ProxyFactory(this);
 };
 
 jigna.Client.prototype._create_proxy = function(type, obj, info) {
@@ -26916,6 +26878,67 @@ jigna.AsyncClient.prototype.get_attribute = function(proxy, attribute) {
     return proxy.__cache__[attribute];
 };
 
+jigna.AsyncClient.prototype.on_object_changed = function(event){
+    if (jigna.debug) {
+        this.print_JS_message('------------on_object_changed--------------');
+        this.print_JS_message('object id  : ' + event.obj);
+        this.print_JS_message('attribute  : ' + event.name);
+        this.print_JS_message('items event: ' + event.items_event);
+        this.print_JS_message('new type   : ' + event.data.type);
+        this.print_JS_message('new value  : ' + event.data.value);
+        this.print_JS_message('new info   : ' + event.data.info);
+        this.print_JS_message('-------------------------------------------');
+    }
+
+    var proxy = this._id_to_proxy_map[event.obj];
+
+    // If the *contents* of a list/dict have changed then we need to update
+    // the associated proxy to reflect the change.
+    if (event.items_event) {
+        var collection_proxy = this._id_to_proxy_map[event.data.value];
+        // The collection proxy can be undefined if on the Python side you
+        // have re-initialized a list/dict with the same value that it
+        // previously had, e.g.
+        //
+        // class Person(HasTraits):
+        //     friends = List([1, 2, 3])
+        //
+        // fred = Person()
+        // fred.friends = [1, 2, 3] # No trait changed event!!
+        //
+        // This is because even though traits does copy on assignment for
+        // lists/dicts (and hence the new list will have a new Id), it fires
+        // the trait change events only if it considers the old and new values
+        // to be different (ie. if does not compare the identity of the lists).
+        //
+        // For us(!), it means that we won't have seen the new list before we
+        // get an items changed event on it.
+        if (collection_proxy === undefined) {
+            // In the async case, we do not create a new proxy instead we
+            // update the id_to_proxy map and update the proxy with the
+            // dict/list event info.
+            collection_proxy = proxy.__cache__[event.name];
+            this._id_to_proxy_map[event.data.value] = collection_proxy;
+        }
+        this._proxy_factory.update_proxy(
+            collection_proxy, event.data.type, event.data.info
+        );
+
+    } else {
+        proxy.__cache__[event.name] = this._unmarshal(event.data);
+    }
+
+    // Angular listens to this event and forces a digest cycle which is how it
+    // detects changes in its watchers.
+    jigna.fire_event('jigna', {name: 'object_changed', object: proxy});
+};
+
+// Private protocol //////////////////////////////////////////////////////////
+
+jigna.AsyncClient.prototype._create_proxy_factory = function() {
+    return new jigna.AsyncProxyFactory(this);
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // ProxyFactory
@@ -26928,6 +26951,15 @@ jigna.ProxyFactory = function(client) {
     // We create a constructor for each Python class and then create the
     // actual proxies from those.
     this._type_to_constructor_map = {};
+
+    // Create a new instance constructor when a "new_type" event is fired.
+    jigna.add_listener(
+        'jigna',
+        'new_type',
+        function(event){this._create_instance_constructor(event.data);},
+        this
+    );
+
 };
 
 jigna.ProxyFactory.prototype.create_proxy = function(type, id, info) {
@@ -27018,11 +27050,15 @@ jigna.ProxyFactory.prototype._add_instance_event = function(proxy, event_name){
 };
 
 jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
+    var constructor = this._type_to_constructor_map[info.type_name];
+    if (constructor !== undefined) {
+        return constructor;
+    }
+
     constructor = function(type, id, client) {
         jigna.Proxy.call(this, type, id, client);
 
         /* Listen for changes to the object that the proxy is a proxy for! */
-
         var index;
         var info = this.__info__;
 
@@ -27085,18 +27121,19 @@ jigna.ProxyFactory.prototype._create_instance_constructor = function(info) {
         constructor.prototype, '__type_name__', {value : info.type_name}
     );
 
+    this._type_to_constructor_map[info.type_name] = constructor;
+
     return constructor;
 }
 
 jigna.ProxyFactory.prototype._create_instance_proxy = function(id, info) {
-    var constructor;
+    var constructor, proxy;
 
     // We create a constructor for each Python class and then create the
     // actual proxies as from those.
     constructor = this._type_to_constructor_map[info.type_name];
     if (constructor === undefined) {
         constructor = this._create_instance_constructor(info);
-        this._type_to_constructor_map[info.type_name] = constructor;
     }
 
     return new constructor('instance', id, this._client);
@@ -27186,6 +27223,190 @@ jigna.ProxyFactory.prototype._add_item_attribute = function(proxy, index){
         var value = this.__cache__[index];
         if (value === undefined) {
             value = this.__client__.get_attribute(this, index);
+            this.__cache__[index] = value;
+        }
+
+        return value;
+    };
+
+    set = function(value) {
+        // In here, 'this' refers to the proxy!
+        this.__cache__[index] = value;
+        this.__client__.set_item(this.__id__, index, value);
+    };
+
+    descriptor = {enumerable:true, get:get, set:set, configurable:true};
+    Object.defineProperty(proxy, index, descriptor);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// AsyncProxyFactory
+/////////////////////////////////////////////////////////////////////////////
+
+jigna._SavedData = function(data) {
+    // Used internally to save marshaled data to unmarshal later.
+    this.data = data;
+};
+
+jigna.AsyncProxyFactory = function(client) {
+    jigna.ProxyFactory.call(this, client);
+};
+
+jigna.AsyncProxyFactory.prototype = Object.create(
+    jigna.ProxyFactory.prototype
+);
+
+jigna.AsyncProxyFactory.prototype.constructor = jigna.AsyncProxyFactory
+
+jigna.AsyncProxyFactory.prototype._add_instance_attribute = function(proxy, attribute_name){
+    var descriptor, get, set;
+
+    get = function() {
+        // In here, 'this' refers to the proxy!
+        var value = this.__cache__[attribute_name];
+        if (value === undefined) {
+            value = this.__client__.get_attribute(this, attribute_name);
+            if (value === undefined) {
+                var info = this.__info__;
+                if (info && (info.attribute_values !== undefined)) {
+                    var index = info.attribute_names.indexOf(attribute_name);
+                    value = this.__client__._unmarshal(
+                        info.attribute_values[index]
+                    );
+                }
+            } else {
+                this.__cache__[attribute_name] = value;
+            }
+        }
+
+        return value;
+    };
+
+    set = function(value) {
+        // In here, 'this' refers to the proxy!
+        //
+        // If the proxy is for a 'HasTraits' instance then we don't need
+        // to set the cached value here as the value will get updated when
+        // we get the corresponding trait event. However, setting the value
+        // here means that we can create jigna UIs for non-traits objects - it
+        // just means we won't react to external changes to the model(s).
+        this.__cache__[attribute_name] = value;
+        this.__client__.set_instance_attribute(
+            this.__id__, attribute_name, value
+        );
+    };
+
+    descriptor = {enumerable:true, get:get, set:set, configurable:true};
+    Object.defineProperty(proxy, attribute_name, descriptor);
+};
+
+jigna.AsyncProxyFactory.prototype._populate_dict_proxy = function(proxy, info) {
+    var index, key;
+    var values = info.values;
+
+    for (index=0; index < info.keys.length; index++) {
+        key = info.keys[index];
+        this._add_item_attribute(proxy, key);
+        proxy.__cache__[key] = new jigna._SavedData(values.data[index]);
+    }
+};
+
+jigna.AsyncProxyFactory.prototype._update_dict_proxy = function(proxy, info) {
+    var removed = info.removed;
+    var cache = proxy.__cache__;
+    var key;
+
+    // Add the keys in the added.
+    this._populate_dict_proxy(proxy, info.added);
+
+    for (var index=0; index < removed.length; index++) {
+        key = removed[index];
+        delete cache[key];
+        delete proxy[key];
+    }
+};
+
+jigna.AsyncProxyFactory.prototype._populate_list_proxy = function(proxy, info) {
+    /* Populate the items in a list proxy. */
+
+    var data = info.data;
+    for (var index=0; index < info.length; index++) {
+        this._add_item_attribute(proxy, index);
+        proxy.__cache__[index] = new jigna._SavedData(data[index]);
+    }
+
+    return proxy;
+};
+
+jigna.AsyncProxyFactory.prototype._update_list_proxy = function(proxy, info) {
+    /* Update the given proxy. */
+
+    if (info.index === undefined) {
+        // This is an extended slice.  Note that one cannot increase the size
+        // of the list with an extended slice.  So one is either deleting
+        // elements or changing them.
+        var index;
+        var added = info.added;
+        var removed = info.removed - added.length;
+        var cache = proxy.__cache__;
+        var end = cache.length;
+        if (removed > 0) {
+            // Delete the proxy indices at the end.
+            for (index=end; index > (end-removed) ; index--) {
+                delete proxy[index-1];
+            }
+            var to_remove = [];
+            for (index=info.start; index<info.stop; index+=info.step) {
+                to_remove.push(index);
+            }
+            // Delete the cached entries in sequence from the back.
+            for (index=to_remove.length; index > 0; index--) {
+                cache.splice(to_remove[index-1], 1);
+            }
+        } else {
+            // When nothing is removed, just update the cache entries.
+            for (var i=0; i < added.length; i++) {
+                index = info.start + i*info.step;
+                cache[index] = new jigna._SavedData(added.data[i]);
+            }
+        }
+    } else {
+        // This is not an extended slice.
+        var splice_args = [info.index, info.removed].concat(
+            info.added.data.map(function(x) {return new jigna._SavedData(x);})
+        );
+
+        var extra = splice_args.length - 2 - splice_args[1];
+        var cache = proxy.__cache__;
+        var end = cache.length;
+        if (extra < 0) {
+            for (var index=end; index > (end+extra) ; index--) {
+                delete proxy[index-1];
+            }
+        } else {
+            for (var index=0; index < extra; index++){
+                this._add_item_attribute(proxy, end+index);
+            }
+        }
+        cache.splice.apply(cache, splice_args);
+    }
+};
+
+
+// Common for list and dict proxies ////////////////////////////////////////////
+
+jigna.AsyncProxyFactory.prototype._add_item_attribute = function(proxy, index){
+    var descriptor, get, set;
+
+    get = function() {
+        // In here, 'this' refers to the proxy!
+        var value = this.__cache__[index];
+        if (value === undefined) {
+            value = this.__client__.get_attribute(this, index);
+            this.__cache__[index] = value;
+        } else if (value instanceof jigna._SavedData) {
+            value = this.__client__._unmarshal(value.data);
             this.__cache__[index] = value;
         }
 

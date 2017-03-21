@@ -1,7 +1,5 @@
 #
-# Enthought product code
-#
-# (C) Copyright 2013 Enthought, Inc., Austin, TX
+# (C) Copyright 2013-2016 Enthought, Inc., Austin, TX
 # All right reserved.
 #
 
@@ -12,6 +10,7 @@
 import json
 import mimetypes
 from os.path import abspath, dirname, join
+import threading
 import traceback
 try:
     from urllib import unquote
@@ -22,9 +21,12 @@ except ImportError:
 # 3rd party library.
 from tornado.websocket import WebSocketHandler
 from tornado.web import Application, RequestHandler, StaticFileHandler
+from tornado.ioloop import IOLoop
 
 # Enthought library.
-from traits.api import List, Str, Instance
+from traits.api import (
+    Bool, List, Str, Instance, TraitDictEvent, TraitListEvent
+)
 
 # Jigna library.
 from jigna.server import Bridge, Server
@@ -41,6 +43,15 @@ class WebBridge(Bridge):
     def send_event(self, event):
         """ Send an event. """
 
+        # Tornado does not support multiple threads calling send_message.
+        # Instead one should add a callback on the IOLoop instance as done
+        # below.  See:
+        # http://www.tornadoweb.org/en/stable/web.html?highlight=thread#thread-safety-notes
+
+        main_thread = isinstance(
+            threading.current_thread(), threading._MainThread
+        )
+
         try:
             jsonized_event = json.dumps(event)
         except TypeError:
@@ -49,7 +60,10 @@ class WebBridge(Bridge):
         message_id = -1
         data = json.dumps([message_id, jsonized_event])
         for socket in self._active_sockets:
-            socket.write_message(data)
+            if main_thread:
+                socket.write_message(data)
+            else:
+                IOLoop.instance().add_callback(socket.write_message, data)
 
         return
 
@@ -120,6 +134,149 @@ class WebServer(Server):
     def __bridge_default(self):
         return WebBridge()
 
+
+class AsyncWebServer(WebServer):
+    """ Asynchronous Web-based server implementation.
+
+    This implementation uses web-sockets for making two-way communication.
+    A GET request is not used in this case.  This allows one to embed
+    jigna on another web application.
+
+    """
+
+    def _get_attribute_values(self, obj, attribute_names):
+        """ Get the values of all 'public' attributes on an object.
+
+        Return a list of strings.
+
+        """
+
+        return [self._marshal(self._get_attribute_default(obj, name))
+                for name in attribute_names]
+
+    def _get_attribute_default(self, obj, name):
+        value = getattr(obj, name, None)
+        if isinstance(value, list):
+            value = []
+        elif isinstance(value, dict):
+            value = {}
+        elif hasattr(value, '__dict__'):
+            pass
+        elif value is None:
+            pass
+        else:
+            value = type(value)()
+        return value
+
+    def _get_dict_info(self, obj):
+        """ Get a description of a dict. """
+        values = self._get_list_info(list(obj.values()))
+        return dict(keys=list(obj.keys()), values=values)
+
+    def _get_instance_info(self, obj):
+        """ Get a description of an instance. """
+
+        info = super(WebServer, self)._get_instance_info(obj)
+
+        # If this is a new type, also send the attribute_values.
+        if 'attribute_names' in info:
+            attribute_values = self._get_attribute_values(
+                obj, info['attribute_names']
+            )
+            info['attribute_values'] = attribute_values
+            self._send_new_type_event(info)
+            # Now that the type info is sent we do not need to send all that
+            # information again.
+            info = dict(type_name=info['type_name'])
+
+        return info
+
+    def _get_list_info(self, obj):
+        """ Get a description of a list. """
+        data = self._marshal_all(obj)
+        return dict(length=len(obj), data=data)
+
+    def _send_object_changed_event(self, obj, trait_name, old, new):
+        """ Send an object changed event. """
+
+        if trait_name.startswith('_'):
+            return
+
+        if isinstance(new, TraitListEvent):
+            trait_name  = trait_name[:-len('_items')]
+            trait = getattr(obj, trait_name)
+            value = id(trait)
+            if isinstance(new.index, slice):
+                # Handle an extended slice.  Note that one cannot increase the
+                # size of the list here.  So one is either deleting elements
+                # or changing them.
+                s = new.index
+                start = s.start if s.start <= s.stop else s.stop
+                stop = s.stop if s.stop >= s.start else s.start
+                added = new.added[0] if len(new.added) > 0 else []
+                info = dict(
+                    start=start, stop=stop, step=s.step,
+                    removed=len(new.removed[0]),
+                    added=self._get_list_info(added)
+                )
+            else:
+                # This information can be used by the Array.splice method.
+                info = dict(
+                    index=new.index, removed=len(new.removed),
+                    added=self._get_list_info(new.added)
+                )
+
+            data = dict(type='list', value=value, info=info)
+            items_event = True
+
+        elif isinstance(new, TraitDictEvent):
+            trait_name  = trait_name[:-len('_items')]
+            trait = getattr(obj, trait_name)
+            value = id(trait)
+            added, removed = new.added, list(new.removed.keys())
+            for key in new.changed:
+                added[key] = trait[key]
+            info = dict(removed=removed, added=self._get_dict_info(added))
+            data = dict(type='dict', value=value, info=info)
+            items_event = True
+
+        else:
+            # fixme: intent is non-scalar or maybe container?
+            if hasattr(new, '__dict__') or isinstance(new, (dict, list)):
+                self._register_object(new)
+
+            data = self._marshal(new)
+            items_event = False
+
+        event = dict(
+            obj  = str(id(obj)),
+            name = trait_name,
+            # fixme: This smells a bit, but marshalling the new value gives us
+            # a type/value pair which we need on the client side to determine
+            # what (if any) proxy we need to create.
+            data = data,
+
+            # fixme: This is how we currently detect an 'xxx_items' event on
+            # the JS side.
+            items_event = items_event
+        )
+
+        self.send_event(event)
+
+        return
+
+    def _send_new_type_event(self, data):
+        """Send a new_type event.  The data passed is the type information
+        dict.
+        """
+        event = dict(
+            obj  = 'jigna',
+            name = 'new_type',
+            data = data
+        )
+        self.send_event(event)
+
+
 ##### Request handlers ########################################################
 
 
@@ -137,7 +294,7 @@ class MainHandler(RequestHandler):
         else:
             mime_type, _ = mimetypes.guess_type(path)
             self.set_header('Content-Type', mime_type)
-            self.write(open(join(self.server.base_url, path)).read())
+            self.write(open(join(self.server.base_url, path), 'rb').read())
 
         return
 
@@ -183,5 +340,8 @@ class AsyncWebSocketHandler(WebSocketHandler):
     def on_close(self):
         self.bridge.remove_socket(self)
         return
+
+    def write_message(self, msg, binary=False):
+        return super(AsyncWebSocketHandler, self).write_message(msg, binary)
 
 #### EOF ######################################################################

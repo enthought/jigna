@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+import sys
+from textwrap import dedent
 from threading import Thread
 import time
 import sys
@@ -16,7 +19,8 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_qt import TestJignaQt, Person, body_html
+from .test_jigna_qt import (TestJignaQt, Person, body_html, AddressBook,
+    sleep_while)
 
 
 def patch_sys_modules():
@@ -46,9 +50,13 @@ class TestJignaWebSync(TestJignaQt):
         from jigna.web_app import WebApp
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
+        addressbook = AddressBook()
         template = Template(body_html=body_html, async=async)
         port = get_free_port()
-        app = WebApp(template=template, context={'model':fred})
+        app = WebApp(
+            template=template,
+            context={'model':fred, 'addressbook': addressbook}, async=async
+        )
         app.listen(port)
 
         # Start the tornado server in a different thread so that we can write
@@ -57,11 +65,20 @@ class TestJignaWebSync(TestJignaQt):
         t.setDaemon(True)
         t.start()
 
-        browser = webdriver.Firefox()
+        # Recent Firefox releases (>45) do not seem to work with Selenium so
+        # we switch to Chrome on darwin but continue with FF on travis.  See:
+        # https://github.com/seleniumhq/selenium/issues/1851
+        if sys.platform.startswith('darwin'):
+            browser = webdriver.Chrome()
+        else:
+            browser = webdriver.Firefox()
+
         browser.get('http://localhost:%d'%port)
         cls.app = app
         cls.fred = fred
         cls.browser = browser
+        cls.addressbook = addressbook
+        cls.thread = t
 
     @classmethod
     def tearDownClass(cls):
@@ -69,6 +86,7 @@ class TestJignaWebSync(TestJignaQt):
         cls.browser.quit()
         IOLoop.instance().stop()
         time.sleep(1)
+        cls.thread.join()
 
         # Smells a bit but doing this here ensures that none of the tested
         # cases imports Qt.
@@ -85,28 +103,33 @@ class TestJignaWebSync(TestJignaQt):
         self.fred.fruits = []
         self.fred.friends = []
         # Wait for the model to be setup before running the tests.
-        self.get_attribute('jigna.models.model.name', None)
+        self.get_attribute('jigna.models.model.name', self.fred.name)
+
+    def process_events(self):
+        pass
 
     def execute_js(self, js):
         return self.browser.execute_script(js)
 
-    def reset_user_var(self):
-        self.execute_js("jigna.user = undefined;")
-
     def get_attribute(self, js, expect):
-        self.reset_user_var()
-        get_js = """jigna.wait_for(\'%s\').done(function(result)
-                                {jigna.user = result;})"""%js
+        get_js = dedent("""
+        var result;
+        try {
+            result = eval(\'%s\');
+        } catch (err) {
+            result = undefined;
+        }
+        return result;
+        """%js)
         self.execute_js(get_js)
 
-        check_js = "return jigna.user;"
+        check_js = get_js
         result = self.execute_js(check_js)
         count = 0
-        while result is None and expect is not None and count < 10:
-            time.sleep(0.1)
+        while result != expect and count < 10:
+            time.sleep(0.025)
             result = self.execute_js(check_js)
             count += 1
-        self.reset_user_var()
         return result
 
     def assertJSEqual(self, js, value):
@@ -137,8 +160,8 @@ class TestJignaWebSync(TestJignaQt):
         # Set in the JS side.
         self.execute_js("jigna.models.model.spouse.name = 'Wilmaji'")
         self.execute_js("jigna.models.model.spouse.age = 41")
-        self.assertEqual(wilma.name, "Wilmaji")
-        self.assertEqual(wilma.age, 41)
+        self.wait_and_assert(lambda: wilma.name != 'Wilmaji')
+        self.wait_and_assert(lambda: wilma.age != 41)
 
     def test_reload_works_correctly(self):
         # Given

@@ -21,7 +21,7 @@ fi
 enpkg tornado
 
 # Get test dependencies
-pip install nose selenium coverage
+pip install nose selenium coverage mock
 
 # Develop the current package
 python setup.py develop

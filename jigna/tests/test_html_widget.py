@@ -1,3 +1,8 @@
+try:
+    from __builtin__ import basestring
+except ImportError:
+    from builtins import str as basestring
+
 from jigna.api import HTMLWidget, Template
 from jigna.qt import QtWebKit, QtGui
 

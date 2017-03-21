@@ -4,6 +4,7 @@ a full html file, rather than specifying body_html and head_html.
 """
 
 #### Imports ####
+from __future__ import print_function
 
 from traits.api import HasTraits, Int, Str
 from jigna.api import HTMLWidget, Template
@@ -40,7 +41,7 @@ def main():
     app.exec_()
 
     # Check the values after the UI is closed
-    print fred.name, fred.age
+    print(fred.name, fred.age)
 
 if __name__ == "__main__":
     main()

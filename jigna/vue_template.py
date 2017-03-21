@@ -8,7 +8,7 @@
 from textwrap import dedent
 
 # Local imports
-from template import Template
+from .template import Template
 
 
 class VueTemplate(Template):
@@ -33,7 +33,12 @@ class VueTemplate(Template):
               jigna.initialize({{async: {async}}}).done(function() {{
                   vm = new Vue({{
                       el: 'body',
-                      data: jigna.models
+                      data: jigna.models,
+                      methods: {{
+                        threaded: function(obj, method_name, args) {{
+                           jigna.threaded.apply(jigna, arguments);
+                        }},
+                      }}
                   }});
               }});
           </script>

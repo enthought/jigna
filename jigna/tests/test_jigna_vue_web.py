@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+import sys
 from threading import Thread
 import unittest
 
@@ -13,8 +15,9 @@ except ImportError:
 
 # Local imports.
 from jigna.utils.web import get_free_port
-from test_jigna_web import TestJignaWebSync, Person, patch_sys_modules
-from test_jigna_vue_qt import body_vue_html
+from .test_jigna_web import TestJignaWebSync, Person, AddressBook, \
+    patch_sys_modules
+from .test_jigna_vue_qt import body_vue_html
 
 
 class TestJignaVueWebSync(TestJignaWebSync):
@@ -25,9 +28,14 @@ class TestJignaVueWebSync(TestJignaWebSync):
         from jigna.web_app import WebApp
         ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
+        addressbook = AddressBook()
         template = VueTemplate(body_html=body_vue_html, async=async)
         port = get_free_port()
-        app = WebApp(template=template, context={'model':fred})
+        app = WebApp(
+            template=template,
+            context={'model':fred, 'addressbook':addressbook},
+            async=async
+        )
         app.listen(port)
 
         # Start the tornado server in a different thread so that we can write
@@ -36,11 +44,20 @@ class TestJignaVueWebSync(TestJignaWebSync):
         t.setDaemon(True)
         t.start()
 
-        browser = webdriver.Firefox()
+        # Recent Firefox releases (>45) do not seem to work with Selenium so
+        # we switch to Chrome on darwin but continue with FF on travis.  See:
+        # https://github.com/seleniumhq/selenium/issues/1851
+        if sys.platform.startswith('darwin'):
+            browser = webdriver.Chrome()
+        else:
+            browser = webdriver.Firefox()
+
         browser.get('http://localhost:%d'%port)
         cls.app = app
         cls.fred = fred
         cls.browser = browser
+        cls.addressbook = addressbook
+        cls.thread = t
 
 
 del TestJignaWebSync

@@ -1,4 +1,5 @@
 #### Imports ####
+from __future__ import print_function
 
 from jigna.api import Template, WebApp
 from numpy import linspace, sin, pi
@@ -54,7 +55,7 @@ class PlotController(HasTraits):
         pyplot.plot(self.domain_model.x, self.domain_model.y)
 
         # Generate image data in png format
-        from StringIO import StringIO
+        from io import StringIO
         stream = StringIO()
         pyplot.savefig(stream, format='png')
         stream.seek(0)
@@ -98,7 +99,7 @@ def main():
     app.listen(8000)
 
     # Start serving the web app on port 8000.
-    print 'Serving on port 8000...'
+    print('Serving on port 8000...')
     ioloop.start()
 
 if __name__ == "__main__":
