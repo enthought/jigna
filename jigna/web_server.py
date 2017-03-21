@@ -35,6 +35,30 @@ from jigna.server import Bridge, Server
 JIGNA_JS_FILE = join(abspath(dirname(__file__)), 'js', 'dist', 'jigna.js')
 
 
+def normalize_slice(s, size):
+    """ Normalize a python slice such that.
+
+    s - slice instance to normalize
+    size - the size of original sequence to normalize for
+
+    The returned slice instance has following properties:
+      - start, stop, step are all int
+      - start < stop
+      - step > 1
+    """
+    start = s.start
+    stop = s.stop
+    step = s.step
+    idx = list(range(size))[s]
+    if len(idx) > 1 and idx[0] > idx[1]:
+        idx.reverse()
+    if len(idx) > 1:
+        return slice(idx[0], idx[-1]+1, idx[1]-idx[0])
+    elif len(idx) == 1:
+        return slice(idx[0], idx[0]+1, 1)
+    else:
+        return slice(0, 0, 1)
+
 class WebBridge(Bridge):
     """ Bridge that handles the client-server communication. """
 
@@ -210,13 +234,15 @@ class AsyncWebServer(WebServer):
                 # Handle an extended slice.  Note that one cannot increase the
                 # size of the list here.  So one is either deleting elements
                 # or changing them.
-                s = new.index
+                added = new.added[0] if len(new.added) > 0 else []
+                removed = new.removed[0]
+                prev_size = len(trait) + len(removed) - len(added)
+                s = normalize_slice(new.index, prev_size)
                 start = s.start if s.start <= s.stop else s.stop
                 stop = s.stop if s.stop >= s.start else s.start
-                added = new.added[0] if len(new.added) > 0 else []
                 info = dict(
                     start=start, stop=stop, step=s.step,
-                    removed=len(new.removed[0]),
+                    removed=len(removed),
                     added=self._get_list_info(added)
                 )
             else:
