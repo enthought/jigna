@@ -2,7 +2,7 @@
 call setenv /x64
 
 mkdir testrun
-copy .coveragerc testrun/
+copy .coveragerc testrun
 cd testrun
 
 coverage run -m nose.core -v jigna
