@@ -1,13 +1,14 @@
 language: generic
 sudo: false
-matrix:
-  include:
-    - env: RUNTIME=2.7 QT_APIS="pyside pyqt"
-    - env: RUNTIME=3.5 QT_APIS=pyqt
-    - os: osx
-      env: RUNTIME=2.7 QT_APIS="pyside pyqt"
-    - os: osx
-      env: RUNTIME=3.5 QT_APIS=pyqt
+os:
+  - linux
+  - osx
+env:
+  global:
+    - PATH=$PATH:~/bin
+  matrix:
+    - RUNTIME=2.7 QT_APIS="pyside pyqt"
+    - RUNTIME=3.5 QT_APIS=pyqt
 addons:
   firefox: "latest"
 cache:
@@ -17,13 +18,13 @@ before_install:
   - export DISPLAY=:99.0
   - if [[ ${TRAVIS_OS_NAME} == "linux" ]] ; then sh -e /etc/init.d/xvfb start ; fi
 install:
-  - ./ci/travis_ci_bootstrap_edm.sh
+  - ./ci/travis_ci_bootstrap.sh
   - edm install -y pip traits tornado nose coverage mock
   - edm run -- pip install -U selenium  # Need latest selenium for browser support
   - for QT_API in $QT_APIS; do edm install -y $QT_API; done
   - edm run -- pip install -e .
 script:
-  - for QT_API in $QT_APIS; do QT_API=$QT_API edm run -- nosetests --with-coverage --cover-package=jigna -sv; done
+  - for QT_API in $QT_APIS; do QT_API=$QT_API edm run -- coverage run -m nose -v jigna; done
 after_success:
   - edm run -- coverage combine
   - edm run -- coverage report

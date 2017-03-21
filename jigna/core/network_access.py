@@ -94,7 +94,7 @@ class ProxyReply(QtNetwork.QNetworkReply):
         self.req_data = data
         self.handler = handler
 
-        self.buffer = ''
+        self.buffer = b''
         self._buflock = threading.Lock()
         self.aborted = False
 
@@ -180,7 +180,7 @@ class ProxyReplyWorker(QtCore.QThread):
 
         # Set WSGI HTTP request headers
         for head_name in req.rawHeaderList():
-            env_name = 'HTTP_' + head_name.data().replace('-','_').upper()
+            env_name = 'HTTP_' + head_name.data().decode().replace('-','_').upper()
             head_val = req.rawHeader(head_name)
             env[env_name] = head_val.data()
 
@@ -190,18 +190,20 @@ class ProxyReplyWorker(QtCore.QThread):
             for read in reply.handler(env, self._start_response):
                 if reply.aborted:
                     return
-                local_buf.append(str(read))
+                if not isinstance(read, bytes):
+                    read = str(read).encode('utf8')
+                local_buf.append(read)
                 local_buf_len += len(read)
                 if local_buf_len >= 8192:
                     # Do not write to buffer on every read, app is slowed down
                     # due to lock contention
                     with reply._buflock:
-                        reply.buffer += ''.join(local_buf)
+                        reply.buffer += b''.join(local_buf)
                     local_buf = []
                     local_buf_len = 0
                     self.readyRead.emit()
             with reply._buflock:
-                reply.buffer += ''.join(local_buf)
+                reply.buffer += b''.join(local_buf)
 
         except Exception as e:
             if reply.aborted:
@@ -214,7 +216,7 @@ class ProxyReplyWorker(QtCore.QThread):
                 'Internal Error'
             )
             with reply._buflock:
-                reply.buffer += 'WSGI Proxy "Server" Error.\n' + str(e)
+                reply.buffer += b'WSGI Proxy "Server" Error.\n' + str(e)
         finally:
             self.readyRead.emit()
             self.finished.emit()

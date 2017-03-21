@@ -25,7 +25,7 @@ install:
     - ps: pip install --upgrade wheel
     - ps: pip --version
 
-    - cmd /v:on /e:on /c ".\appveyor-install-deps.cmd"
+    - cmd /v:on /e:on /c ".\ci\appveyor-install-deps.cmd"
 
 test_script:
-    - cmd /v:on /e:on /c ".\appveyor-run-tests.cmd"
+    - cmd /v:on /e:on /c ".\ci\appveyor-run-tests.cmd"

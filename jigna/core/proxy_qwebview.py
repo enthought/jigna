@@ -8,7 +8,6 @@
 # Standard library imports.
 import logging
 from os.path import abspath, dirname, join
-from types import NoneType
 
 # Local imports.
 from jigna.core.interoperation import create_js_object_wrapper
@@ -142,7 +141,7 @@ class ProxyQWebView(QtWebKit.QWebView):
         the standard None type.
 
         """
-        if isinstance(obj, getattr(QtCore, 'QPyNullVariant', NoneType)):
+        if isinstance(obj, getattr(QtCore, 'QPyNullVariant', type(None))):
             return None
 
         return obj

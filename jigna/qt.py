@@ -5,13 +5,11 @@ interchangeably only to the extent needed by jigna.
 
 
 def load_pyside():
-    print 'loading pyside'
     global QtCore, QtGui, QtNetwork, QtWebKit
     from PySide import QtCore, QtGui, QtNetwork, QtWebKit
 
 
 def load_pyqt():
-    print 'loading pyqt'
     global QtCore, QtGui, QtNetwork, QtWebKit
 
     import sip
