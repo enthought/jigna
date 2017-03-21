@@ -65,13 +65,7 @@ class TestJignaWebSync(TestJignaQt):
         t.setDaemon(True)
         t.start()
 
-        # Recent Firefox releases (>45) do not seem to work with Selenium so
-        # we switch to Chrome on darwin but continue with FF on travis.  See:
-        # https://github.com/seleniumhq/selenium/issues/1851
-        if sys.platform.startswith('darwin'):
-            browser = webdriver.Chrome()
-        else:
-            browser = webdriver.Firefox()
+        browser = webdriver.Firefox()
 
         browser.get('http://localhost:%d'%port)
         cls.app = app
@@ -115,7 +109,7 @@ class TestJignaWebSync(TestJignaQt):
         get_js = dedent("""
         var result;
         try {
-            result = eval(\'%s\');
+            result = eval(%r);
         } catch (err) {
             result = undefined;
         }
@@ -140,9 +134,9 @@ class TestJignaWebSync(TestJignaQt):
             self.assertEqual(len(value), len(result), msg)
             for index in range(len(value)):
                 expect = value[index]
-                got = result[index]
+                got = result[str(index)]
                 if got != expect:
-                    got = self.get_attribute(js+"[%d]"%index, expect)
+                    got = self.get_attribute(js+"['%d']"%index, expect)
                 msg = "%s[%s] != %s, got %s"%(js, index, expect, got)
                 self.assertEqual(expect, got, msg)
         else:
