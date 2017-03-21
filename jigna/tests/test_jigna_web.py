@@ -120,8 +120,8 @@ class TestJignaWebSync(TestJignaQt):
         check_js = get_js
         result = self.execute_js(check_js)
         count = 0
-        while result != expect and count < 10:
-            time.sleep(0.025)
+        while result != expect and count < 20:
+            time.sleep(0.05)
             result = self.execute_js(check_js)
             count += 1
         return result
