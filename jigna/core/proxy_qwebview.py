@@ -103,10 +103,12 @@ class ProxyQWebView(QtWebKit.QWebView):
         frame = self._page.mainFrame()
         js_wrapper = create_js_object_wrapper(callbacks=callbacks,parent=frame)
         frame.javaScriptWindowObjectCleared.connect(
-            lambda: frame.addToJavaScriptWindowObject(
-                python_namespace, js_wrapper
-            )
+            lambda: self._on_js_window_cleared(python_namespace, js_wrapper)
         )
+
+    def _on_js_window_cleared(self, namespace, js_wrapper):
+        frame = self._page.mainFrame()
+        frame.addToJavaScriptWindowObject(namespace, js_wrapper)
 
     def setUrl(self, url):
         """ Reimplemented to make sure that when we return, the DOM is ready to
