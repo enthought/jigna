@@ -228,6 +228,12 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
 
         # Now try a complex slice.
+
+        # Check if negative strides work.
+        fred.fruits[::-2] = ["mango", "litchi"]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        # Check if positive strides work.
         fred.fruits[::2] = ["mango", "litchi"]
         self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
 

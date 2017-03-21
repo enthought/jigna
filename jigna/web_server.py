@@ -46,18 +46,21 @@ def normalize_slice(s, size):
       - start < stop
       - step > 1
     """
-    start = s.start
-    stop = s.stop
-    step = s.step
-    idx = list(range(size))[s]
-    if len(idx) > 1 and idx[0] > idx[1]:
-        idx.reverse()
-    if len(idx) > 1:
-        return slice(idx[0], idx[-1]+1, idx[1]-idx[0])
-    elif len(idx) == 1:
-        return slice(idx[0], idx[0]+1, 1)
-    else:
-        return slice(0, 0, 1)
+    start, stop, step = s.indices(size)
+    if step < 0:
+        step = -step
+        start, stop = stop, start
+        diff = stop - start
+        if diff % step == 0:
+            n = diff//step - 1
+        else:
+            n = diff//step
+        start = stop - n*step
+
+        stop += 1
+
+    return slice(start, stop, step)
+
 
 class WebBridge(Bridge):
     """ Bridge that handles the client-server communication. """
@@ -238,10 +241,13 @@ class AsyncWebServer(WebServer):
                 removed = new.removed[0]
                 prev_size = len(trait) + len(removed) - len(added)
                 s = normalize_slice(new.index, prev_size)
-                start = s.start if s.start <= s.stop else s.stop
-                stop = s.stop if s.stop >= s.start else s.start
+                if new.index.step < 0:
+                    # When the step is negative we swap the order of start and
+                    # stop so that start <= stop, we therefore must reverse the
+                    # added elements.
+                    added = added[::-1]
                 info = dict(
-                    start=start, stop=stop, step=s.step,
+                    start=s.start, stop=s.stop, step=s.step,
                     removed=len(removed),
                     added=self._get_list_info(added)
                 )
