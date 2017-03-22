@@ -36,6 +36,33 @@ from jigna.core.wsgi import guess_type
 JIGNA_JS_FILE = join(abspath(dirname(__file__)), 'js', 'dist', 'jigna.js')
 
 
+def normalize_slice(s, size):
+    """ Normalize a python slice such that.
+
+    s - slice instance to normalize
+    size - the size of original sequence to normalize for
+
+    The returned slice instance has following properties:
+      - start, stop, step are all int
+      - start < stop
+      - step > 1
+    """
+    start, stop, step = s.indices(size)
+    if step < 0:
+        step = -step
+        start, stop = stop, start
+        diff = stop - start
+        if diff % step == 0:
+            n = diff//step - 1
+        else:
+            n = diff//step
+        start = stop - n*step
+
+        stop += 1
+
+    return slice(start, stop, step)
+
+
 class WebBridge(Bridge):
     """ Bridge that handles the client-server communication. """
 
@@ -211,13 +238,18 @@ class AsyncWebServer(WebServer):
                 # Handle an extended slice.  Note that one cannot increase the
                 # size of the list here.  So one is either deleting elements
                 # or changing them.
-                s = new.index
-                start = s.start if s.start <= s.stop else s.stop
-                stop = s.stop if s.stop >= s.start else s.start
                 added = new.added[0] if len(new.added) > 0 else []
+                removed = new.removed[0]
+                prev_size = len(trait) + len(removed) - len(added)
+                s = normalize_slice(new.index, prev_size)
+                if new.index.step < 0:
+                    # When the step is negative we swap the order of start and
+                    # stop so that start <= stop, we therefore must reverse the
+                    # added elements.
+                    added = added[::-1]
                 info = dict(
-                    start=start, stop=stop, step=s.step,
-                    removed=len(new.removed[0]),
+                    start=s.start, stop=s.stop, step=s.step,
+                    removed=len(removed),
                     added=self._get_list_info(added)
                 )
             else:

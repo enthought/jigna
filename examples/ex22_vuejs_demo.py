@@ -1,6 +1,6 @@
 """
-This example shows how to initialize Jigna's HTML interface by reading
-a full html file, rather than specifying body_html and head_html.
+This example shows how to use Jigna using the Vue.js Javascript framework,
+instead of AngularJS.
 """
 
 #### Imports ####

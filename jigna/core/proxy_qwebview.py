@@ -8,7 +8,6 @@
 # Standard library imports.
 import logging
 from os.path import abspath, dirname, join
-from types import NoneType
 
 # Local imports.
 from jigna.core.interoperation import create_js_object_wrapper
@@ -104,10 +103,12 @@ class ProxyQWebView(QtWebKit.QWebView):
         frame = self._page.mainFrame()
         js_wrapper = create_js_object_wrapper(callbacks=callbacks,parent=frame)
         frame.javaScriptWindowObjectCleared.connect(
-            lambda: frame.addToJavaScriptWindowObject(
-                python_namespace, js_wrapper
-            )
+            lambda: self._on_js_window_cleared(python_namespace, js_wrapper)
         )
+
+    def _on_js_window_cleared(self, namespace, js_wrapper):
+        frame = self._page.mainFrame()
+        frame.addToJavaScriptWindowObject(namespace, js_wrapper)
 
     def setUrl(self, url):
         """ Reimplemented to make sure that when we return, the DOM is ready to
@@ -125,7 +126,7 @@ class ProxyQWebView(QtWebKit.QWebView):
 
         self._page.loadFinished.connect(on_load)
 
-        super(ProxyQWebView, self).setUrl(url)
+        super(ProxyQWebView, self).setUrl(QtCore.QUrl(url))
 
         if not self._loaded:
             event_loop.exec_()
@@ -142,7 +143,7 @@ class ProxyQWebView(QtWebKit.QWebView):
         the standard None type.
 
         """
-        if isinstance(obj, getattr(QtCore, 'QPyNullVariant', NoneType)):
+        if isinstance(obj, getattr(QtCore, 'QPyNullVariant', type(None))):
             return None
 
         return obj

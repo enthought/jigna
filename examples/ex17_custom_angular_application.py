@@ -31,7 +31,7 @@ class StopWatch(HasTraits):
 
 #### UI layer ####
 
-template = Template(html_file='custom_angular_application.html')
+template = Template(html_file='ex17_custom_angular_application.html')
 
 #### Entry point ####
 

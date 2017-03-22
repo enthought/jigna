@@ -213,9 +213,11 @@ class TestJignaQt(unittest.TestCase):
 
         # Test setting from the JS side...
         self.execute_js("jigna.models.model.fruits[0] = 'orange'")
+        sleep_while(lambda: fred.fruits[0] != 'orange', timeout=1.0)
         self.assertEqual(fred.fruits, ["orange", "peach", "pear", "mango"])
 
         self.execute_js("jigna.models.model.fruits = ['apple']")
+        sleep_while(lambda: fred.fruits[0] != 'apple', timeout=1.0)
         self.assertEqual(fred.fruits, ["apple"])
 
     def test_list_slicing(self):
@@ -228,6 +230,12 @@ class TestJignaQt(unittest.TestCase):
         self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
 
         # Now try a complex slice.
+
+        # Check if negative strides work.
+        fred.fruits[::-2] = ["mango", "litchi"]
+        self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
+
+        # Check if positive strides work.
         fred.fruits[::2] = ["mango", "litchi"]
         self.assertJSEqual("jigna.models.model.fruits", fred.fruits)
 
@@ -267,10 +275,12 @@ class TestJignaQt(unittest.TestCase):
 
         # Test setting from the JS side...
         self.execute_js("jigna.models.model.phonebook['joe'] = 567")
+        sleep_while(lambda: fred.phonebook['joe'] != 567, timeout=1.0)
         self.assertEqual(567, fred.phonebook['joe'])
 
         self.execute_js("jigna.models.model.phonebook = {'alan' : 987}")
-        self.assertEqual(fred.phonebook, {'alan' : 987})
+        sleep_while(lambda: fred.phonebook != {'alan': 987}, timeout=1.0)
+        self.assertEqual(fred.phonebook, {'alan': 987})
 
     def test_instance_trait(self):
         self.assertIn(self.execute_js("jigna.models.model.spouse"), ['', None])
@@ -282,6 +292,7 @@ class TestJignaQt(unittest.TestCase):
         # Set in the JS side.
         self.execute_js("jigna.models.model.spouse.name = 'Wilmaji'")
         self.execute_js("jigna.models.model.spouse.age = 41")
+        sleep_while(lambda: wilma.age != 41, timeout=1.0)
         self.assertEqual(wilma.name, "Wilmaji")
         self.assertEqual(wilma.age, 41)
 
@@ -311,6 +322,7 @@ class TestJignaQt(unittest.TestCase):
 
         # Test setting from the JS side...
         self.execute_js("jigna.models.model.friends[0].name = 'Barneyji'")
+        sleep_while(lambda: barney.name != "Barneyji", timeout=1.0)
         self.assertEqual(barney.name, "Barneyji")
 
     def test_list_sortable(self):
