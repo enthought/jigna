@@ -169,7 +169,8 @@ class TestJignaWebSync(TestJignaQt):
 
         # When
         self.execute_js("window.location.reload();")
-        time.sleep(0.5)
+        time.sleep(1)
+        self.get_attribute("jigna.models.model.name", fred.name)
 
         # Then
         self.assertJSEqual("jigna.models.model.name", fred.name)
