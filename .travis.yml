@@ -19,7 +19,8 @@ before_install:
   - if [[ ${TRAVIS_OS_NAME} == "linux" ]] ; then sh -e /etc/init.d/xvfb start ; fi
 install:
   - ./ci/travis_ci_bootstrap.sh
-  - edm install -y pip traits tornado nose coverage mock
+  - edm install --version $RUNTIME -y pip traits tornado nose coverage mock
+  - edm run -- python -V # Check the default Python version.
   - edm run -- pip install -U selenium  # Need latest selenium for browser support
   - for QT_API in $QT_APIS; do edm install -y $QT_API; done
   - edm run -- pip install -e .
