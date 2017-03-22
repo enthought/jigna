@@ -65,13 +65,7 @@ class TestJignaWebSync(TestJignaQt):
         t.setDaemon(True)
         t.start()
 
-        # Recent Firefox releases (>45) do not seem to work with Selenium so
-        # we switch to Chrome on darwin but continue with FF on travis.  See:
-        # https://github.com/seleniumhq/selenium/issues/1851
-        if sys.platform.startswith('darwin'):
-            browser = webdriver.Chrome()
-        else:
-            browser = webdriver.Firefox()
+        browser = webdriver.Firefox()
 
         browser.get('http://localhost:%d'%port)
         cls.app = app
@@ -115,7 +109,7 @@ class TestJignaWebSync(TestJignaQt):
         get_js = dedent("""
         var result;
         try {
-            result = eval(\'%s\');
+            result = eval(%r);
         } catch (err) {
             result = undefined;
         }
@@ -126,8 +120,8 @@ class TestJignaWebSync(TestJignaQt):
         check_js = get_js
         result = self.execute_js(check_js)
         count = 0
-        while result != expect and count < 10:
-            time.sleep(0.025)
+        while result != expect and count < 20:
+            time.sleep(0.05)
             result = self.execute_js(check_js)
             count += 1
         return result
@@ -140,9 +134,9 @@ class TestJignaWebSync(TestJignaQt):
             self.assertEqual(len(value), len(result), msg)
             for index in range(len(value)):
                 expect = value[index]
-                got = result[index]
+                got = result[str(index)]
                 if got != expect:
-                    got = self.get_attribute(js+"[%d]"%index, expect)
+                    got = self.get_attribute(js+"['%d']"%index, expect)
                 msg = "%s[%s] != %s, got %s"%(js, index, expect, got)
                 self.assertEqual(expect, got, msg)
         else:
@@ -175,7 +169,8 @@ class TestJignaWebSync(TestJignaQt):
 
         # When
         self.execute_js("window.location.reload();")
-        time.sleep(0.5)
+        time.sleep(1)
+        self.get_attribute("jigna.models.model.name", fred.name)
 
         # Then
         self.assertJSEqual("jigna.models.model.name", fred.name)

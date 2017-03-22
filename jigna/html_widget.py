@@ -14,7 +14,7 @@ import os
 from os.path import join
 
 # Local library.
-from .qt import QtGui
+from .qt import QtCore, QtGui
 from .qt_server import QtServer
 
 
@@ -24,8 +24,8 @@ class HTMLWidget(QtGui.QWidget):
     #### 'object' protocol ####################################################
     
     def __init__(
-        self, parent=None, window_flags=0, context=None, template=None,
-        debug=False
+        self, parent=None, window_flags=QtCore.Qt.Widget, context=None,
+        template=None, debug=False
     ):
         """ Constructor. """
         

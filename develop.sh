@@ -9,7 +9,13 @@ if ! [ -x "enpkg" ]; then
 fi
 
 # Get core dependencies
-enpkg traits pyside
+enpkg traits
+if [ "$QT_API" = "pyqt" ]
+then
+    enpkg sip pyqt
+else
+    enpkg pyside
+fi
 
 # Get dependencies for the web version
 enpkg tornado
