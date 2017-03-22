@@ -10,6 +10,10 @@ update itself when the model changes, and update the model when user actions
 take place on the UI. The Jigna view can be rendered in an in-process Qt
 widget or over the web in a browser.
 
+The primary use of jigna is to provide a way to write desktop GUI applications
+using HTML, and we use the Qt backend for that. You can also use jigna to write
+GUIs that run on the browser. This is done via the web backend.
+
 
 Installation
 ============
@@ -20,13 +24,21 @@ the dependencies yourself).
 The setup procedure is simple. Make sure you have a Python installation to
 which you have write access and run the following command:
 
-..code:: bash
+.. code:: bash
 
-    source ./develop.sh
+    $ pip install jigna
 
-The primary use of jigna is to provide a way to write desktop GUI applications
-using HTML, and we use the Qt backend for that. You can also use jigna to write
-GUIs that run on the browser. This is done via the web backend.
+This will not pull in any Qt requirements but will require tornado_ as it is
+easy to install.  The test requirements can be installed via::
+
+    $ pip install jigna[test]
+
+This will install, PySide, nose, mock, coverage, and selenium_ if you do not
+already have them.
+
+You may also use the ``requirements.txt`` file to install the necessary
+dependencies. This does not install PyQt or PySide though.
+
 
 Examples
 ========
@@ -43,7 +55,8 @@ using ``nosetests``.
 
 .. _selenium: https://pypi.python.org/pypi/selenium
 .. _nose: https://pypi.python.org/pypi/nose
-
+.. _Traits: http://code.enthought.com/projects/traits/
+.. _tornado: http://tornadoweb.org
 
 Getting Started
 ===============
@@ -131,3 +144,14 @@ examples in the ``examples`` directory. They are numbered and are meant to act
 as a tutorial if followed in sequence.
 
 .. _AngularJS: http://angularjs.org/
+
+
+One may also use `Vue.js`_ to build the HTML UI. The approach is very similar to
+that using AngularJS. An example showing how to use this is in
+`examples/ex22_vuejs_demo.py
+<https://github.com/enthought/jigna/blob/master/examples/ex22_vuejs_demo.py>`_
+with the corresponding HTML file in `examples/ex22_vuejs_demo.html
+<https://github.com/enthought/jigna/blob/master/examples/ex22_vuejs_demo.html>`_.
+
+
+.. _`Vue.js`: http://vuejs.org

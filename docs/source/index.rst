@@ -6,12 +6,17 @@
 Welcome to the Jigna documentation!
 ===================================
 
-Contents:
+Jigna allows you to create a HTML/CSS/Javascript based user interface for a
+Python application. The UI can be viewed either in a Qt-based application or
+entirely on a web-browser.
+
 
 .. toctree::
    :maxdepth: 2
 
    intro
+
+
 
 
 Indices and tables
