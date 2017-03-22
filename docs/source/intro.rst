@@ -155,3 +155,9 @@ with the corresponding HTML file in `examples/ex22_vuejs_demo.html
 
 
 .. _`Vue.js`: http://vuejs.org
+
+
+Changelog
+==========
+
+.. include:: ../../CHANGES.rst
