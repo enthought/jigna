@@ -7,6 +7,6 @@ app.run(function(){
 app.directive('personView', function(){
     return {
         scope: {person: '='},
-        templateUrl: 'template_person.html'
+        templateUrl: 'ex16_template_person.html'
     }
 })
