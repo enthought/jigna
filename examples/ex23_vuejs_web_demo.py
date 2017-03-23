@@ -7,9 +7,10 @@ instead of AngularJS.
 from __future__ import print_function
 
 from traits.api import HasTraits, Int, Str, List, Instance
-from jigna.api import HTMLWidget, VueTemplate
-from jigna.qt import QtGui
-from jigna.utils.gui import do_after
+from jigna.vue_template import  VueTemplate
+from jigna.web_app import WebApp
+from tornado.ioloop import IOLoop
+
 
 #### Domain model ####
 
@@ -48,31 +49,33 @@ class Person(HasTraits):
 #### Entry point ####
 
 def main():
-    # Start the Qt application
-    app = QtGui.QApplication([])
+    # Start the tornado ioloop application
+    ioloop = IOLoop.instance()
 
     # Instantiate the domain model
 
     fred = Person(name='Fred', age=42, fruits=['pear', 'apple'])
-
     template = VueTemplate(html_file='ex22_vuejs_demo.html')
 
     # Create the jigna based HTML widget which renders the given HTML template
     # with the given context.
-    widget = HTMLWidget(template=template, context={'person': fred}, debug=True)
-    widget.show()
+    app = WebApp(template=template, context={'person': fred})
+    app.listen(8000)
 
-    # Schedule an update to a model variable after 2.5 seconds. This update
+    # Schedule an update to a model variable after 5 seconds. This update
     # will be reflected in the UI immediately.
-    do_after(2500, fred.update_name, "Guido")
-    do_after(2500, fred.add_fruit)
-    do_after(2500, fred.add_friend)
+    ioloop.call_later(5, setattr, fred, 'update_name', 'Guido')
+    ioloop.call_later(5, fred.add_fruit)
+    ioloop.call_later(5, fred.add_friend)
 
-    # Start the event loop
-    app.exec_()
+    # Start serving the web app on port 8000.
+    #
+    # Point your web browser to http://localhost:8000/ to connect to this jigna
+    # web app. Any operation performed on the client directly update the
+    # model attributes on the server.
+    print('Serving on port 8000...')
+    ioloop.start()
 
-    # Check the values after the UI is closed
-    print(fred.name, fred.age, fred.fruits, fred.friends)
 
 if __name__ == "__main__":
     main()

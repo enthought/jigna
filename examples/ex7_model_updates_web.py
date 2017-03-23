@@ -7,7 +7,8 @@ the web version.
 from __future__ import print_function
 
 import datetime
-from jigna.api import Template, WebApp
+from jigna.web_app import WebApp
+from jigna.template import Template
 from tornado.ioloop import IOLoop
 from traits.api import HasTraits, Str
 

@@ -29,11 +29,20 @@
     <div v-on:click="person.add_friend()">+</div>
 
   <script>
-      var vm = new Vue({
-          el: 'body', // Attach to the body tag.
-          data: jigna.models,
-      });
-    </script>
+    var vm = undefined;
+    // jigna.models are ready only when the deferred called ready is done.
+    jigna.ready.done(function() {
+       vm = new Vue({
+           el: 'body',
+           data: jigna.models, // Attach to the body tag.
+           methods: {
+               threaded: function(obj, method_name, args) {
+                   jigna.threaded.apply(jigna, arguments);
+               },
+           }
+       });
+    });
+  </script>
 
   </body>
 

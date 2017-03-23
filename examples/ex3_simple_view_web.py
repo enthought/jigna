@@ -7,7 +7,8 @@ from __future__ import print_function
 
 from tornado.ioloop import IOLoop
 from traits.api import HasTraits, Int, Str
-from jigna.api import Template, WebApp
+from jigna.web_app import WebApp
+from jigna.template import Template
 
 #### Domain model ####
 
