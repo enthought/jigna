@@ -31,13 +31,25 @@ def patch_sys_modules():
 
     return backup
 
+
 def restore_sys_modules(backup):
     sys.modules = backup
+
 
 def assert_no_qt_in_sys_modules():
     for name in list(sys.modules.keys()):
         if 'PySide' in name or 'PyQt' in name:
-            raise AssertionError("Qt import found: %s."%name)
+            raise AssertionError("Qt import found: %s." % name)
+
+
+def start_io_loop():
+    ioloop = IOLoop.instance()
+    ioloop.make_current()
+    ioloop.start()
+
+
+def stop_io_loop():
+    IOLoop.instance().stop()
 
 
 class TestJignaWebSync(TestJignaQt):
@@ -48,7 +60,6 @@ class TestJignaWebSync(TestJignaQt):
 
         from jigna.template import Template
         from jigna.web_app import WebApp
-        ioloop = IOLoop.instance()
         fred = Person(name='Fred', age=42)
         addressbook = AddressBook()
         template = Template(body_html=body_html, async=async)
@@ -60,14 +71,14 @@ class TestJignaWebSync(TestJignaQt):
         app.listen(port)
 
         # Start the tornado server in a different thread so that we can write
-        # test statements here in the main loop
-        t = Thread(target=ioloop.start)
+        # test statements here in the main loop.
+        t = Thread(target=start_io_loop)
         t.setDaemon(True)
         t.start()
 
         browser = webdriver.Firefox()
-
-        browser.get('http://localhost:%d'%port)
+        browser.implicitly_wait(10)
+        browser.get('http://localhost:%d' % port)
         cls.app = app
         cls.fred = fred
         cls.browser = browser
@@ -76,10 +87,13 @@ class TestJignaWebSync(TestJignaQt):
 
     @classmethod
     def tearDownClass(cls):
-        from tornado.ioloop import IOLoop
         cls.browser.quit()
-        IOLoop.instance().stop()
-        time.sleep(1)
+
+        IOLoop.instance().add_callback(stop_io_loop)
+        thread = cls.thread
+        count = 0
+        while thread.is_alive() and count < 50:
+            time.sleep(0.1)
         cls.thread.join()
 
         # Smells a bit but doing this here ensures that none of the tested
