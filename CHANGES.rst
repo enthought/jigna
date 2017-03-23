@@ -1,3 +1,10 @@
+0.10.1
+------
+
+* Fix a bug with methods not being exposed in Python-3.x.
+* Fix and improve web-UI examples to run without Qt.
+* Improve test stability a little.
+
 0.10.0
 -------
 
