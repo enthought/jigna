@@ -320,7 +320,7 @@ class Server(HasTraits):
                 type_name       = type_name,
                 attribute_names = self._get_attribute_names(obj),
                 event_names     = self._get_event_names(obj),
-                method_names    = self._get_public_method_names(type(obj))
+                method_names    = self._get_public_method_names(obj)
             )
             self._visited_type_names.add(type_name)
 
@@ -337,13 +337,13 @@ class Server(HasTraits):
 
         return dict(length=len(obj))
 
-    def _get_public_method_names(self, cls):
+    def _get_public_method_names(self, obj):
         """ Get the names of all public methods on a class.
 
         Return a list of strings.
 
         """
-
+        cls = type(obj)
         public_method_names = []
         for c in inspect.getmro(cls):
             if c is HasTraits:
@@ -351,7 +351,7 @@ class Server(HasTraits):
 
             for name in c.__dict__:
                 if not name.startswith( '_' ):
-                    value = getattr(c, name)
+                    value = getattr(obj, name)
                     if inspect.ismethod(value):
                         public_method_names.append(name)
 
