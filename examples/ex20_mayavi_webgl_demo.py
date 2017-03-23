@@ -11,7 +11,8 @@ from mayavi import mlab
 from mayavi.core.api import PipelineBase
 from traits.api import HasTraits, Instance, Int, Str
 from tvtk.api import tvtk
-from jigna.api import Template, WebApp
+from jigna.web_app import WebApp
+from jigna.template import Template
 from tornado.ioloop import IOLoop
 
 mlab.options.offscreen = True
