@@ -3,14 +3,17 @@ interchangeably only to the extent needed by jigna.
 
 """
 
+qt_api = None
+
 
 def load_pyside():
-    global QtCore, QtGui, QtNetwork, QtWebKit
+    global QtCore, QtGui, QtNetwork, QtWebKit, qt_api
     from PySide import QtCore, QtGui, QtNetwork, QtWebKit
+    qt_api = 'pyside'
 
 
 def load_pyqt():
-    global QtCore, QtGui, QtNetwork, QtWebKit
+    global QtCore, QtGui, QtNetwork, QtWebKit, qt_api
 
     import sip
     sip.setapi('QDate', 2)
@@ -27,6 +30,32 @@ def load_pyqt():
     QtCore.Signal = QtCore.pyqtSignal
     QtCore.Slot = QtCore.pyqtSlot
 
+    qt_api = 'pyqt'
+
+
+def load_pyqt5():
+    global QtCore, QtGui, QtNetwork, QtWebKit, qt_api
+
+    import types
+    from PyQt5 import (QtCore, QtGui, QtWidgets, QtNetwork, QtWebKit,
+        QtWebKitWidgets, Qt)
+
+    def _union_mod(*mods):
+        mod = types.ModuleType(mods[0].__name__)
+        for _mod in mods:
+            mod.__dict__.update(_mod.__dict__)
+        return mod
+
+    QtCore = _union_mod(QtCore)
+    QtGui = _union_mod(QtGui, QtWidgets)
+    QtWebKit = _union_mod(QtWebKit, QtWebKitWidgets)
+
+    QtCore.Property = QtCore.pyqtProperty
+    QtCore.Signal = QtCore.pyqtSignal
+    QtCore.Slot = QtCore.pyqtSlot
+
+    qt_api = 'pyqt5'
+
 
 def main():
 
@@ -37,11 +66,23 @@ def main():
         load_pyside()
     elif os.environ.get('QT_API') == 'pyqt' or 'PyQt4' in sys.modules:
         load_pyqt()
+    elif os.environ.get('QT_API') == 'pyqt5' or 'PyQt5' in sys.modules:
+        load_pyqt5()
     else:
         try:
             load_pyqt()
         except ImportError:
-            load_pyside()
+            try:
+                load_pyside()
+            except ImportError:
+                load_pyqt5()
 
 main()
 
+if qt_api == 'pyqt5':
+    def query_from_url(qurl):
+        return qurl.query()
+
+else:
+    def query_from_url(qurl):
+        return str(qurl.encodedQuery())

@@ -17,7 +17,7 @@ import threading
 from io import StringIO
 
 # System library imports.
-from jigna.qt import QtCore, QtNetwork
+from jigna.qt import QtCore, QtNetwork, query_from_url
 
 # Logger.
 logger = logging.getLogger(__name__)
@@ -168,7 +168,7 @@ class ProxyReplyWorker(QtCore.QThread):
             'SERVER_NAME': url.host(),
             'SERVER_PORT': '80',
             'SERVER_PROTOCOL': 'HTTP/1.1',
-            'QUERY_STRING': str(url.encodedQuery()),
+            'QUERY_STRING': query_from_url(url),
             'wsgi.version': (1, 0),
             'wsgi.url_scheme': url.scheme(),
             'wsgi.input': StringIO(unicode(reply.req_data)),
@@ -216,7 +216,7 @@ class ProxyReplyWorker(QtCore.QThread):
                 'Internal Error'
             )
             with reply._buflock:
-                reply.buffer += b'WSGI Proxy "Server" Error.\n' + str(e)
+                reply.buffer += b'WSGI Proxy "Server" Error.' + str(e).encode('utf8')
         finally:
             self.readyRead.emit()
             self.finished.emit()
@@ -235,6 +235,10 @@ class ProxyReplyWorker(QtCore.QThread):
             QtNetwork.QNetworkRequest.HttpReasonPhraseAttribute, reason
         )
         for name, value in response_headers:
-            self.reply.setRawHeader(name, str(value))
+            if not isinstance(value, bytes):
+                value = value.encode('utf8')
+            if not isinstance(name, bytes):
+                name = name.encode('utf8')
+            self.reply.setRawHeader(name, value)
 
         self.metaDataChanged.emit()
