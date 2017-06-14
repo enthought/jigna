@@ -121,7 +121,7 @@ class ProxyQWebView(QtWebKit.QWebView):
         page = self._page
         loaded = [False]
 
-        def on_load():
+        def on_load(ok):
             loaded[0] = True
             event_loop.quit()
 
