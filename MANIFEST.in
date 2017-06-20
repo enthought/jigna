@@ -4,4 +4,4 @@ recursive-include jigna/js *.*
 recursive-exclude jigna/js/node_modules *.*
 recursive-exclude examples/.ipynb_checkpoints *.*
 include README.rst LICENSE.txt
-global-exclude *.pyc *.pyo .DS_Store *.egg-info/*
+global-exclude *.pyc *.pyo .DS_Store
