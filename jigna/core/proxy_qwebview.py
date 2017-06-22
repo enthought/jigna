@@ -7,12 +7,14 @@
 
 # Standard library imports.
 import logging
-from os.path import abspath, dirname, join
 
 # Local imports.
 from jigna.core.interoperation import create_js_object_wrapper
 from jigna.core.network_access import ProxyAccessManager
 from jigna.qt import QtCore, QtGui, QtWebKit
+
+if QtWebKit is None:
+    raise ImportError('Needs QtWebKit')
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +173,7 @@ class ProxyQWebPage(QtWebKit.QWebPage):
 
     def createWindow(self, *args, **kwargs):
         return ProxyQWebPage()
+
 
 if __name__ == '__main__':
     app = QtGui.QApplication([])

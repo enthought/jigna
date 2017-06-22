@@ -121,7 +121,10 @@ class TestJignaQt(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from jigna.qt import QtGui
-        from jigna.html_widget import HTMLWidget
+        try:
+            from jigna.html_widget import HTMLWidget
+        except ImportError:
+            raise unittest.SkipTest('Needs QtWebkit')
         from jigna.utils import gui
         qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
         template = Template(body_html=body_html)

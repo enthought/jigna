@@ -4,6 +4,15 @@ import sys
 # Local imports
 from ..qt import QtGui, QtCore
 
+_qapp = None
+def qapp():
+    """ Create or return existing QApplication instance. """
+    global _qapp
+    if _qapp:
+        return _qapp
+    _qapp = QtGui.QApplication.instance() or QtGui.QApplication(sys.argv)
+    return _qapp
+
 def ui_handler(handler, *args, **kw):
     """ Handles UI notification handler requests that occur on a thread other
     than the UI thread.
@@ -29,7 +38,7 @@ def do_after(ms, callable, *args, **kw):
 def process_events():
     """ Process all events.
     """
-    QtCore.QCoreApplication.processEvents(QtCore.QEventLoop.AllEvents)
+    QtGui.QApplication.processEvents(QtCore.QEventLoop.AllEvents)
 
 #### Private protocol #########################################################
 

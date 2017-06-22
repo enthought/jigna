@@ -1,7 +1,13 @@
 from .template import Template
 from .vue_template import VueTemplate
 from .core.concurrent import Future
-from .html_widget import HTMLWidget
+
+# Wrapping the HTMLWidget import so that you can use jigna even if you don't
+# have Qt installed
+try:
+    from .html_widget import HTMLWidget
+except ImportError:
+    pass
 
 # Wrapping the WebApp import so that you can use jigna even if you don't have
 # tornado install

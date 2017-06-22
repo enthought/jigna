@@ -111,6 +111,7 @@ class QtServer(Server):
     def _webview_default(self):
         user_root, index_file = self.home_url.split('/')[-2:]
 
+        from jigna.core.proxy_qwebview import ProxyQWebView
         return ProxyQWebView(
             python_namespace = 'qt_bridge',
             callbacks        = [('handle_request', self.handle_request)],
@@ -146,33 +147,33 @@ class QtServer(Server):
         self._plugin_factory = QtWebPluginFactory(context=self.context)
         self.webview.page().setPluginFactory(self._plugin_factory)
 
+if QtWebKit:
+    class QtWebPluginFactory(QtWebKit.QWebPluginFactory):
 
-class QtWebPluginFactory(QtWebKit.QWebPluginFactory):
+        MIME_TYPE = 'application/x-qwidget'
 
-    MIME_TYPE = 'application/x-qwidget'
+        def __init__(self, context):
+            self.context = context
+            super(self.__class__, self).__init__()
 
-    def __init__(self, context):
-        self.context = context
-        super(self.__class__, self).__init__()
+        def plugins(self):
+            plugin = QtWebKit.QWebPluginFactory.Plugin()
+            plugin.name = 'QWidget'
+            mimeType = QtWebKit.QWebPluginFactory.MimeType()
+            mimeType.name = self.MIME_TYPE
+            plugin.mimeTypes = [mimeType]
 
-    def plugins(self):
-        plugin = QtWebKit.QWebPluginFactory.Plugin()
-        plugin.name = 'QWidget'
-        mimeType = QtWebKit.QWebPluginFactory.MimeType()
-        mimeType.name = self.MIME_TYPE
-        plugin.mimeTypes = [mimeType]
+            return [plugin]
 
-        return [plugin]
+        def create(self, mimeType, url, argNames, argVals):
+            """ Return the QWidget to be embedded.
+            """
+            if mimeType != self.MIME_TYPE:
+                return
 
-    def create(self, mimeType, url, argNames, argVals):
-        """ Return the QWidget to be embedded.
-        """
-        if mimeType != self.MIME_TYPE:
-            return
+            args = dict(zip(argNames, argVals))
+            widget_factory = eval(args.get('widget-factory'), self.context)
 
-        args = dict(zip(argNames, argVals))
-        widget_factory = eval(args.get('widget-factory'), self.context)
-
-        return widget_factory()
+            return widget_factory()
 
 #### EOF ######################################################################

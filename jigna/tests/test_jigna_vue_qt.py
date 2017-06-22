@@ -53,7 +53,10 @@ class TestJignaVueQt(TestJignaQt):
 
     @classmethod
     def setUpClass(cls):
-        from jigna.api import HTMLWidget, VueTemplate
+        try:
+            from jigna.api import HTMLWidget, VueTemplate
+        except ImportError:
+            raise unittest.SkipTest('Needs QtWebkit')
         from jigna.utils import gui
         from jigna.qt import QtGui
         qapp = QtGui.QApplication.instance() or QtGui.QApplication([])

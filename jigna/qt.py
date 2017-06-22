@@ -7,13 +7,14 @@ qt_api = None
 
 
 def load_pyside():
-    global QtCore, QtGui, QtNetwork, QtWebKit, qt_api
+    global QtCore, QtGui, QtNetwork, QtWebKit, QtWebEngine, qt_api
     from PySide import QtCore, QtGui, QtNetwork, QtWebKit
+    QtWebEngine = None
     qt_api = 'pyside'
 
 
 def load_pyqt():
-    global QtCore, QtGui, QtNetwork, QtWebKit, qt_api
+    global QtCore, QtGui, QtNetwork, QtWebKit, QtWebEngine, qt_api
 
     import sip
     sip.setapi('QDate', 2)
@@ -25,7 +26,7 @@ def load_pyqt():
     sip.setapi('QVariant', 2)
 
     from PyQt4 import QtCore, QtGui, QtNetwork, QtWebKit, Qt
-
+    QtWebEngine = None
     QtCore.Property = QtCore.pyqtProperty
     QtCore.Signal = QtCore.pyqtSignal
     QtCore.Slot = QtCore.pyqtSlot
@@ -34,11 +35,10 @@ def load_pyqt():
 
 
 def load_pyqt5():
-    global QtCore, QtGui, QtNetwork, QtWebKit, qt_api
+    global QtCore, QtGui, QtNetwork, QtWebKit, QtWebEngine, qt_api
 
     import types
-    from PyQt5 import (QtCore, QtGui, QtWidgets, QtNetwork, QtWebKit,
-        QtWebKitWidgets, Qt)
+    from PyQt5 import QtCore, QtGui, QtWidgets, QtNetwork, Qt
 
     def _union_mod(*mods):
         mod = types.ModuleType(mods[0].__name__)
@@ -48,11 +48,23 @@ def load_pyqt5():
 
     QtCore = _union_mod(QtCore)
     QtGui = _union_mod(QtGui, QtWidgets)
-    QtWebKit = _union_mod(QtWebKit, QtWebKitWidgets)
 
     QtCore.Property = QtCore.pyqtProperty
     QtCore.Signal = QtCore.pyqtSignal
     QtCore.Slot = QtCore.pyqtSlot
+
+    QtWebEngine = QtWebKit = None
+
+    try:
+        from PyQt5 import QtWebKit, QtWebKitWidgets
+        QtWebKit = _union_mod(QtWebKit, QtWebKitWidgets)
+    except ImportError:
+        pass
+    try:
+        from PyQt5 import QtWebEngine, QtWebEngineWidgets
+        QtWebEngine = _union_mod(QtWebEngine, QtWebEngineWidgets)
+    except ImportError:
+        pass
 
     qt_api = 'pyqt5'
 

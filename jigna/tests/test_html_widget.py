@@ -3,12 +3,16 @@ try:
 except ImportError:
     from builtins import str as basestring
 
-from jigna.api import HTMLWidget, Template
+import unittest
+
+try:
+    from jigna.api import HTMLWidget, Template
+except ImportError:
+    raise unittest.SkipTest('Needs QtWebkit')
 from jigna.qt import QtWebKit, QtGui
 
 from traits.api import HasTraits, Str, Int
 
-import unittest
 
 class MyModel(HasTraits):
     attr1 = Str

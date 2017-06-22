@@ -10,11 +10,6 @@ try:
 except ImportError:
     raise unittest.SkipTest("Tornado not installed")
 
-try:
-    from selenium import webdriver
-except ImportError:
-    raise unittest.SkipTest("selenium not installed")
-
 # Local imports.
 from jigna.utils.web import get_free_port
 from .test_jigna_qt import TestJignaQt, Person, body_html, AddressBook
@@ -49,14 +44,16 @@ def stop_io_loop():
     IOLoop.instance().stop()
 
 
-class TestJignaWebSync(TestJignaQt):
+class TestJignaWebEngineSync(TestJignaQt):
     @classmethod
     def setUpClass(cls, async=False):
-
-        cls._backup_modules = patch_sys_modules()
-
         from jigna.template import Template
         from jigna.web_app import WebApp
+        from jigna.utils import gui
+        from jigna.qt import QtWebEngine, QtCore
+        if QtWebEngine is None:
+            raise unittest.SkipTest('Needs QtWebEngine')
+        gui.qapp()
         fred = Person(name='Fred', age=42)
         addressbook = AddressBook()
         template = Template(body_html=body_html, async=async)
@@ -73,9 +70,9 @@ class TestJignaWebSync(TestJignaQt):
         t.setDaemon(True)
         t.start()
 
-        browser = webdriver.Firefox()
-        browser.implicitly_wait(10)
-        browser.get('http://localhost:%d' % port)
+        browser = QtWebEngine.QWebEngineView()
+        browser.load(QtCore.QUrl('http://localhost:%d' % port))
+        gui.process_events()
         cls.app = app
         cls.fred = fred
         cls.browser = browser
@@ -84,7 +81,7 @@ class TestJignaWebSync(TestJignaQt):
 
     @classmethod
     def tearDownClass(cls):
-        cls.browser.quit()
+        cls.browser.destroy()
 
         IOLoop.instance().add_callback(stop_io_loop)
         thread = cls.thread
@@ -92,12 +89,6 @@ class TestJignaWebSync(TestJignaQt):
         while thread.is_alive() and count < 50:
             time.sleep(0.1)
         cls.thread.join()
-
-        # Smells a bit but doing this here ensures that none of the tested
-        # cases imports Qt.
-        assert_no_qt_in_sys_modules()
-
-        restore_sys_modules(cls._backup_modules)
 
     def setUp(self):
         cls = self.__class__
@@ -110,11 +101,16 @@ class TestJignaWebSync(TestJignaQt):
         # Wait for the model to be setup before running the tests.
         self.get_attribute('jigna.models.model.name', self.fred.name)
 
-    def process_events(self):
-        pass
-
     def execute_js(self, js):
-        return self.browser.execute_script(js)
+        # wrap the code in an expression function evaluation
+        js_code = '(function(){%s})()' % js
+        js_result = []
+        def callback(result):
+            js_result.append(result)
+        self.browser.page().runJavaScript(js_code, callback)
+        while not js_result:
+            self.process_events()
+        return js_result[0]
 
     def get_attribute(self, js, expect):
         get_js = dedent("""
@@ -153,20 +149,6 @@ class TestJignaWebSync(TestJignaQt):
         else:
             msg = "%s != %s, got %s"%(js, value, result)
             self.assertEqual(value, result, msg)
-
-    def test_instance_trait(self):
-        # Overridden to work with the web backend.
-        self.assertJSEqual("jigna.models.model.spouse", None)
-        wilma = Person(name='Wilma', age=40)
-        self.fred.spouse = wilma
-        self.assertJSEqual("jigna.models.model.spouse.name", 'Wilma')
-        self.assertJSEqual("jigna.models.model.spouse.age", 40)
-
-        # Set in the JS side.
-        self.execute_js("jigna.models.model.spouse.name = 'Wilmaji'")
-        self.execute_js("jigna.models.model.spouse.age = 41")
-        self.wait_and_assert(lambda: wilma.name != 'Wilmaji')
-        self.wait_and_assert(lambda: wilma.age != 41)
 
     def test_reload_works_correctly(self):
         # Given
