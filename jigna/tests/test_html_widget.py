@@ -4,7 +4,7 @@ except ImportError:
     from builtins import str as basestring
 
 from jigna.api import HTMLWidget, Template
-from jigna.qt import QtWebKit, QtGui
+from jigna.qt import QtWebKitWidgets, QtWidgets
 
 from traits.api import HasTraits, Str, Int
 
@@ -20,7 +20,7 @@ class TestHTMLWidget(unittest.TestCase):
         self.model = MyModel(attr1="Attr1", attr2=2)
         self.template = Template(body_html="")
 
-        self.app = QtGui.QApplication.instance() or QtGui.QApplication([])
+        self.app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
     def test_widget_is_created(self):
         # Create a widget
@@ -30,8 +30,8 @@ class TestHTMLWidget(unittest.TestCase):
 
         # Check if a qwebview widget was created
         self.assertIsNotNone(widget)
-        self.assertIsInstance(widget, QtGui.QWidget)
-        self.assertIsInstance(widget.webview, QtWebKit.QWebView)
+        self.assertIsInstance(widget, QtWidgets.QWidget)
+        self.assertIsInstance(widget.webview, QtWebKitWidgets.QWebView)
 
     def test_created_widget_loads_html(self):
         # Create a widget

@@ -55,8 +55,8 @@ class TestJignaVueQt(TestJignaQt):
     def setUpClass(cls):
         from jigna.api import HTMLWidget, VueTemplate
         from jigna.utils import gui
-        from jigna.qt import QtGui
-        qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
+        from jigna.qt import QtWidgets
+        qapp = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
         template = VueTemplate(body_html=body_vue_html)
         fred = Person(name='Fred', age=42)
         addressbook = AddressBook()

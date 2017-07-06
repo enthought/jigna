@@ -12,21 +12,21 @@ from os.path import abspath, dirname, join
 # Local imports.
 from jigna.core.interoperation import create_js_object_wrapper
 from jigna.core.network_access import ProxyAccessManager
-from jigna.qt import QtCore, QtGui, QtWebKit
+from jigna.qt import QtCore, QtWidgets, QtWebKit, QtWebKitWidgets
 
 logger = logging.getLogger(__name__)
 
 
-class ProxyQWebView(QtWebKit.QWebView):
+class ProxyQWebView(QtWebKitWidgets.QWebView):
 
     DISABLED_ACTIONS = [
-        QtWebKit.QWebPage.OpenLinkInNewWindow,
-        QtWebKit.QWebPage.DownloadLinkToDisk,
-        QtWebKit.QWebPage.OpenImageInNewWindow,
-        QtWebKit.QWebPage.OpenFrameInNewWindow,
-        QtWebKit.QWebPage.DownloadImageToDisk,
-        QtWebKit.QWebPage.Reload,
-        QtWebKit.QWebPage.Back
+        QtWebKitWidgets.QWebPage.OpenLinkInNewWindow,
+        QtWebKitWidgets.QWebPage.DownloadLinkToDisk,
+        QtWebKitWidgets.QWebPage.OpenImageInNewWindow,
+        QtWebKitWidgets.QWebPage.OpenFrameInNewWindow,
+        QtWebKitWidgets.QWebPage.DownloadImageToDisk,
+        QtWebKitWidgets.QWebPage.Reload,
+        QtWebKitWidgets.QWebPage.Back
     ]
 
     def __init__(
@@ -57,7 +57,7 @@ class ProxyQWebView(QtWebKit.QWebView):
 
         # Set sizing policy
         self.setSizePolicy(
-            QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
         )
 
     def execute_js(self, js):
@@ -151,7 +151,7 @@ class ProxyQWebView(QtWebKit.QWebView):
         return obj
 
 
-class ProxyQWebPage(QtWebKit.QWebPage):
+class ProxyQWebPage(QtWebKitWidgets.QWebPage):
     """ Overridden to open external links in a web browser.
 
     Source: http://www.expobrain.net/2012/03/01/open-urls-in-external-browser-by-javascript-in-webkit/
@@ -175,7 +175,7 @@ class ProxyQWebPage(QtWebKit.QWebPage):
         return ProxyQWebPage()
 
 if __name__ == '__main__':
-    app = QtGui.QApplication([])
+    app = QtWidgets.QApplication([])
     w = ProxyQWebView()
     w.show()
     w.raise_()

@@ -14,21 +14,21 @@ import os
 from os.path import join
 
 # Local library.
-from .qt import QtCore, QtGui
+from .qt import QtCore, QtWidgets
 from .qt_server import QtServer
 
 
-class HTMLWidget(QtGui.QWidget):
+class HTMLWidget(QtWidgets.QWidget):
     """ A Qt based HTML widget to render a jigna UI. """
 
     #### 'object' protocol ####################################################
-    
+
     def __init__(
         self, parent=None, window_flags=QtCore.Qt.Widget, context=None,
         template=None, debug=False
     ):
         """ Constructor. """
-        
+
         super(HTMLWidget, self).__init__(parent, window_flags)
 
         # Private protocol.
@@ -39,9 +39,9 @@ class HTMLWidget(QtGui.QWidget):
 
         # fixme: This has to be a public attribute for testing *only*.
         self.webview   = self._server.webview
-        
+
         # Set the widget layout.
-        self.setLayout(QtGui.QVBoxLayout())
+        self.setLayout(QtWidgets.QVBoxLayout())
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().addWidget(self._server.webview)
         self.resize(*template.recommended_size)

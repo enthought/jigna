@@ -2,7 +2,8 @@
 import sys
 
 # Local imports
-from ..qt import QtGui, QtCore
+from ..qt import QtWidgets, QtCore
+
 
 def ui_handler(handler, *args, **kw):
     """ Handles UI notification handler requests that occur on a thread other
@@ -10,26 +11,31 @@ def ui_handler(handler, *args, **kw):
     """
     invoke_later(handler, *args, **kw)
 
+
 def set_trait_later(obj, trait_name, value):
     """ Set the given trait name on the given object in the GUI thread.
     """
     invoke_later(setattr, obj, trait_name, value)
+
 
 def invoke_later(callable, *args, **kw):
     """ Invoke the callable in the GUI thread.
     """
     _FutureCall(0, callable, *args, **kw)
 
+
 def do_after(ms, callable, *args, **kw):
     """ Invoke the callable after the given number of milliseconds.
     """
-    app = QtGui.QApplication.instance() or QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
     QtCore.QTimer.singleShot(ms, lambda : callable(*args, **kw))
+
 
 def process_events():
     """ Process all events.
     """
     QtCore.QCoreApplication.processEvents(QtCore.QEventLoop.AllEvents)
+
 
 #### Private protocol #########################################################
 
@@ -62,14 +68,14 @@ class _FutureCall(QtCore.QObject):
         self._calls_mutex.unlock()
 
         # Move to the main GUI thread.
-        self.moveToThread(QtGui.QApplication.instance().thread())
+        self.moveToThread(QtWidgets.QApplication.instance().thread())
 
         # Post an event to be dispatched on the main GUI thread. Note that
         # we do not call QTimer.singleShot here, which would be simpler, because
         # that only works on QThreads. We want regular Python threads to work.
         event = QtCore.QEvent(self._gui_event)
-        QtGui.QApplication.postEvent(self, event)
-        QtGui.QApplication.sendPostedEvents()
+        QtWidgets.QApplication.postEvent(self, event)
+        QtWidgets.QApplication.sendPostedEvents()
 
     def event(self, event):
         """ QObject event handler.

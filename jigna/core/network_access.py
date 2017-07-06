@@ -168,7 +168,7 @@ class ProxyReplyWorker(QtCore.QThread):
             'SERVER_NAME': url.host(),
             'SERVER_PORT': '80',
             'SERVER_PROTOCOL': 'HTTP/1.1',
-            'QUERY_STRING': str(url.encodedQuery()),
+            'QUERY_STRING': str(url.query(QtCore.QUrl.FullyEncoded)),
             'wsgi.version': (1, 0),
             'wsgi.url_scheme': url.scheme(),
             'wsgi.input': StringIO(unicode(reply.req_data)),
