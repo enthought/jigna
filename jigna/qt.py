@@ -5,12 +5,20 @@ interchangeably only to the extent needed by jigna.
 
 
 def load_pyside():
-    global QtCore, QtGui, QtNetwork, QtWebKit
-    from PySide import QtCore, QtGui, QtNetwork, QtWebKit
+    global QtCore, QtGui, QtWidgets, QtNetwork, QtWebKit, QtWebKitWidgets
+    from PySide import (
+        QtCore, QtGui, QtNetwork, QtWebKit,
+        QtWebKit as QtWebKitWidgets, QtGui as QtWidgets)
 
 
-def load_pyqt():
-    global QtCore, QtGui, QtNetwork, QtWebKit
+def load_pyqt5():
+    global QtCore, QtGui, QtWidgets, QtNetwork, QtWebKit, QtWebKitWidgets
+    from PyQt5 import (
+        QtCore, QtGui, QtNetwork, QtWebKit, QtWebKitWidgets, QtWidgets)
+
+
+def load_pyqt4():
+    global QtCore, QtGui, QtWidgets, QtNetwork, QtWebKit, QtWebKitWidgets
 
     import sip
     sip.setapi('QDate', 2)
@@ -21,7 +29,9 @@ def load_pyqt():
     sip.setapi('QUrl', 2)
     sip.setapi('QVariant', 2)
 
-    from PyQt4 import QtCore, QtGui, QtNetwork, QtWebKit, Qt
+    from PyQt4 import (
+        QtCore, QtGui, QtNetwork, QtWebKit,
+        QtWebKit as QtWebKitWidgets, QtGui as QtWidgets)
 
     QtCore.Property = QtCore.pyqtProperty
     QtCore.Signal = QtCore.pyqtSignal
@@ -29,19 +39,19 @@ def load_pyqt():
 
 
 def main():
-
     import os
     import sys
 
     if os.environ.get('QT_API') == 'pyside' or 'PySide' in sys.modules:
         load_pyside()
+    elif os.environ.get('QT_API') == 'pyqt5' or 'PyQt5' in sys.modules:
+        load_pyqt5()
     elif os.environ.get('QT_API') == 'pyqt' or 'PyQt4' in sys.modules:
-        load_pyqt()
+        load_pyqt4()
     else:
         try:
-            load_pyqt()
+            load_pyqt4()
         except ImportError:
             load_pyside()
 
 main()
-
