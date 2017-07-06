@@ -53,16 +53,19 @@ def main():
     import os
     import sys
 
-    if os.environ.get('QT_API') == QT_API_PYSIDE or 'PySide' in sys.modules:
-        load_pyside()
-    elif os.environ.get('QT_API') == QT_API_PYQT5 or 'PyQt5' in sys.modules:
+    if os.environ.get('QT_API') == QT_API_PYQT5 or 'PyQt5' in sys.modules:
         load_pyqt5()
     elif os.environ.get('QT_API') == QT_API_PYQT4 or 'PyQt4' in sys.modules:
         load_pyqt4()
+    elif os.environ.get('QT_API') == QT_API_PYSIDE or 'PySide' in sys.modules:
+        load_pyside()
     else:
         try:
-            load_pyqt4()
+            load_pyqt5()
         except ImportError:
-            load_pyside()
+            try:
+                load_pyqt4()
+            except ImportError:
+                load_pyside()
 
 main()
