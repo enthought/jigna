@@ -17,7 +17,7 @@ import threading
 from io import StringIO
 
 # System library imports.
-from jigna.qt import QtCore, QtNetwork
+from jigna.qt import QtCore, QtNetwork, qt_api, QT_API_PYQT5
 
 # Logger.
 logger = logging.getLogger(__name__)
@@ -160,6 +160,10 @@ class ProxyReplyWorker(QtCore.QThread):
         url = reply.url()
         req = reply.request()
 
+        if qt_api == QT_API_PYQT5:
+            query_string = url.query(QtCore.QUrl.FullyEncoded)
+        else:
+            query_string = url.encodedQuery()
         # WSGI environ variables
         env = {
             'REQUEST_METHOD': self.OPERATIONS[reply.operation()],
@@ -168,7 +172,7 @@ class ProxyReplyWorker(QtCore.QThread):
             'SERVER_NAME': url.host(),
             'SERVER_PORT': '80',
             'SERVER_PROTOCOL': 'HTTP/1.1',
-            'QUERY_STRING': str(url.query(QtCore.QUrl.FullyEncoded)),
+            'QUERY_STRING': str(query_string),
             'wsgi.version': (1, 0),
             'wsgi.url_scheme': url.scheme(),
             'wsgi.input': StringIO(unicode(reply.req_data)),
