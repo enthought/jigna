@@ -120,10 +120,10 @@ class TestJignaQt(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from jigna.qt import QtGui
+        from jigna.qt import QtWidgets
         from jigna.html_widget import HTMLWidget
         from jigna.utils import gui
-        qapp = QtGui.QApplication.instance() or QtGui.QApplication([])
+        qapp = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
         template = Template(body_html=body_html)
         fred = Person(name='Fred', age=42)
         addressbook = AddressBook()
